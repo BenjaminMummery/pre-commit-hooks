@@ -1,36 +1,28 @@
-add-msg-issue-prefix-hook
-=========================
+# pre-commit-hooks
 
-A prepare-commit-msg hook for pre-commit.
+A selection of quality-of-life tools for use with pre-commit.
 
-See also: https://github.com/pre-commit/pre-commit
+## Table of Contents
 
+<!--TOC-->
 
-### Using with pre-commit
+## Using with Pre-Commit
 
-Add this to your `.pre-commit-config.yaml`
-
-```yaml
--   repo: https://github.com/avilaton/add-msg-issue-prefix-hook
-    rev: v0.0.5  # Use the ref you want to point at
-    hooks:
-    -   id: add-msg-issue-prefix
-```
-
-and install prepare-commit-msg hooks using
-```
-pre-commit install --hook-type prepare-commit-msg
-```
-
-### Optional template argument
-Change how the issue is rendered to the commit message using the `--template` argument.
+Add the following to your `.pre-commit-config.yaml`
 
 ```yaml
--   repo: https://github.com/avilaton/add-msg-issue-prefix-hook
-    rev: v0.0.5  # Use the ref you want to point at
+-   repo: https://github.com/BenjaminMummery/pre-commit-hooks
+    rev: v0.0.1
     hooks:
-    -   id: add-msg-issue-prefix
-        args:
-            - --template=[{}]
-
+    -   id: add-msg-issue
 ```
+
+For more information on pre-commit, see [https://github.com/pre-commit/pre-commit](https://github.com/pre-commit/pre-commit)
+
+## What the hooks actually do
+
+### add-msg-issue
+
+Search the branch name for something that looks like an issue message, and insert it into the commit message.
+
+TODO: instructions on setting up pre-commit to run on prepare-commit-message
