@@ -5,24 +5,37 @@ import re
 import subprocess
 
 
-def get_ticket_id_from_branch_name(branch: str):
+def _get_branch_name() -> str:
+    branch: str = ""
+    try:
+        branch = subprocess.check_output(
+            ["git", "symbolic-ref", "--short", "HEAD"], universal_newlines=True
+        ).strip()
+    except Exception as e:
+        print(e)
+    return branch
+
+
+def _get_issue_ids_from_branch_name(branch: str) -> list:
     """Parse the branch name looking for an issue ID.
 
     Issue IDs are assumed to follow "X-Y" where X is a string of 1-10 letters, and
     Y is a string of 1-5 numerals.
 
     Args:
-        branch (_type_): _description_
+        branch (str): the name of the current branch.
 
     Returns:
-        _type_: _description_
+        str: the first instance of something resembling a jira issue id.
     """
     matches = re.findall("[a-zA-Z]{1,10}-[0-9]{1,5}", branch)
     if len(matches) > 0:
-        return matches[0].upper()
+        return [match.upper() for match in matches]
+    else:
+        return []
 
 
-def issue_is_in_message(issue_id: str, message: str) -> bool:
+def _issue_is_in_message(issue_id: str, message: str) -> bool:
     """Determine if the issue ID is already in the message.
 
     Ignores lines in the message that start with '#'.
@@ -43,7 +56,7 @@ def issue_is_in_message(issue_id: str, message: str) -> bool:
     return False
 
 
-def insert_issue_into_message(issue_id: str, message: str, template: str) -> str:
+def _insert_issue_into_message(issue_id: str, message: str, template: str) -> str:
     """Insert the issue_id into the commit message according to the template.
 
     The existing message is parsed into two parts:
@@ -96,36 +109,32 @@ def main():
         "-t",
         "--template",
         default="{subject}\n\n[{issue_id}]\n{body}",
-        help="Template to render ticket id into",
+        help=(
+            "Template for commit message. "
+            "Must contain {subject}, {issue_id} and {body} keywords."
+        ),
     )
     args = parser.parse_args()
     commit_msg_filepath = args.commit_msg_filepath
     template = args.template
 
-    # Get branch name
-    branch = ""
-    try:
-        branch = subprocess.check_output(
-            ["git", "symbolic-ref", "--short", "HEAD"], universal_newlines=True
-        ).strip()
-    except Exception as e:
-        print(e)
+    branch: str = _get_branch_name()
+    issue_ids: str = _get_issue_ids_from_branch_name(branch)
 
-    # extract issue_id from branch name
-    result: str = get_ticket_id_from_branch_name(branch)
-    issue_id: str = ""
-
-    # If we have the issue id, insert it into the message
-    if result:
-        issue_id = result
+    if len(issue_ids) > 0:
+        issue_id: str = issue_ids[0]
+        message: str
 
         with open(commit_msg_filepath, "r+") as f:
-            content = f.read()
+            message = f.read()
+
+            if _issue_is_in_message(issue_id, message):
+                return
+
+            message = _insert_issue_into_message(issue_id, message, template)
+
             f.seek(0, 0)
-            if issue_is_in_message(issue_id, content):
-                f.write(content)
-            else:
-                f.write(insert_issue_into_message(issue_id, content, template))
+            f.write(message)
 
 
 if __name__ == "__main__":
