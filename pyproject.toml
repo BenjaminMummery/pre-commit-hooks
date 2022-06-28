@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "add_msg_issue_hook"
-version = "v0.1.0"
+version = "v1.0.0"
 description = ""
 authors = ["Benjamin Mummery <benjamin.mummery@zapatacomputing.com>"]
 
