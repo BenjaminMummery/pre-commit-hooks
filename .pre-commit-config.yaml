@@ -1,4 +1,5 @@
 ---
+default_install_hook_types: [pre-commit, pre-merge-commit, pre-push, prepare-commit-msg,commit-msg, post-checkout, post-commit, post-merge, post-rewrite]
 default_stages: [commit, push]
 
 exclude: |
