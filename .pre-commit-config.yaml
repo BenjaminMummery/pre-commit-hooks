@@ -112,6 +112,7 @@ repos:
     rev: v0.961
     hooks:
       - id: mypy
+        exclude: ^tests/
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
