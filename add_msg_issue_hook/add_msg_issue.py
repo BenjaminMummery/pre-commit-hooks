@@ -12,6 +12,7 @@ def _get_branch_name() -> str:
             ["git", "symbolic-ref", "--short", "HEAD"], universal_newlines=True
         ).strip()
     except Exception as e:
+        print("Getting branch name for add_msg_issue_hook pre-commit hook failed:")
         print(e)
     return branch
 
