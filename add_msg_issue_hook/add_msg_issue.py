@@ -128,8 +128,6 @@ def _parse_args() -> argparse.Namespace:
     )
     args = parser.parse_args()
 
-    print("PARSED TEMPLATE:", args.template)
-
     fallback_message = (
         rf"The default template '{DEFAULT_TEMPLATE}' will be used instead. "
         "For more information, see "
