@@ -8,7 +8,8 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
 
 - [pre-commit-hooks](#pre-commit-hooks)
   - [Table of Contents](#table-of-contents)
-  - [Using with Pre-Commit](#using-with-pre-commit)
+  - [Usage with Pre-Commit](#usage-with-pre-commit)
+  - [Usage in a vanilla hook](#usage-in-a-vanilla-hook)
   - [`add-msg-issue`](#add-msg-issue)
     - [Example 1: Usage when defining the commit msg from command line](#example-1-usage-when-defining-the-commit-msg-from-command-line)
     - [Example 2: Usage when defining the commit msg from editor](#example-2-usage-when-defining-the-commit-msg-from-editor)
@@ -16,7 +17,7 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
 
 <!--TOC-->
 
-## Using with Pre-Commit
+## Usage with Pre-Commit
 
 Add the following to the `.pre-commit-config.yaml` in your repo (or create it if necessary):
 
@@ -49,6 +50,17 @@ pre-commit installed at .git/hooks/prepare-commit-msg
 
 For more information on pre-commit, see [https://github.com/pre-commit/pre-commit](https://github.com/pre-commit/pre-commit)
 
+## Usage in a vanilla hook
+
+The following is a minimal example of a `.git/hooks/prepare-commit-msg` to run add-msg-issue:
+
+```bash
+#!/usr/bin/env bash
+add-msg-issue $1
+```
+
+Note that this assumes that you've installed add-msg-issue in your global python environment.
+
 ## `add-msg-issue`
 
 Search the branch name for something that looks like an issue message, and insert it into the commit message.
@@ -68,7 +80,7 @@ Some more description about our test commit.
 
 ### Example 2: Usage when defining the commit msg from editor
 
-If a message is not specified in the command line, the issue ID is instead inserted into the message in the editor:
+If a message is not specified in the command line, the issue ID is instead inserted into the message prior to it opening in the editor. You should be greeted with something that looks like:
 
 ```markdown
 [TEST-01]
@@ -103,4 +115,8 @@ The template must include the following keywords:
 {body}
 ```
 
-These correspond to the issue id, subject line, and body of the commit message. The default template is `{subject}\n\n[{issue_id}]\n{body}`.
+These correspond to the issue id, subject line, and body of the commit message. The default template is:
+
+```python
+"{subject}\n\n[{issue_id}]\n{body}"
+```
