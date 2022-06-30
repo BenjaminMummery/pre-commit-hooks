@@ -1,7 +1,9 @@
--   id: add-msg-issue
-    name: Add issue to the commit message
-    description: Searches the branch name for something looking like a jira issue name and inserts it into the commit message.
-    entry: add-msg-issue
-    language: python
-    always_run: true
-    stages: [prepare-commit-msg]
+---
+- id: add-msg-issue
+  name: Add issue to the commit message
+  description: Searches the branch name for something looking like a jira issue
+    name and inserts it into the commit message.
+  entry: add-msg-issue
+  language: python
+  always_run: true
+  stages: [prepare-commit-msg]
