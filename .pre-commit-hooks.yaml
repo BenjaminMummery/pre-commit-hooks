@@ -14,4 +14,4 @@
   language: python
   always_run: true
   stages: [commit]
-  pass_filename: true
+  pass_filenames: true
