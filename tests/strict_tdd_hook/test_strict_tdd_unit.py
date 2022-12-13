@@ -1,0 +1,1 @@
+from strict_tdd_hook import strict_tdd

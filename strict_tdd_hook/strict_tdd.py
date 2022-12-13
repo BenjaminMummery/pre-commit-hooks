@@ -2,12 +2,15 @@ import argparse
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    print(argv)
+    parser = argparse.ArgumentParser()
     parser.add_argument("filenames", nargs="*")
     args = parser.parse_args(argv)
+
+    print(args)
 
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+# if __name__ == "__main__":
+#     raise SystemExit(main())
