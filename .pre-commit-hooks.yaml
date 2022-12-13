@@ -13,5 +13,5 @@
   entry: strict-tdd
   language: python
   always_run: true
-  stages: commit
+  stages: [commit]
   pass_filename: true
