@@ -7,3 +7,11 @@
   language: python
   always_run: true
   stages: [prepare-commit-msg]
+- id: strict-tdd
+  name: StrictTDD
+  description: Enforce strict TDD workflow
+  entry: strict-tdd
+  language: python
+  always_run: true
+  stages: commit
+  pass_filename: true
