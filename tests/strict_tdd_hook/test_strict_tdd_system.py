@@ -16,4 +16,19 @@ def cwd(path):
 
 def test_passes_for_no_changes(monkeypatch):
     monkeypatch.setattr(sys, "argv", [])
-    subprocess.check_output(["strict-tdd"])
+    subprocess.run("strict-tdd", check=True)
+
+
+def test_passes_for_changes_to_non_src_test_files(monkeypatch):
+    # GIVEN
+    monkeypatch.setattr(sys, "argv", ["dummy.xt", "docs/floop.blah"])
+
+    # WHEN
+    completed_process = subprocess.run("strict-tdd")
+
+    # THEN
+    assert completed_process.returncode == 1
+
+
+# def test_fails_for_changes_in_src_and_tests(monkeypatch):
+#     monkeypatch.setattr(sys, "argv", [])
