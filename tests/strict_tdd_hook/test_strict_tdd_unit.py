@@ -10,3 +10,8 @@ class TestConstructFileLists:
     def test_src_files_only():
         filenames = ["src/foo", "src/bar"]
         assert (filenames, [], []) == strict_tdd._construct_file_lists(filenames)
+
+    @staticmethod
+    def test_test_files_only():
+        filenames = ["test/foo", "test/bar"]
+        assert ([], filenames, []) == strict_tdd._construct_file_lists(filenames)
