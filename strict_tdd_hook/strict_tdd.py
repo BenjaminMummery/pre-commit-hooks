@@ -1,4 +1,11 @@
 import argparse
+from typing import List, Tuple
+
+
+def _construct_file_lists(
+    filenames: List[str],
+) -> Tuple[List[str], List[str], List[str]]:
+    return [], [], []
 
 
 def main(argv=None):
