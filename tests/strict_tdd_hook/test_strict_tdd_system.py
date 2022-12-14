@@ -26,3 +26,8 @@ class TestCLI:
         with cwd(tmp_path):
             process = subprocess.run(["strict-tdd", "docs/foo.bar", "src/foo.bar"])
         assert process.returncode == 1
+
+    @staticmethod
+    def test_passes_for_metatext_only_changes(tmp_path):
+        with cwd(tmp_path):
+            subprocess.run(["strict-tdd", "docs/foo.bar", "foo.bar"], check=True)
