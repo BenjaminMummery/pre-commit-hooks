@@ -9,7 +9,9 @@ def _construct_file_lists(
         return [], [], []
     if filenames[0].startswith("src"):
         return filenames, [], []
-    return [], filenames, []
+    elif filenames[0].startswith("test"):
+        return [], filenames, []
+    return [], [], filenames
 
 
 def main(argv=None):
