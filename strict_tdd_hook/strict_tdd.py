@@ -2,9 +2,19 @@ import argparse
 from typing import List, Tuple
 
 
-def _construct_file_lists(
+def _parse_file_list(
     filenames: List[str],
 ) -> Tuple[List[str], List[str], List[str]]:
+    """
+    Parse the list of files into lists of source files, test files, and other
+
+    Args:
+        filenames (List[str]): The list of changed files.
+
+    Returns:
+        source files, test files, other files: Lists of the filenames corresponding to
+            each category.
+    """
     source_files: List[str] = []
     test_files: List[str] = []
     etc_files: List[str] = []
