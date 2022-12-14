@@ -5,7 +5,7 @@ from typing import List, Tuple
 def _construct_file_lists(
     filenames: List[str],
 ) -> Tuple[List[str], List[str], List[str]]:
-    return [], [], []
+    return filenames, [], []
 
 
 def main(argv=None):
