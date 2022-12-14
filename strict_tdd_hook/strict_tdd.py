@@ -5,7 +5,11 @@ from typing import List, Tuple
 def _construct_file_lists(
     filenames: List[str],
 ) -> Tuple[List[str], List[str], List[str]]:
-    return filenames, [], []
+    if len(filenames) == 0:
+        return [], [], []
+    if filenames[0].startswith("src"):
+        return filenames, [], []
+    return [], filenames, []
 
 
 def main(argv=None):
