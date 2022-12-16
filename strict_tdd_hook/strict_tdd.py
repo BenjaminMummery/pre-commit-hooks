@@ -30,6 +30,10 @@ def _parse_file_list(
     return source_files, test_files, etc_files
 
 
+def _get_current_n_tests() -> int:
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("filenames", nargs="*")
