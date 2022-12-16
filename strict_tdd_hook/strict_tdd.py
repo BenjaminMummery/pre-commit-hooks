@@ -35,6 +35,13 @@ def main(argv=None):
     parser.add_argument("filenames", nargs="*")
     args = parser.parse_args(argv)
 
-    if len(args.filenames) > 0:
+    changed_src_files, changed_test_files, changed_etc_files = _parse_file_list(
+        args.filenames
+    )
+
+    if len(changed_src_files) + len(changed_test_files) == 0:
+        return 0
+    elif len(changed_etc_files) > 0:
         return 1
+
     return 0
