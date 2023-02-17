@@ -1,4 +1,39 @@
+import os
+from contextlib import contextmanager
+
+import pytest
+
 from add_copyright_hook import add_copyright
+
+
+@contextmanager
+def cwd(path):
+    oldcwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(oldcwd)
+
+
+class TestGetGitUserName:
+    @staticmethod
+    def test_returns_configured_name(git_repo):
+        username = "stub username"
+        git_repo.run(f"git config user.name '{username}'")
+
+        with cwd(git_repo.workspace):
+            name = add_copyright._get_git_user_name()
+
+        assert name == username
+
+    @staticmethod
+    @pytest.mark.xfail(reason="Not sure how to mock this yet.")
+    def test_raises_exception_for_unset_name():
+        """Unsetting the user name persists outside of the test, so instead of
+        using pytest-git we need to mock the GitPython call.
+        """
+        assert False
 
 
 class TestParseArgs:

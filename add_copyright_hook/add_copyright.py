@@ -2,6 +2,17 @@
 
 import argparse
 
+from git import Repo
+
+
+def _get_git_user_name() -> str:
+    repo = Repo(".")
+    reader = repo.config_reader()
+    name: str = reader.get_value("user", "name")
+    if len(name) == 0:
+        raise ValueError("Git user name is not set.")
+    return name
+
 
 def _parse_args() -> argparse.Namespace:
     """Parse the CLI arguments.
@@ -24,6 +35,8 @@ def main() -> int:
 
     for file in args.files:
         print(file)
+
+    print(_get_git_user_name())
 
     return 1
 
