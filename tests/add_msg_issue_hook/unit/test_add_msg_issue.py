@@ -159,7 +159,6 @@ class TestInsertIssueIntoMessage:
         ],
     )
     def test_default_template_formats_correctly(message_in, message_out, issue_id):
-
         outstr = add_msg_issue._insert_issue_into_message(
             issue_id, message_in, DEFAULT_TEMPLATE
         )
@@ -190,7 +189,6 @@ class TestInsertIssueIntoMessage:
     def test_user_defined_template_formats_correctly(
         issue_id, template, message_in, message_out
     ):
-
         outstr = add_msg_issue._insert_issue_into_message(
             issue_id, message_in, template
         )

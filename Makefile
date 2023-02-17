@@ -8,6 +8,9 @@ test_venv/touchfile: test_requirements.txt
 test: test_venv
 	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_msg_issue_hook tests/
 
+test_add_issue: test_venv
+	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_msg_issue_hook tests/add_msg_issue_hook -x
+
 clean:
 	rm -rf test_venv
 	find -iname "*.pyc" -delete

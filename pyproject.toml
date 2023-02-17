@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "add_msg_issue_hook"
+name = "pre-commit-hooks"
 version = "v1.0.2"
 description = ""
 authors = ["Benjamin Mummery <benjamin.mummery@zapatacomputing.com>"]
