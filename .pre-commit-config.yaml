@@ -42,7 +42,7 @@ repos:
       - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.41.0
+    rev: v2.42.0
     hooks:
       - id: commitizen
 
@@ -55,6 +55,17 @@ repos:
     rev: v1.0.2
     hooks:
       - id: add-msg-issue
+
+  # C++ ###############################################################################
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: 'v1.3.5'
+    hooks:
+      - id: clang-format
+        args: [-i]
+      # - id: clang-tidy
+      #   args: [--fix-errors]
+      - id: cppcheck
+      - id: cpplint
 
   # CMAKE  ############################################################################
   - repo: https://github.com/cheshirekow/cmake-format-precommit
@@ -121,7 +132,7 @@ repos:
       - id: check-yaml
 
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.8.0
+    rev: 1.9.0
     hooks:
       - id: yamlfix
         exclude: .pre-commit-config.yaml
