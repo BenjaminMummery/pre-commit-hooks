@@ -29,28 +29,48 @@ class TestGetGitUserName:
 
 
 class TestParseArgs:
-    @staticmethod
-    def test_no_files(mocker):
-        mocker.patch("sys.argv", ["stub name"])
+    class TestParseFilenames:
+        @staticmethod
+        def test_no_files(mocker):
+            mocker.patch("sys.argv", ["stub name"])
 
-        args = add_copyright._parse_args()
+            args = add_copyright._parse_args()
 
-        assert args.files == []
+            assert args.files == []
 
-    @staticmethod
-    def test_single_file(mocker):
-        filename = "stub_file.py"
-        mocker.patch("sys.argv", ["stub_name", filename])
+        @staticmethod
+        def test_single_file(mocker):
+            filename = "stub_file.py"
+            mocker.patch("sys.argv", ["stub_name", filename])
 
-        args = add_copyright._parse_args()
+            args = add_copyright._parse_args()
 
-        assert args.files == [filename]
+            assert args.files == [filename]
 
-    @staticmethod
-    def test_multiple_files(mocker):
-        filenames = ["stub_file_1", "stub_file_2", "subdir/stub_file_3"]
-        mocker.patch("sys.argv", ["stub_name"] + filenames)
+        @staticmethod
+        def test_multiple_files(mocker):
+            filenames = ["stub_file_1", "stub_file_2", "subdir/stub_file_3"]
+            mocker.patch("sys.argv", ["stub_name"] + filenames)
 
-        args = add_copyright._parse_args()
+            args = add_copyright._parse_args()
 
-        assert args.files == filenames
+            assert args.files == filenames
+
+    class TestParseCopyrightHolderName:
+        @staticmethod
+        def test_no_name_set(mocker):
+            mocker.patch("sys.argv", ["stub_name"])
+
+            args = add_copyright._parse_args()
+
+            assert args.name is None
+
+        @staticmethod
+        @pytest.mark.parametrize("username", ["stub", "stub_name"])
+        @pytest.mark.parametrize("toggle", ["-n", "--name"])
+        def test_single_word(mocker, username, toggle):
+            mocker.patch("sys.argv", ["stub_name", toggle, username])
+
+            args = add_copyright._parse_args()
+
+            assert args.name == username

@@ -32,6 +32,7 @@ def _parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
+    parser.add_argument("-n", "--name", type=str, default=None)
     args = parser.parse_args()
 
     if isinstance(args.files, str):
