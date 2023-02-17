@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import typing as t
 
 from git import Repo
 
 
-def _get_git_user_name() -> str:
+def _get_git_user_name() -> t.Union[str, None]:
     """Get the user name as configured in git.
 
     Raises:
@@ -17,8 +18,8 @@ def _get_git_user_name() -> str:
     repo = Repo(".")
     reader = repo.config_reader()
     name: str = reader.get_value("user", "name")
-    if len(name) == 0:
-        raise ValueError("Git user name is not set.")
+    if len(name) < 1:
+        return None
     return name
 
 

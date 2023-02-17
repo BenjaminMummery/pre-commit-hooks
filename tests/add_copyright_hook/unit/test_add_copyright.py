@@ -27,14 +27,6 @@ class TestGetGitUserName:
 
         assert name == username
 
-    @staticmethod
-    @pytest.mark.xfail(reason="Not sure how to mock this yet.")
-    def test_raises_exception_for_unset_name():
-        """Unsetting the user name persists outside of the test, so instead of
-        using pytest-git we need to mock the GitPython call.
-        """
-        assert False
-
 
 class TestParseArgs:
     @staticmethod
