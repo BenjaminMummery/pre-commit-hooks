@@ -14,5 +14,5 @@
   entry: add-copyright
   language: python
   always_run: true
-  stage: [commit]
+  stages: [commit]
   types: [python]
