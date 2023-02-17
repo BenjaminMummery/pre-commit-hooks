@@ -7,3 +7,12 @@
   language: python
   always_run: true
   stages: [prepare-commit-msg]
+- id: add-copyright
+  name: Add copyright string to source files
+  description: Checks that source files have copyright strings. Adds the string
+    if necessary.
+  entry: add-copyright
+  language: python
+  always_run: true
+  stage: [commit]
+  types: [python]

@@ -6,10 +6,13 @@ test_venv/touchfile: test_requirements.txt
 	touch test_venv/touchfile
 
 test: test_venv
-	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_msg_issue_hook tests/
+	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_msg_issue_hook --cov=add_copyright_hook tests/
 
 test_add_issue: test_venv
 	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_msg_issue_hook tests/add_msg_issue_hook -x
+
+test_add_copyright: test_venv
+	. test_venv/bin/activate; pytest --cov-report term-missing --cov=add_copyright_hook tests/add_copyright_hook -x
 
 clean:
 	rm -rf test_venv
