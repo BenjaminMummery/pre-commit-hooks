@@ -6,6 +6,14 @@ from git import Repo
 
 
 def _get_git_user_name() -> str:
+    """Get the user name as configured in git.
+
+    Raises:
+        ValueError: when the user name has not been configured.
+
+    Returns:
+        str: the user name
+    """
     repo = Repo(".")
     reader = repo.config_reader()
     name: str = reader.get_value("user", "name")
