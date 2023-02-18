@@ -25,7 +25,7 @@ def _get_git_user_name() -> t.Union[str, None]:
     reader = repo.config_reader()
     name: str = reader.get_value("user", "name")
     if len(name) < 1:
-        return None
+        raise ValueError("The git username is not configured.")
     return name
 
 
