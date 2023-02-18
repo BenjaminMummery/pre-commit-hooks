@@ -39,6 +39,62 @@ class TestGetGitUserName:
         assert name == username
 
 
+class TestResolveUserName:
+    @staticmethod
+    def test_returns_name_if_provided():
+        username = "stub username"
+
+        name = add_copyright._resolve_user_name(username)
+
+        assert name == username
+
+    @staticmethod
+    def test_calls_get_git_user_name_if_no_name_provided(mocker):
+        username = "stub username"
+        mocked_get_git_user_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name", return_value=username
+        )
+
+        name = add_copyright._resolve_user_name()
+
+        assert name == username
+        mocked_get_git_user_name.assert_called_once()
+
+    @staticmethod
+    def test_raises_valueerror_if_get_git_user_name_errors(mocker):
+        mocked_get_git_user_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name",
+            side_effect=ValueError,
+        )
+
+        with pytest.raises(ValueError):
+            add_copyright._resolve_user_name()
+        mocked_get_git_user_name.assert_called_once()
+
+
+class TestResolveYear:
+    @staticmethod
+    def test_returns_year_if_provided():
+        inputyear = "stub_year"
+
+        year = add_copyright._resolve_year(inputyear)
+
+        assert year == inputyear
+
+    @staticmethod
+    def test_calls_get_current_year_if_no_name_provided(mocker):
+        currentyear = "1984"
+        mocked_get_current_year = mocker.patch(
+            "add_copyright_hook.add_copyright._get_current_year",
+            return_value=currentyear,
+        )
+
+        year = add_copyright._resolve_year()
+
+        assert year == currentyear
+        mocked_get_current_year.assert_called_once()
+
+
 class TestParseArgs:
     class TestParseFilenames:
         @staticmethod
