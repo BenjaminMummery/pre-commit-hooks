@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 
 import pytest
+from freezegun import freeze_time
 
 from add_copyright_hook import add_copyright
 
@@ -14,6 +15,16 @@ def cwd(path):
         yield
     finally:
         os.chdir(oldcwd)
+
+
+class TestGetCurrentYear:
+    @staticmethod
+    @freeze_time("2012-01-01")
+    def test_returns_year_string():
+        year = add_copyright._get_current_year()
+
+        assert isinstance(year, str)
+        assert year == "2012"
 
 
 class TestGetGitUserName:

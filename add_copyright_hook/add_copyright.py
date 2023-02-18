@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import typing as t
 
 from git import Repo
+
+
+def _get_current_year() -> str:
+    today = datetime.date.today()
+    return str(today.year)
 
 
 def _get_git_user_name() -> t.Union[str, None]:
