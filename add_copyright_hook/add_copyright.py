@@ -8,6 +8,7 @@ from git import Repo
 
 
 def _get_current_year() -> str:
+    """Get the current year from the system clock."""
     today = datetime.date.today()
     return str(today.year)
 
