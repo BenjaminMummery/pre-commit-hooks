@@ -165,7 +165,7 @@ def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     if isinstance(files, str):
         files = [files]
 
-    _files: t.List[Path] = [Path(file).absolute() for file in files]
+    _files: t.List[Path] = [Path(file) for file in files]
 
     for file in _files:
         if not os.path.isfile(file):

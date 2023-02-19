@@ -245,7 +245,7 @@ class TestResolveFiles:
         with cwd(tmp_path):
             files = add_copyright._resolve_files("hello.txt")
 
-        assert files == [Path(p).absolute()]
+        assert files == [Path("hello.txt")]
 
     @staticmethod
     def test_returns_list_for_multiple_valid_files(tmp_path):
@@ -257,7 +257,7 @@ class TestResolveFiles:
         with cwd(tmp_path):
             files = add_copyright._resolve_files(["hello.txt", "goodbye.py"])
 
-        assert files == [Path(p1).absolute(), Path(p2).absolute()]
+        assert files == [Path("hello.txt"), Path("goodbye.py")]
 
     @staticmethod
     def test_raises_exception_for_missing_file(tmp_path):
