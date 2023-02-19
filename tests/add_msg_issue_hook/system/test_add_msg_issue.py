@@ -1,3 +1,5 @@
+# Copyright (c) 2023 Benjamin Mummery
+
 import os
 import subprocess
 from contextlib import contextmanager

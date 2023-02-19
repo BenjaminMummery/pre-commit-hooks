@@ -52,8 +52,9 @@ repos:
       - id: codespell
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.2
+    rev: v1.1.0
     hooks:
+      - id: add-copyright
       - id: add-msg-issue
 
   # C++ ###############################################################################
@@ -120,7 +121,7 @@ repos:
         args: ['--ignore=E203,E266,F401,W503', --max-line-length=88]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.0.0
+    rev: v1.0.1
     hooks:
       - id: mypy
         exclude: ^tests/

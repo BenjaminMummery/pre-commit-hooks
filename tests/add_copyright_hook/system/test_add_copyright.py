@@ -1,3 +1,5 @@
+# Copyright (c) 2023 Benjamin Mummery
+
 import os
 from contextlib import contextmanager
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2023 Benjamin Mummery
+
 import argparse
 import datetime
 import os
