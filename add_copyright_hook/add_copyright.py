@@ -3,10 +3,22 @@
 import argparse
 import datetime
 import os
+import re
 import typing as t
 from pathlib import Path
 
 from git import Repo
+
+
+def _is_copyright_string(input: str) -> bool:
+    exp = re.compile(
+        r"^#\s?(?P<signifiers>copyright(\s?\(c\))?)\s(?P<year>\d{4})\s(?P<name>.*)",
+        re.IGNORECASE,
+    )
+    m = re.match(exp, input)
+    if m is None:
+        return False
+    return True
 
 
 def _get_current_year() -> str:

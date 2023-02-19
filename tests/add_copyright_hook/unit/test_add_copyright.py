@@ -18,6 +18,29 @@ def cwd(path):
         os.chdir(oldcwd)
 
 
+class TestIsCopyrightString:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_string",
+        [
+            "# Copyright 2023 Benjamin Mummery",
+            "# Copyright (c) 2023 Benjamin Mummery",
+            "#Copyright 8923 Hugo Drax",
+            "# copyright 1234 Qwe Rty",
+            "# COPYRIGHT 5678 Uio Pas",
+        ],
+    )
+    def test_returns_true_for_correct_strings(input_string):
+        assert add_copyright._is_copyright_string(input_string)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_string", ["Not a comment", "# Not a copyright string"]
+    )
+    def test_returns_false_for_incorrect_strings(input_string):
+        assert not add_copyright._is_copyright_string(input_string)
+
+
 class TestGetCurrentYear:
     @staticmethod
     @freeze_time("2012-01-01")
