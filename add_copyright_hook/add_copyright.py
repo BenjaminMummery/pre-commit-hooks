@@ -11,6 +11,17 @@ from git import Repo
 
 
 def _is_copyright_string(input: str) -> bool:
+    """Checks if the input string is a copyright comment.
+
+    Note: at present this assumes that we're looking for a python comment.
+    Future versions will extend this to include other languages.
+
+    Args:
+        input (str): The string to be checked
+
+    Returns:
+        bool: True if the input string is a copyright comment, false otherwise.
+    """
     exp = re.compile(
         r"^#\s?(?P<signifiers>copyright(\s?\(c\))?)\s(?P<year>\d{4})\s(?P<name>.*)",
         re.IGNORECASE,
