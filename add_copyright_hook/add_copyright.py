@@ -2,7 +2,9 @@
 
 import argparse
 import datetime
+import os
 import typing as t
+from pathlib import Path
 
 from git import Repo
 
@@ -69,6 +71,33 @@ def _resolve_year(year: t.Optional[str] = None) -> str:
     return year or _get_current_year()
 
 
+def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
+    """Convert the list of files into a list of paths, and ensure that they all
+    exist.
+
+    Args:
+        files (str, List[str]): The list of changed files.
+
+    Raises:
+        FileNotFoundError: When one or more of the specified files does not
+        exist.
+
+    Returns:
+        List[Path]: A list of paths coressponding to the changed files.
+    """
+
+    if isinstance(files, str):
+        files = [files]
+
+    _files: t.List[Path] = [Path(file).absolute() for file in files]
+
+    for file in _files:
+        if not os.path.isfile(file):
+            raise FileNotFoundError(file)
+
+    return _files
+
+
 def _parse_args() -> argparse.Namespace:
     """Parse the CLI arguments.
 
@@ -79,20 +108,30 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-n", "--name", type=str, default=None)
+    parser.add_argument("-y", "--year", type=str, default=None)
+    parser.add_argument("-f", "--format", type=str, default=None)
     args = parser.parse_args()
 
-    if isinstance(args.files, str):
-        args.files = [args.files]
+    args.name = _resolve_user_name(args.name)
+    args.year = _resolve_year(args.year)
+    args.files = _resolve_files(args.files)
+
     return args
 
 
 def main() -> int:
     args = _parse_args()
 
-    for file in args.files:
-        print(file)
+    # Early exit if no files provided
+    if len(args.files) < 1:
+        return 0
 
-    print(_get_git_user_name())
+    # Resolve the copyright holder name
+    name = args.name or _get_git_user_name()
+
+    # Filter out files that already have a copyright string
+    for file in args.files:
+        print(file, name)
 
     return 1
 

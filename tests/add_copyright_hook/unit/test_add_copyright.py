@@ -1,5 +1,6 @@
 import os
 from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 from freezegun import freeze_time
@@ -95,49 +96,88 @@ class TestResolveYear:
         mocked_get_current_year.assert_called_once()
 
 
+class TestResolveFiles:
+    @staticmethod
+    def test_returns_empty_list_for_empty_input():
+        files = add_copyright._resolve_files([])
+
+        assert files == []
+
+    @staticmethod
+    def test_returns_list_for_single_valid_file(tmp_path):
+        p = tmp_path / "hello.txt"
+        p.write_text("")
+
+        with cwd(tmp_path):
+            files = add_copyright._resolve_files("hello.txt")
+
+        assert files == [Path(p).absolute()]
+
+    @staticmethod
+    def test_returns_list_for_multiple_valid_files(tmp_path):
+        p1 = tmp_path / "hello.txt"
+        p2 = tmp_path / "goodbye.py"
+        for file in [p1, p2]:
+            file.write_text("")
+
+        with cwd(tmp_path):
+            files = add_copyright._resolve_files(["hello.txt", "goodbye.py"])
+
+        assert files == [Path(p1).absolute(), Path(p2).absolute()]
+
+    @staticmethod
+    def test_raises_exception_for_missing_file(tmp_path):
+        p1 = tmp_path / "hello.txt"
+        p1.write_text("")
+
+        with cwd(tmp_path):
+            with pytest.raises(FileNotFoundError):
+                add_copyright._resolve_files(["hello.txt", "goodbye.py"])
+
+
 class TestParseArgs:
-    class TestParseFilenames:
-        @staticmethod
-        def test_no_files(mocker):
-            mocker.patch("sys.argv", ["stub name"])
+    @staticmethod
+    @pytest.mark.parametrize(
+        "file_arg", [[], ["stub_file"], ["stub_file_1", "stub_file_2"]]
+    )
+    @pytest.mark.parametrize(
+        "name_arg, expected_name",
+        [
+            (["-n", "stub_name"], "stub_name"),
+            (["--name", "stub_name"], "stub_name"),
+            ([], None),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "year_arg, expected_year",
+        [
+            (["-y", "stub_year"], "stub_year"),
+            (["--year", "stub_year"], "stub_year"),
+            ([], None),
+        ],
+    )
+    def test_argument_passing(
+        mocker, file_arg, name_arg, expected_name, year_arg, expected_year
+    ):
+        mock_name_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_user_name",
+            return_value="name sentinel",
+        )
+        mock_year_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_year",
+            return_value="year sentinel",
+        )
+        mock_file_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_files",
+            return_value="file sentinel",
+        )
+        mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *year_arg])
 
-            args = add_copyright._parse_args()
+        args = add_copyright._parse_args()
 
-            assert args.files == []
-
-        @staticmethod
-        def test_single_file(mocker):
-            filename = "stub_file.py"
-            mocker.patch("sys.argv", ["stub_name", filename])
-
-            args = add_copyright._parse_args()
-
-            assert args.files == [filename]
-
-        @staticmethod
-        def test_multiple_files(mocker):
-            filenames = ["stub_file_1", "stub_file_2", "subdir/stub_file_3"]
-            mocker.patch("sys.argv", ["stub_name"] + filenames)
-
-            args = add_copyright._parse_args()
-
-            assert args.files == filenames
-
-    class TestParseCopyrightHolderName:
-        @staticmethod
-        def test_no_name_set(mocker):
-            mocker.patch("sys.argv", ["stub_name"])
-
-            args = add_copyright._parse_args()
-
-            assert args.name is None
-
-        @staticmethod
-        @pytest.mark.parametrize("username", ["stub", "stub_name"])
-        @pytest.mark.parametrize("toggle", ["-n", "--name"])
-        def test_single_word(mocker, username, toggle):
-            mocker.patch("sys.argv", ["stub_name", toggle, username])
-
-            args = add_copyright._parse_args()
-
-            assert args.name == username
+        mock_name_resolver.assert_called_once_with(expected_name)
+        mock_year_resolver.assert_called_once_with(expected_year)
+        mock_file_resolver.assert_called_once_with(file_arg)
+        assert args.name == "name sentinel"
+        assert args.year == "year sentinel"
+        assert args.files == "file sentinel"
