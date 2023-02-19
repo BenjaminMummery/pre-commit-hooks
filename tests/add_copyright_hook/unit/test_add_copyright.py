@@ -99,6 +99,59 @@ class TestInsertCopyrightString:
         assert out == expected
 
 
+class TestEnsureCopyrightString:
+    @staticmethod
+    def test_returns_0_if_file_has_copyright(tmp_path, mocker):
+        p = tmp_path / "stub_file.py"
+        p.write_text("<file_contents sentinel>")
+        mock_copyright_check = mocker.patch(
+            "add_copyright_hook.add_copyright._contains_copyright_string",
+            return_value=True,
+        )
+
+        assert (
+            add_copyright._ensure_copyright_string(
+                p, "<name sentinel>", "<year sentinel>"
+            )
+            == 0
+        )
+        mock_copyright_check.assert_called_once_with("<file_contents sentinel>")
+        with open(p) as f:
+            assert f.read() == "<file_contents sentinel>"
+
+    @staticmethod
+    def test_returns_1_if_file_is_changed(tmp_path, mocker):
+        p = tmp_path / "stub_file.py"
+        p.write_text("<file_contents sentinel>")
+        mocker.patch(
+            "add_copyright_hook.add_copyright._contains_copyright_string",
+            return_value=False,
+        )
+        mock_construct_string = mocker.patch(
+            "add_copyright_hook.add_copyright._construct_copyright_string",
+            return_value="<copyright string sentinel>",
+        )
+        mock_insert_string = mocker.patch(
+            "add_copyright_hook.add_copyright._insert_copyright_string",
+            return_value="<modified contents sentinel>",
+        )
+
+        assert (
+            add_copyright._ensure_copyright_string(
+                p, "<name sentinel>", "<year sentinel>"
+            )
+            == 1
+        )
+        mock_construct_string.assert_called_once_with(
+            "<name sentinel>", "<year sentinel>"
+        )
+        mock_insert_string.assert_called_once_with(
+            "<copyright string sentinel>", "<file_contents sentinel>"
+        )
+        with open(p) as f:
+            assert f.read() == "<modified contents sentinel>"
+
+
 class TestGetCurrentYear:
     @staticmethod
     @freeze_time("2012-01-01")
