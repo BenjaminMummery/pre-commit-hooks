@@ -187,7 +187,6 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-n", "--name", type=str, default=None)
     parser.add_argument("-y", "--year", type=str, default=None)
-    parser.add_argument("-f", "--format", type=str, default=None)
     args = parser.parse_args()
 
     args.name = _resolve_user_name(args.name)
