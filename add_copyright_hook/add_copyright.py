@@ -10,7 +10,7 @@ from pathlib import Path
 from git import Repo
 
 
-def _is_copyright_string(input: str) -> bool:
+def _contains_copyright_string(input: str) -> bool:
     """Checks if the input string is a copyright comment.
 
     Note: at present this assumes that we're looking for a python comment.
@@ -24,9 +24,9 @@ def _is_copyright_string(input: str) -> bool:
     """
     exp = re.compile(
         r"^#\s?(?P<signifiers>copyright(\s?\(c\))?)\s(?P<year>\d{4})\s(?P<name>.*)",
-        re.IGNORECASE,
+        re.IGNORECASE | re.MULTILINE,
     )
-    m = re.match(exp, input)
+    m = re.search(exp, input)
     if m is None:
         return False
     return True
