@@ -78,6 +78,8 @@ def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
         if _contains_copyright_string(contents):
             return 0
 
+        print(f"Fixing file `{file}`")
+
         f.seek(0, 0)
         f.write(
             _insert_copyright_string(_construct_copyright_string(name, year), contents)
