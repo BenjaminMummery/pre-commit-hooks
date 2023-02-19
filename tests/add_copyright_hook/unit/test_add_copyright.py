@@ -42,6 +42,63 @@ class TestContainsCopyrightString:
         assert not add_copyright._contains_copyright_string(input_string)
 
 
+class TestIsShebang:
+    @staticmethod
+    @pytest.mark.parametrize("input", ["#!/usr/bin/python"])
+    def test_returns_true_for_shebang(input):
+        assert add_copyright._is_shebang(input)
+
+    @staticmethod
+    @pytest.mark.parametrize("input", ["#/usr/bin/python"])
+    def test_returns_false_for_not_shebang(input):
+        assert not add_copyright._is_shebang(input)
+
+
+class TestConstructCopyrightString:
+    @staticmethod
+    @pytest.mark.parametrize("name", ["Harold Hadrada"])
+    @pytest.mark.parametrize("year", ["1066"])
+    def test_correct_construction(name, year):
+        expected = f"# Copyright (c) {year} {name}"
+        print(expected)
+        assert add_copyright._construct_copyright_string(name, year) == expected
+
+
+class TestInsertCopyrightString:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "content",
+        [
+            '"""docstring"""\ndef some_code():\n    pass',
+        ],
+    )
+    def test_insterts_string(content):
+        expected = "<copyright sentinel>\n" + content
+
+        out = add_copyright._insert_copyright_string("<copyright sentinel>", content)
+
+        assert out == expected
+
+    @staticmethod
+    def test_insterts_copyright_after_shebang():
+        content = (
+            "#!shebang\n" "\n" '"""docstring"""\n' "\n" "def some_code():\n" "    pass"
+        )
+        expected = (
+            "#!shebang\n"
+            "\n"
+            "<copyright sentinel>\n"
+            "\n"
+            '"""docstring"""\n'
+            "\n"
+            "def some_code():\n"
+            "    pass"
+        )
+
+        out = add_copyright._insert_copyright_string("<copyright sentinel>", content)
+        assert out == expected
+
+
 class TestGetCurrentYear:
     @staticmethod
     @freeze_time("2012-01-01")

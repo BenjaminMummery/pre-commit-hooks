@@ -32,6 +32,57 @@ def _contains_copyright_string(input: str) -> bool:
     return True
 
 
+def _is_shebang(input: str) -> bool:
+    return input.startswith("#!")
+
+
+def _construct_copyright_string(name: str, year: str) -> str:
+    """Construct a commented line containing the copyright information.
+
+    Args:
+        name (str): The name of the copyright holder.
+        year (str): The year of the copyright.
+    """
+    outstr = "# Copyright (c) {year} {name}".format(year=year, name=name)
+    assert _contains_copyright_string(outstr)
+    return outstr
+
+
+def _insert_copyright_string(copyright: str, content: str) -> str:
+    """Insert the specified copyright string as a new line in the content. This
+    method attempts to place the copyright string at the top of the file, unless
+    the file starts with a shebang in which case the copyright string is
+    inserted after the shebang, separated by an empty line.
+
+    Args:
+        copyright (str): The copyright string.
+        content (str): The content into which to insert the copyright string.
+
+    Returns:
+        str: The modified content, including the copyright string.
+    """
+    lines: list = [line for line in content.split("\n")]
+    for i, line in enumerate(lines):
+        if _is_shebang(line):
+            lines[i] += "\n"
+            continue
+        lines = lines[0:i] + [copyright] + lines[i:]
+        break
+    return "\n".join(lines)
+
+
+def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
+    with open(file, "r+") as f:
+        contents: str = f.read()
+
+        if _contains_copyright_string(contents):
+            return 0
+
+        f.seek(0, 0)
+        # f.write(blah)
+    return 1
+
+
 def _get_current_year() -> str:
     """Get the current year from the system clock."""
     today = datetime.date.today()
@@ -149,14 +200,12 @@ def main() -> int:
     if len(args.files) < 1:
         return 0
 
-    # Resolve the copyright holder name
-    name = args.name or _get_git_user_name()
-
     # Filter out files that already have a copyright string
+    retv = 0
     for file in args.files:
-        print(file, name)
+        retv |= _ensure_copyright_string(file, args.name, args.year)
 
-    return 1
+    return retv
 
 
 if __name__ == "__main__":
