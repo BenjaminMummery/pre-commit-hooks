@@ -79,7 +79,9 @@ def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
             return 0
 
         f.seek(0, 0)
-        # f.write(blah)
+        f.write(
+            _insert_copyright_string(_construct_copyright_string(name, year), contents)
+        )
     return 1
 
 
