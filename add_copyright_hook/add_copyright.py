@@ -145,13 +145,19 @@ def _resolve_user_name(
         str: The resolved name.
     """
     if name is not None:
+        print(f"Using cli-configured name `{name}`.")
         return name
 
     if config is not None:
         data = _read_config_file(config)
-        return data["name"]
+        if "name" in data:
+            print(f"Name `{data['name']}` read from config file `{config}`.")
+            return data["name"]
+        print(f"Config file `{config}` has no name field.")
 
-    return _get_git_user_name()
+    _name = _get_git_user_name()
+    print(f"Name `{_name}` inferred from git user.name configuration.")
+    return _name
 
 
 def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
@@ -167,13 +173,19 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
         str: The resolved year.
     """
     if year is not None:
+        print(f"Using cli-configured year `{year}`.")
         return year
 
     if config is not None:
         data = _read_config_file(config)
-        return data["year"]
+        if "year" in data:
+            print(f"Year `{data['year']}` read from config file `{config}`.")
+            return data["year"]
+        print(f"Config file `{config}` has no year field.")
 
-    return _get_current_year()
+    _year = _get_current_year()
+    print(f"Year `{_year}` inferred from system clock.")
+    return _year
 
 
 def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
@@ -237,6 +249,7 @@ def _parse_args() -> argparse.Namespace:
 
     if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
         args.config = DEFAULT_CONFIG_FILE
+        print(f"Found config file `{args.config}`.")
 
     args.name = _resolve_user_name(args.name, args.config)
     args.year = _resolve_year(args.year, args.config)
