@@ -3,6 +3,7 @@
 import os
 from contextlib import contextmanager
 
+import pytest
 from freezegun import freeze_time
 
 from add_copyright_hook import add_copyright
@@ -18,86 +19,148 @@ def cwd(path):
         os.chdir(oldcwd)
 
 
-def test_return_0_for_no_changed_files(mocker):
-    mocker.patch("sys.argv", ["stub_name"])
-    assert add_copyright.main() == 0
-
-
-def test_return_0_if_all_files_have_copyright(mocker, git_repo):
-    p1 = git_repo.workspace / "file_1.py"
-    p2 = git_repo.workspace / "file_2.txt"
-    p1.write_text("# Copyright 1701 James T. Kirk")
-    p2.write_text("#COPYRIGHT 2087 KHAN")
-    mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
-
-    with cwd(git_repo.workspace):
+class TestNoFilesToCheck:
+    @staticmethod
+    def test_return_0_for_no_changed_files(mocker):
+        mocker.patch("sys.argv", ["stub_name"])
         assert add_copyright.main() == 0
 
+    @staticmethod
+    def test_return_0_if_all_files_have_copyright(mocker, git_repo):
+        p1 = git_repo.workspace / "file_1.py"
+        p2 = git_repo.workspace / "file_2.txt"
+        p1.write_text("# Copyright 1701 James T. Kirk")
+        p2.write_text("#COPYRIGHT 2087 KHAN")
+        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
 
-@freeze_time("1001-01-01")
-def test_default_formatting(mocker, git_repo):
-    username = "<username sentinel>"
-    expected_content = "# Copyright (c) 1001 <username sentinel>\n"
-    git_repo.run(f"git config user.name '{username}'")
-    p1 = git_repo.workspace / "file_1.py"
-    p2 = git_repo.workspace / "file_2.txt"
-    files = [p1, p2]
-    for file in files:
-        file.write_text("")
-    mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
-
-    with cwd(git_repo.workspace):
-        assert add_copyright.main() == 1
-
-    for file in files:
-        with open(file, "r") as f:
-            content: str = f.read()
-
-        assert content == expected_content
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 0
 
 
-@freeze_time("1001-01-01")
-def test_keep_shebang_first(mocker, git_repo, capsys):
-    input_content = "#!<shebang sentinel>\n" "<content sentinel>"
-    expected_content = (
-        "#!<shebang sentinel>\n"
-        "\n"
-        "# Copyright (c) 1001 <username sentinel>\n"
-        "\n"
-        "<content sentinel>"
+class TestInferredNameDate:
+    @staticmethod
+    @freeze_time("1001-01-01")
+    def test_default_formatting(mocker, git_repo):
+        username = "<username sentinel>"
+        expected_content = "# Copyright (c) 1001 <username sentinel>\n"
+        git_repo.run(f"git config user.name '{username}'")
+        p1 = git_repo.workspace / "file_1.py"
+        p2 = git_repo.workspace / "file_2.txt"
+        files = [p1, p2]
+        for file in files:
+            file.write_text("")
+        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
+
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        for file in files:
+            with open(file, "r") as f:
+                content: str = f.read()
+
+            assert content == expected_content
+
+    @staticmethod
+    @freeze_time("1001-01-01")
+    def test_keep_shebang_first(mocker, git_repo, capsys):
+        input_content = "#!<shebang sentinel>\n" "<content sentinel>"
+        expected_content = (
+            "#!<shebang sentinel>\n"
+            "\n"
+            "# Copyright (c) 1001 <username sentinel>\n"
+            "\n"
+            "<content sentinel>"
+        )
+
+        username = "<username sentinel>"
+        git_repo.run(f"git config user.name '{username}'")
+        p1 = git_repo.workspace / "file_1.py"
+        p1.write_text(input_content)
+        mocker.patch("sys.argv", ["stub_name", "file_1.py"])
+
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        with open(p1) as f:
+            out: str = f.read()
+
+        assert out == expected_content
+
+
+class TestCLINameDate:
+    @staticmethod
+    def test_custom_name_and_year(mocker, git_repo):
+        username = "<username sentinel>"
+        date = "0000"
+        p1 = git_repo.workspace / "file_1.py"
+        p2 = git_repo.workspace / "file_2.txt"
+        files = [p1, p2]
+        for file in files:
+            file.write_text("")
+        mocker.patch(
+            "sys.argv",
+            ["stub_name", "file_1.py", "file_2.txt", "-n", username, "-y", date],
+        )
+
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        for file in files:
+            with open(file, "r") as f:
+                content: str = f.read()
+            assert content.startswith("# Copyright (c) 0000 <username sentinel>")
+
+
+class TestDefaultConfigFile:
+    @staticmethod
+    def test_default_config_file_location(mocker, git_repo):
+        p1 = git_repo.workspace / "file_1.py"
+        p2 = git_repo.workspace / "file_2.txt"
+        files = [p1, p2]
+        for file in files:
+            file.write_text("")
+        c = git_repo.workspace / ".add-copyright-hook-config.yaml"
+        c.write_text("name: <name sentinel>\n" "year: '0000'\n")
+        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
+
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        for file in files:
+            with open(file, "r") as f:
+                content: str = f.read()
+            print(content)
+            assert content.startswith("# Copyright (c) 0000 <name sentinel>")
+
+
+class TestCustomConfigFile:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "filename, file_contents",
+        [
+            (
+                "stub_filename.json",
+                ("{\n" '    "name": "<name sentinel>",\n' '    "year": "0000"\n' "}\n"),
+            ),
+            ("stub_filename.yaml", ("name: <name sentinel>\n" "year: '0000'\n")),
+        ],
     )
+    def test_custom_config_file_location(mocker, git_repo, filename, file_contents):
+        p1 = git_repo.workspace / "file_1.py"
+        p2 = git_repo.workspace / "file_2.txt"
+        files = [p1, p2]
+        for file in files:
+            file.write_text("")
+        c = git_repo.workspace / filename
+        c.write_text(file_contents)
+        mocker.patch(
+            "sys.argv", ["stub_name", "file_1.py", "file_2.txt", "-c", filename]
+        )
 
-    username = "<username sentinel>"
-    git_repo.run(f"git config user.name '{username}'")
-    p1 = git_repo.workspace / "file_1.py"
-    p1.write_text(input_content)
-    mocker.patch("sys.argv", ["stub_name", "file_1.py"])
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
 
-    with cwd(git_repo.workspace):
-        assert add_copyright.main() == 1
-
-    with open(p1) as f:
-        out: str = f.read()
-
-    assert out == expected_content
-
-
-def test_custom_name_and_year(mocker, git_repo):
-    username = "<username sentinel>"
-    date = "0000"
-    p1 = git_repo.workspace / "file_1.py"
-    p2 = git_repo.workspace / "file_2.txt"
-    files = [p1, p2]
-    for file in files:
-        file.write_text("")
-    mocker.patch(
-        "sys.argv", ["stub_name", "file_1.py", "file_2.txt", "-n", username, "-y", date]
-    )
-
-    with cwd(git_repo.workspace):
-        assert add_copyright.main() == 1
-
-    for file in files:
-        with open(file, "r") as f:
-            content: str = f.read()
-        assert content.startswith("# Copyright (c) 0000 <username sentinel>")
+        for file in files:
+            with open(file, "r") as f:
+                content: str = f.read()
+            assert content.startswith("# Copyright (c) 0000 <name sentinel>")

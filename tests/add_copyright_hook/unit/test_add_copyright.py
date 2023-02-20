@@ -179,38 +179,103 @@ class TestGetGitUserName:
 
 class TestResolveUserName:
     @staticmethod
-    def test_returns_name_if_provided():
-        username = "stub username"
+    @pytest.mark.parametrize("config", [None, "stub config"])
+    def test_returns_name_if_provided(config, mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+        mock_get_git_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name"
+        )
 
-        name = add_copyright._resolve_user_name(username)
+        name = add_copyright._resolve_user_name("<name sentinel>", config)
 
-        assert name == username
+        assert name == "<name sentinel>"
+        mock_read_config.assert_not_called()
+        mock_get_git_name.assert_not_called()
 
     @staticmethod
-    def test_calls_get_git_user_name_if_no_name_provided(mocker):
-        username = "stub username"
-        mocked_get_git_user_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name", return_value=username
+    def test_read_from_config_if_config_provided(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={"name": "<name sentinel>"},
+        )
+        mock_get_git_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name"
+        )
+
+        name = add_copyright._resolve_user_name(None, "<config file sentinel>")
+
+        assert name == "<name sentinel>"
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_get_git_name.assert_not_called()
+
+    @staticmethod
+    def test_calls_get_git_user_name_if_no_name_or_config_provided(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+        mock_get_git_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name",
+            return_value="<name sentinel>",
         )
 
         name = add_copyright._resolve_user_name()
 
-        assert name == username
-        mocked_get_git_user_name.assert_called_once()
-
-    @staticmethod
-    def test_raises_valueerror_if_get_git_user_name_errors(mocker):
-        mocked_get_git_user_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name",
-            side_effect=ValueError,
-        )
-
-        with pytest.raises(ValueError):
-            add_copyright._resolve_user_name()
-        mocked_get_git_user_name.assert_called_once()
+        assert name == "<name sentinel>"
+        mock_read_config.assert_not_called()
+        mock_get_git_name.assert_called_once_with()
 
 
 class TestResolveYear:
+    @staticmethod
+    @pytest.mark.parametrize("config", [None, "stub config"])
+    def test_returns_name_if_provided(config, mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+        mock_get_current_year = mocker.patch(
+            "add_copyright_hook.add_copyright._get_current_year"
+        )
+
+        year = add_copyright._resolve_year("<year sentinel>", config)
+
+        assert year == "<year sentinel>"
+        mock_read_config.assert_not_called()
+        mock_get_current_year.assert_not_called()
+
+    @staticmethod
+    def test_read_from_config_if_config_provided(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={"year": "<year sentinel>"},
+        )
+        mock_get_current_year = mocker.patch(
+            "add_copyright_hook.add_copyright._get_current_year"
+        )
+
+        year = add_copyright._resolve_year(None, "<config file sentinel>")
+
+        assert year == "<year sentinel>"
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_get_current_year.assert_not_called()
+
+    @staticmethod
+    def test_calls_get_git_user_name_if_no_name_or_config_provided(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+        mock_get_current_year = mocker.patch(
+            "add_copyright_hook.add_copyright._get_current_year",
+            return_value="<year sentinel>",
+        )
+
+        year = add_copyright._resolve_year()
+
+        assert year == "<year sentinel>"
+        mock_read_config.assert_not_called()
+        mock_get_current_year.assert_called_once_with()
+
     @staticmethod
     def test_returns_year_if_provided():
         inputyear = "stub_year"
@@ -272,6 +337,41 @@ class TestResolveFiles:
                 add_copyright._resolve_files(["hello.txt", "goodbye.py"])
 
 
+class TestReadConfigFile:
+    @staticmethod
+    @pytest.mark.parametrize("invalid_file_name", ["foo.txt", "var.cfg"])
+    def test_raises_exception_if_not_supported_type(invalid_file_name):
+        with pytest.raises(FileNotFoundError):
+            add_copyright._read_config_file(invalid_file_name)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "filename, file_contents",
+        [
+            (
+                "stub_filename.json",
+                (
+                    "{\n"
+                    '    "name": "<name sentinel>",\n'
+                    '    "year": "<year sentinel>"\n'
+                    "}\n"
+                ),
+            ),
+            (
+                "stub_filename.yaml",
+                ("name: <name sentinel>\n" "year: <year sentinel>\n"),
+            ),
+        ],
+    )
+    def test_reads_config_file(tmp_path, filename, file_contents):
+        p = tmp_path / filename
+        p.write_text(file_contents)
+
+        data = add_copyright._read_config_file(p)
+
+        assert data == {"name": "<name sentinel>", "year": "<year sentinel>"}
+
+
 class TestParseArgs:
     @staticmethod
     @pytest.mark.parametrize(
@@ -293,28 +393,81 @@ class TestParseArgs:
             ([], None),
         ],
     )
-    def test_argument_passing(
+    def test_argument_passing_year_name(
         mocker, file_arg, name_arg, expected_name, year_arg, expected_year
     ):
         mock_name_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_user_name",
-            return_value="name sentinel",
+            return_value="<name sentinel>",
         )
         mock_year_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_year",
-            return_value="year sentinel",
+            return_value="<year sentinel>",
         )
         mock_file_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_files",
-            return_value="file sentinel",
+            return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *year_arg])
 
         args = add_copyright._parse_args()
 
-        mock_name_resolver.assert_called_once_with(expected_name)
-        mock_year_resolver.assert_called_once_with(expected_year)
+        mock_name_resolver.assert_called_once_with(expected_name, None)
+        mock_year_resolver.assert_called_once_with(expected_year, None)
         mock_file_resolver.assert_called_once_with(file_arg)
-        assert args.name == "name sentinel"
-        assert args.year == "year sentinel"
-        assert args.files == "file sentinel"
+        assert args.name == "<name sentinel>"
+        assert args.year == "<year sentinel>"
+        assert args.files == "<file sentinel>"
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "file_arg", [[], ["stub_file"], ["stub_file_1", "stub_file_2"]]
+    )
+    @pytest.mark.parametrize(
+        "config_arg, expected_config",
+        [
+            (["-c", "<config sentinel>"], "<config sentinel>"),
+            (["--config", "<config sentinel>"], "<config sentinel>"),
+            ([], None),
+        ],
+    )
+    def test_argument_passing_config(file_arg, config_arg, expected_config, mocker):
+        mock_name_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_user_name",
+            return_value="<name sentinel>",
+        )
+        mock_year_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_year",
+            return_value="<year sentinel>",
+        )
+        mock_file_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_files",
+            return_value="<file sentinel>",
+        )
+        mocker.patch("sys.argv", ["stub", *file_arg, *config_arg])
+
+        args = add_copyright._parse_args()
+
+        mock_name_resolver.assert_called_once_with(None, expected_config)
+        mock_year_resolver.assert_called_once_with(None, expected_config)
+        mock_file_resolver.assert_called_once_with(file_arg)
+        assert args.name == "<name sentinel>"
+        assert args.year == "<year sentinel>"
+        assert args.files == "<file sentinel>"
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "clashing_option",
+        [
+            ["-n", "stub_name"],
+            ["-y", "stub_year"],
+        ],
+    )
+    def test_raises_sysexit_if_clashing_options(clashing_option, mocker, capsys):
+        sentinel = "-c and -n|-y are mutually exclusive."
+        mocker.patch("sys.argv", ["stub", *clashing_option, "-c", "stub_config"])
+
+        with pytest.raises(SystemExit):
+            add_copyright._parse_args()
+
+        assert sentinel in capsys.readouterr().out
