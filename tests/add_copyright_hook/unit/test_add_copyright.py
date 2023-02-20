@@ -226,6 +226,23 @@ class TestResolveUserName:
         mock_read_config.assert_not_called()
         mock_get_git_name.assert_called_once_with()
 
+    @staticmethod
+    def test_falls_through_if_name_missing_from_config(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={},
+        )
+        mock_get_git_name = mocker.patch(
+            "add_copyright_hook.add_copyright._get_git_user_name",
+            return_value="<name sentinel>",
+        )
+
+        name = add_copyright._resolve_user_name(None, "<config file sentinel>")
+
+        assert name == "<name sentinel>"
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_get_git_name.assert_called_once_with()
+
 
 class TestResolveYear:
     @staticmethod

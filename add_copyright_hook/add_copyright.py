@@ -93,12 +93,12 @@ def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
         if _contains_copyright_string(contents):
             return 0
 
-        print(f"Fixing file `{file}`")
+        copyright_string = _construct_copyright_string(name, year)
+
+        print(f"Fixing file `{file}`: adding `{copyright_string}`")
 
         f.seek(0, 0)
-        f.write(
-            _insert_copyright_string(_construct_copyright_string(name, year), contents)
-        )
+        f.write(_insert_copyright_string(copyright_string, contents))
     return 1
 
 
@@ -145,19 +145,14 @@ def _resolve_user_name(
         str: The resolved name.
     """
     if name is not None:
-        print(f"Using cli-configured name `{name}`.")
         return name
 
     if config is not None:
         data = _read_config_file(config)
         if "name" in data:
-            print(f"Name `{data['name']}` read from config file `{config}`.")
             return data["name"]
-        print(f"Config file `{config}` has no name field.")
 
-    _name = _get_git_user_name()
-    print(f"Name `{_name}` inferred from git user.name configuration.")
-    return _name
+    return _get_git_user_name()
 
 
 def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
@@ -173,19 +168,15 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
         str: The resolved year.
     """
     if year is not None:
-        print(f"Using cli-configured year `{year}`.")
         return year
 
     if config is not None:
         data = _read_config_file(config)
         if "year" in data:
-            print(f"Year `{data['year']}` read from config file `{config}`.")
             return data["year"]
         print(f"Config file `{config}` has no year field.")
 
-    _year = _get_current_year()
-    print(f"Year `{_year}` inferred from system clock.")
-    return _year
+    return _get_current_year()
 
 
 def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:

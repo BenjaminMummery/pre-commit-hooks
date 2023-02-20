@@ -120,7 +120,7 @@ repos:
     -   id: add-msg-issue
 ```
 
-The config file must specify a name and year to use. Currently supported config formats are: JSON and YAML.
+The config file can contain the name and year. Any properties that are not set by the config file will be inferred from the current year / git user name. Currently supported config formats are: JSON and YAML.
 
 
 #### 3.1.2 `.add-copyright-hook-config.yaml` file.
