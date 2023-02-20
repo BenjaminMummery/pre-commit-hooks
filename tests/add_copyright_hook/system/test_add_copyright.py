@@ -37,6 +37,7 @@ def test_return_0_if_all_files_have_copyright(mocker, git_repo):
 @freeze_time("1001-01-01")
 def test_default_formatting(mocker, git_repo):
     username = "<username sentinel>"
+    expected_content = "# Copyright (c) 1001 <username sentinel>\n"
     git_repo.run(f"git config user.name '{username}'")
     p1 = git_repo.workspace / "file_1.py"
     p2 = git_repo.workspace / "file_2.txt"
@@ -51,25 +52,34 @@ def test_default_formatting(mocker, git_repo):
     for file in files:
         with open(file, "r") as f:
             content: str = f.read()
-        assert content.startswith("# Copyright (c) 1001 <username sentinel>")
+
+        assert content == expected_content
 
 
 @freeze_time("1001-01-01")
 def test_keep_shebang_first(mocker, git_repo, capsys):
+    input_content = "#!<shebang sentinel>\n" "<content sentinel>"
+    expected_content = (
+        "#!<shebang sentinel>\n"
+        "\n"
+        "# Copyright (c) 1001 <username sentinel>\n"
+        "\n"
+        "<content sentinel>"
+    )
+
     username = "<username sentinel>"
     git_repo.run(f"git config user.name '{username}'")
     p1 = git_repo.workspace / "file_1.py"
-    p1.write_text("#!<shebang sentinel>\n")
+    p1.write_text(input_content)
     mocker.patch("sys.argv", ["stub_name", "file_1.py"])
 
     with cwd(git_repo.workspace):
         assert add_copyright.main() == 1
 
     with open(p1) as f:
-        content: str = f.read()
-    assert content == (
-        "#!<shebang sentinel>\n" "\n" "# Copyright (c) 1001 <username sentinel>\n"
-    )
+        out: str = f.read()
+
+    assert out == expected_content
 
 
 def test_custom_name_and_year(mocker, git_repo):
