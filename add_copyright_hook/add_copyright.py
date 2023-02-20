@@ -34,7 +34,7 @@ def _contains_copyright_string(input: str) -> bool:
     return True
 
 
-def _is_shebang(input: str) -> bool:
+def _has_shebang(input: str) -> bool:
     return input.startswith("#!")
 
 
@@ -64,12 +64,20 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
         str: The modified content, including the copyright string.
     """
     lines: list = [line for line in content.split("\n")]
-    for i, line in enumerate(lines):
-        if _is_shebang(line):
-            lines[i] += "\n"
-            continue
-        lines = lines[0:i] + [copyright] + lines[i:]
-        break
+
+    shebang: t.Optional[str] = None
+    if _has_shebang(content):
+        shebang = lines[0]
+        lines = lines[1:]
+
+    if lines[0] == "":
+        lines = [copyright] + lines
+    else:
+        lines = [copyright, ""] + lines
+
+    if shebang is not None:
+        lines = [shebang, ""] + lines
+
     return "\n".join(lines)
 
 

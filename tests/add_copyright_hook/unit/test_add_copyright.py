@@ -48,12 +48,12 @@ class TestIsShebang:
     @staticmethod
     @pytest.mark.parametrize("input", ["#!/usr/bin/python"])
     def test_returns_true_for_shebang(input):
-        assert add_copyright._is_shebang(input)
+        assert add_copyright._has_shebang(input)
 
     @staticmethod
     @pytest.mark.parametrize("input", ["#/usr/bin/python"])
     def test_returns_false_for_not_shebang(input):
-        assert not add_copyright._is_shebang(input)
+        assert not add_copyright._has_shebang(input)
 
 
 class TestConstructCopyrightString:
@@ -61,9 +61,10 @@ class TestConstructCopyrightString:
     @pytest.mark.parametrize("name", ["Harold Hadrada"])
     @pytest.mark.parametrize("year", ["1066"])
     def test_correct_construction(name, year):
-        expected = f"# Copyright (c) {year} {name}"
-        print(expected)
-        assert add_copyright._construct_copyright_string(name, year) == expected
+        assert (
+            add_copyright._construct_copyright_string(name, year)
+            == f"# Copyright (c) {year} {name}"
+        )
 
 
 class TestInsertCopyrightString:
@@ -75,14 +76,14 @@ class TestInsertCopyrightString:
         ],
     )
     def test_insterts_string(content):
-        expected = "<copyright sentinel>\n" + content
+        expected = "<copyright sentinel>\n\n" + content
 
         out = add_copyright._insert_copyright_string("<copyright sentinel>", content)
 
         assert out == expected
 
     @staticmethod
-    def test_insterts_copyright_after_shebang():
+    def test_inserts_copyright_after_shebang():
         content = (
             "#!shebang\n" "\n" '"""docstring"""\n' "\n" "def some_code():\n" "    pass"
         )
