@@ -125,6 +125,7 @@ repos:
     hooks:
       - id: mypy
         exclude: ^tests/
+        additional_dependencies: [types-all]
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks

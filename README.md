@@ -78,12 +78,23 @@ where the year is the current year, and the name is sourced from the git `user.n
 
 ### 3.1 Controlling the name and year
 
+The hook looks for copyright information in the following hierarchy:
+
+1. Command-line arguments. Either specifying the name and year directly, or providing a configuration file that specifies them.
+2. A `.add-copyright-hook-config.yaml` in the root directory of the repo.
+3. The current year and git user.name
+
+#### 3.1.1 Command line arguments
+
 The `add-copyright` hook accepts the following command line arguments to control the values inserted into new copyright messages:
 
 | Flag | Description |
 |------|-------------|
 | `-n` / `--name` | Set a custom name to be used rather than git's `user.name` |
 | `-y` / `--year` | Set a custom year to be used rather than the current year. |
+| `-c` / `--config` | Specify a configuration file that contains the name and year to be used. |
+
+The name and/or year arguments cannot be used at the same time as the config argument.
 
 If you're using a `.pre-commit-config.yaml`, these can be configured as follows:
 
@@ -96,6 +107,32 @@ repos:
         args: ["-n", "James T. Kirk", "-y", "1701"]
     -   id: add-msg-issue
 ```
+
+Alternatively, a local configuration file can be specified:
+
+```yaml
+repos:
+-   repo: https://github.com/BenjaminMummery/pre-commit-hooks
+    rev: v1.0.0
+    hooks:
+    -   id: add-copyright
+        args: ["-c", "copyright-config.json"]
+    -   id: add-msg-issue
+```
+
+The config file can contain the name and year. Any properties that are not set by the config file will be inferred from the current year / git user name. Currently supported config formats are: JSON and YAML.
+
+
+#### 3.1.2 `.add-copyright-hook-config.yaml` file.
+
+If command line arguments are not specified, the hook will look for a file named `.add-copyright-hook-config.yaml` in the root of the git repo, and read the name and year from there. This file should be formatted as follows:
+
+```yaml
+name: <name sentinel>
+year: '0000'
+```
+
+
 
 ## 4. The `add-msg-issue` Hook
 

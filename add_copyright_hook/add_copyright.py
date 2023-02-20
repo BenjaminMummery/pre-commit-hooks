@@ -4,12 +4,17 @@
 
 import argparse
 import datetime
+import json
 import os
 import re
+import sys
 import typing as t
 from pathlib import Path
 
+import yaml
 from git import Repo
+
+DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 
 
 def _contains_copyright_string(input: str) -> bool:
@@ -88,12 +93,12 @@ def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
         if _contains_copyright_string(contents):
             return 0
 
-        print(f"Fixing file `{file}`")
+        copyright_string = _construct_copyright_string(name, year)
+
+        print(f"Fixing file `{file}`: adding `{copyright_string}`")
 
         f.seek(0, 0)
-        f.write(
-            _insert_copyright_string(_construct_copyright_string(name, year), contents)
-        )
+        f.write(_insert_copyright_string(copyright_string, contents))
     return 1
 
 
@@ -120,7 +125,9 @@ def _get_git_user_name() -> str:
     return name
 
 
-def _resolve_user_name(name: t.Optional[str] = None) -> str:
+def _resolve_user_name(
+    name: t.Optional[str] = None, config: t.Optional[str] = None
+) -> str:
     """Resolve the user name to attach to the copyright.
 
     If the name argument is provided, it is returned as the username. Otherwise
@@ -128,23 +135,27 @@ def _resolve_user_name(name: t.Optional[str] = None) -> str:
 
     Args:
         name (str, optional): The name argument if provided. Defaults to None.
+        config (str, optional): The config argument if provided. Defaults to None.
 
     Raises:
-        ValueError: When the name argument is not provided, and the git user
-        name is not configured.
+        ValueError: When the name argument is not provided, no config file is provided,
+        and the git user name is not configured.
 
     Returns:
         str: The resolved name.
     """
     if name is not None:
         return name
-    try:
-        return _get_git_user_name()
-    except ValueError as e:
-        raise e
+
+    if config is not None:
+        data = _read_config_file(config)
+        if "name" in data:
+            return data["name"]
+
+    return _get_git_user_name()
 
 
-def _resolve_year(year: t.Optional[str] = None) -> str:
+def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
     """Resolve the year to attach to the copyright.
 
     If the year argument is provided, it is returned as the year. Otherwise the
@@ -156,7 +167,16 @@ def _resolve_year(year: t.Optional[str] = None) -> str:
     Returns:
         str: The resolved year.
     """
-    return year or _get_current_year()
+    if year is not None:
+        return year
+
+    if config is not None:
+        data = _read_config_file(config)
+        if "year" in data:
+            return data["year"]
+        print(f"Config file `{config}` has no year field.")
+
+    return _get_current_year()
 
 
 def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
@@ -186,6 +206,20 @@ def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     return _files
 
 
+def _read_config_file(file_path: str) -> dict:
+    _file_path = Path(file_path)
+    data: dict
+    with open(_file_path, "r") as f:
+        if _file_path.suffix == ".json":
+            data = json.load(f)
+        elif _file_path.suffix == ".yaml":
+            data = yaml.safe_load(f)
+        else:
+            raise FileNotFoundError(f"{file_path} is not a valid config file.")
+
+    return data
+
+
 def _parse_args() -> argparse.Namespace:
     """Parse the CLI arguments.
 
@@ -197,10 +231,19 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-n", "--name", type=str, default=None)
     parser.add_argument("-y", "--year", type=str, default=None)
+    parser.add_argument("-c", "--config", type=str, default=None)
     args = parser.parse_args()
 
-    args.name = _resolve_user_name(args.name)
-    args.year = _resolve_year(args.year)
+    if args.config and (args.name or args.year):
+        print("-c and -n|-y are mutually exclusive.")
+        sys.exit(2)
+
+    if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
+        args.config = DEFAULT_CONFIG_FILE
+        print(f"Found config file `{args.config}`.")
+
+    args.name = _resolve_user_name(args.name, args.config)
+    args.year = _resolve_year(args.year, args.config)
     args.files = _resolve_files(args.files)
 
     return args
