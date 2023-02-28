@@ -120,7 +120,10 @@ class TestDefaultConfigFile:
         for file in files:
             file.write_text("")
         c = git_repo.workspace / ".add-copyright-hook-config.yaml"
-        c.write_text("name: <name sentinel>\n" "year: '0000'\n")
+        c.write_text(
+            "name: <name sentinel>\n"
+            "year: '0000'\nformat: '# Belongs to {name} as of {year}.'"
+        )
         mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
 
         with cwd(git_repo.workspace):
@@ -130,7 +133,7 @@ class TestDefaultConfigFile:
             with open(file, "r") as f:
                 content: str = f.read()
             print(content)
-            assert content.startswith("# Copyright (c) 0000 <name sentinel>")
+            assert content.startswith("# Belongs to <name sentinel> as of 0000.")
 
 
 class TestCustomConfigFile:
@@ -140,9 +143,22 @@ class TestCustomConfigFile:
         [
             (
                 "stub_filename.json",
-                ("{\n" '    "name": "<name sentinel>",\n' '    "year": "0000"\n' "}\n"),
+                (
+                    "{\n"
+                    '    "name": "<name sentinel>",\n'
+                    '    "year": "0000",\n'
+                    '    "format": "# <format sentinel> {name} {year}"\n'
+                    "}\n"
+                ),
             ),
-            ("stub_filename.yaml", ("name: <name sentinel>\n" "year: '0000'\n")),
+            (
+                "stub_filename.yaml",
+                (
+                    "name: <name sentinel>\n"
+                    "year: '0000'\n"
+                    "format: '# <format sentinel> {name} {year}'\n"
+                ),
+            ),
         ],
     )
     def test_custom_config_file_location(mocker, git_repo, filename, file_contents):
@@ -163,4 +179,5 @@ class TestCustomConfigFile:
         for file in files:
             with open(file, "r") as f:
                 content: str = f.read()
-            assert content.startswith("# Copyright (c) 0000 <name sentinel>")
+            print(content)
+            assert content.startswith("# <format sentinel> <name sentinel> 0000")

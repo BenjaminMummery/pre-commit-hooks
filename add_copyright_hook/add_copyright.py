@@ -15,6 +15,7 @@ import yaml
 from git import Repo
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
+DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
 
 
 def _contains_copyright_string(input: str) -> bool:
@@ -43,15 +44,18 @@ def _has_shebang(input: str) -> bool:
     return input.startswith("#!")
 
 
-def _construct_copyright_string(name: str, year: str) -> str:
+def _construct_copyright_string(name: str, year: str, format: str) -> str:
     """Construct a commented line containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
         year (str): The year of the copyright.
+        format (str): The f-string into which the name and year should be
+            inserted.
     """
-    outstr = "# Copyright (c) {year} {name}".format(year=year, name=name)
-    assert _contains_copyright_string(outstr)
+    outstr = format.format(year=year, name=name)
+    if format == DEFAULT_FORMAT:
+        assert _contains_copyright_string(outstr)
     return outstr
 
 
@@ -86,14 +90,28 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
     return "\n".join(lines)
 
 
-def _ensure_copyright_string(file: Path, name: str, year: str) -> int:
+def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> int:
+    """Check that the specified file has a copyright string, adding one if it is
+    not already present.
+
+    Args:
+        file (Path): the file to check.
+        name (str): Name of the copyright holder to be added to uncopyrighted
+            files.
+        year (str): Year of the copyright to be added to uncopyrighted files.
+        format (str): f-string specifying the structure of new copyright
+            strings.
+
+    Returns:
+        int: 0 if the file is unchanged, 1 if it was modified.
+    """
     with open(file, "r+") as f:
         contents: str = f.read()
 
         if _contains_copyright_string(contents):
             return 0
 
-        copyright_string = _construct_copyright_string(name, year)
+        copyright_string = _construct_copyright_string(name, year, format)
 
         print(f"Fixing file `{file}`: adding `{copyright_string}`")
 
@@ -179,6 +197,20 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
     return _get_current_year()
 
 
+def _resolve_format(
+    format: t.Optional[str] = None, config: t.Optional[str] = None
+) -> str:
+    if format is not None:
+        return format
+
+    if config is not None:
+        data = _read_config_file(config)
+        if "format" in data:
+            return data["format"]
+        print(f"Config file `{config}` has no format field.")
+    return DEFAULT_FORMAT
+
+
 def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     """Convert the list of files into a list of paths, and ensure that they all
     exist.
@@ -231,11 +263,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-n", "--name", type=str, default=None)
     parser.add_argument("-y", "--year", type=str, default=None)
+    parser.add_argument("-f", "--format", type=str, default=None)
     parser.add_argument("-c", "--config", type=str, default=None)
     args = parser.parse_args()
 
-    if args.config and (args.name or args.year):
-        print("-c and -n|-y are mutually exclusive.")
+    if args.config and (args.name or args.year or args.format):
+        print("The arguments -c and -n|-y|-f are mutually exclusive.")
         sys.exit(2)
 
     if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
@@ -244,6 +277,7 @@ def _parse_args() -> argparse.Namespace:
 
     args.name = _resolve_user_name(args.name, args.config)
     args.year = _resolve_year(args.year, args.config)
+    args.format = _resolve_format(args.format, args.config)
     args.files = _resolve_files(args.files)
 
     return args
@@ -259,7 +293,7 @@ def main() -> int:
     # Filter out files that already have a copyright string
     retv = 0
     for file in args.files:
-        retv |= _ensure_copyright_string(file, args.name, args.year)
+        retv |= _ensure_copyright_string(file, args.name, args.year, args.format)
 
     return retv
 

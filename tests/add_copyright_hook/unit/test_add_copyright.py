@@ -44,7 +44,7 @@ class TestContainsCopyrightString:
         assert not add_copyright._contains_copyright_string(input_string)
 
 
-class TestIsShebang:
+class TestHasShebang:
     @staticmethod
     @pytest.mark.parametrize("input", ["#!/usr/bin/python"])
     def test_returns_true_for_shebang(input):
@@ -60,11 +60,14 @@ class TestConstructCopyrightString:
     @staticmethod
     @pytest.mark.parametrize("name", ["Harold Hadrada"])
     @pytest.mark.parametrize("year", ["1066"])
-    def test_correct_construction(name, year):
-        assert (
-            add_copyright._construct_copyright_string(name, year)
-            == f"# Copyright (c) {year} {name}"
-        )
+    @pytest.mark.parametrize(
+        "format",
+        ["# Copyright (c) {year} {name}", "{name} owns this as of {year}, hands off!"],
+    )
+    def test_correct_construction(name, year, format):
+        assert add_copyright._construct_copyright_string(
+            name, year, format
+        ) == format.format(year=year, name=name)
 
 
 class TestInsertCopyrightString:
@@ -114,7 +117,7 @@ class TestEnsureCopyrightString:
 
         assert (
             add_copyright._ensure_copyright_string(
-                p, "<name sentinel>", "<year sentinel>"
+                p, "<name sentinel>", "<year sentinel>", None
             )
             == 0
         )
@@ -141,12 +144,12 @@ class TestEnsureCopyrightString:
 
         assert (
             add_copyright._ensure_copyright_string(
-                p, "<name sentinel>", "<year sentinel>"
+                p, "<name sentinel>", "<year sentinel>", "<format sentinel>"
             )
             == 1
         )
         mock_construct_string.assert_called_once_with(
-            "<name sentinel>", "<year sentinel>"
+            "<name sentinel>", "<year sentinel>", "<format sentinel>"
         )
         mock_insert_string.assert_called_once_with(
             "<copyright string sentinel>", "<file_contents sentinel>"
@@ -302,7 +305,7 @@ class TestResolveYear:
         assert year == inputyear
 
     @staticmethod
-    def test_calls_get_current_year_if_no_name_provided(mocker):
+    def test_calls_get_current_year_if_no_year_provided(mocker):
         currentyear = "1984"
         mocked_get_current_year = mocker.patch(
             "add_copyright_hook.add_copyright._get_current_year",
@@ -313,6 +316,65 @@ class TestResolveYear:
 
         assert year == currentyear
         mocked_get_current_year.assert_called_once()
+
+
+class TestResolveFormat:
+    @staticmethod
+    def test_returns_format_if_provided():
+        assert (
+            add_copyright._resolve_format("<format sentinel>", None)
+            == "<format sentinel>"
+        )
+
+    @staticmethod
+    def test_read_from_config_if_config_provided(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={"format": "<format sentinel>"},
+        )
+
+        assert (
+            add_copyright._resolve_format(None, "<config file sentinel>")
+            == "<format sentinel>"
+        )
+
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+
+    @staticmethod
+    def test_falls_back_to_default_if_provided_config_lacks_format_field(
+        mocker, capsys
+    ):
+        mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={},
+        )
+
+        assert (
+            add_copyright._resolve_format(None, "<config file sentinel>")
+            == mock_default
+        )
+
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+
+    @staticmethod
+    def test_chooses_format_arg_over_config(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+
+        assert (
+            add_copyright._resolve_format("<format sentinel>", "<config file sentinel>")
+            == "<format sentinel>"
+        )
+
+        mock_read_config.assert_not_called()
+
+    @staticmethod
+    def test_returns_default_if_no_format_or_config(mocker):
+        mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+
+        assert add_copyright._resolve_format(None, None) == mock_default
 
 
 class TestResolveFiles:
@@ -410,8 +472,23 @@ class TestParseArgs:
             ([], None),
         ],
     )
-    def test_argument_passing_year_name(
-        mocker, file_arg, name_arg, expected_name, year_arg, expected_year
+    @pytest.mark.parametrize(
+        "format_arg, expected_format",
+        [
+            (["-f", "stub_format"], "stub_format"),
+            (["--format", "stub_format"], "stub_format"),
+            ([], None),
+        ],
+    )
+    def test_argument_passing_year_name_format(
+        mocker,
+        file_arg,
+        name_arg,
+        expected_name,
+        year_arg,
+        expected_year,
+        format_arg,
+        expected_format,
     ):
         mock_name_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_user_name",
@@ -421,19 +498,25 @@ class TestParseArgs:
             "add_copyright_hook.add_copyright._resolve_year",
             return_value="<year sentinel>",
         )
+        mock_format_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_format",
+            return_value="<format sentinel>",
+        )
         mock_file_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_files",
             return_value="<file sentinel>",
         )
-        mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *year_arg])
+        mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *format_arg, *year_arg])
 
         args = add_copyright._parse_args()
 
         mock_name_resolver.assert_called_once_with(expected_name, None)
         mock_year_resolver.assert_called_once_with(expected_year, None)
+        mock_format_resolver.assert_called_once_with(expected_format, None)
         mock_file_resolver.assert_called_once_with(file_arg)
         assert args.name == "<name sentinel>"
         assert args.year == "<year sentinel>"
+        assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
 
     @staticmethod
@@ -457,6 +540,10 @@ class TestParseArgs:
             "add_copyright_hook.add_copyright._resolve_year",
             return_value="<year sentinel>",
         )
+        mock_format_resolver = mocker.patch(
+            "add_copyright_hook.add_copyright._resolve_format",
+            return_value="<format sentinel>",
+        )
         mock_file_resolver = mocker.patch(
             "add_copyright_hook.add_copyright._resolve_files",
             return_value="<file sentinel>",
@@ -467,9 +554,11 @@ class TestParseArgs:
 
         mock_name_resolver.assert_called_once_with(None, expected_config)
         mock_year_resolver.assert_called_once_with(None, expected_config)
+        mock_format_resolver.assert_called_once_with(None, expected_config)
         mock_file_resolver.assert_called_once_with(file_arg)
         assert args.name == "<name sentinel>"
         assert args.year == "<year sentinel>"
+        assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
 
     @staticmethod
@@ -478,10 +567,11 @@ class TestParseArgs:
         [
             ["-n", "stub_name"],
             ["-y", "stub_year"],
+            ["-f", "stub_format"],
         ],
     )
     def test_raises_sysexit_if_clashing_options(clashing_option, mocker, capsys):
-        sentinel = "-c and -n|-y are mutually exclusive."
+        sentinel = "-c and -n|-y|-f are mutually exclusive."
         mocker.patch("sys.argv", ["stub", *clashing_option, "-c", "stub_config"])
 
         with pytest.raises(SystemExit):
