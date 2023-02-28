@@ -341,6 +341,23 @@ class TestResolveFormat:
         mock_read_config.assert_called_once_with("<config file sentinel>")
 
     @staticmethod
+    def test_falls_back_to_default_if_provided_config_lacks_format_field(
+        mocker, capsys
+    ):
+        mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file",
+            return_value={},
+        )
+
+        assert (
+            add_copyright._resolve_format(None, "<config file sentinel>")
+            == mock_default
+        )
+
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+
+    @staticmethod
     def test_chooses_format_arg_over_config(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file"
