@@ -50,7 +50,7 @@ def _construct_copyright_string(name: str, year: str, format: str) -> str:
     Args:
         name (str): The name of the copyright holder.
         year (str): The year of the copyright.
-        format (str): The f-string into which the name and year should be 
+        format (str): The f-string into which the name and year should be
             inserted.
     """
     outstr = format.format(year=year, name=name)
@@ -96,10 +96,10 @@ def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> i
 
     Args:
         file (Path): the file to check.
-        name (str): Name of the copyright holder to be added to uncopyrighted 
+        name (str): Name of the copyright holder to be added to uncopyrighted
             files.
         year (str): Year of the copyright to be added to uncopyrighted files.
-        format (str): f-string specifying the structure of new copyright 
+        format (str): f-string specifying the structure of new copyright
             strings.
 
     Returns:
@@ -197,8 +197,9 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
     return _get_current_year()
 
 
-def _resolve_format(format: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
-    
+def _resolve_format(
+    format: t.Optional[str] = None, config: t.Optional[str] = None
+) -> str:
     if format is not None:
         return format
 
@@ -207,7 +208,6 @@ def _resolve_format(format: t.Optional[str] = None, config: t.Optional[str] = No
         if "format" in data:
             return data["format"]
         print(f"Config file `{config}` has no format field.")
-        
     return DEFAULT_FORMAT
 
 
@@ -268,7 +268,7 @@ def _parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.config and (args.name or args.year or args.format):
-        print("-c and -n|-y|-f are mutually exclusive.")
+        print("The arguments -c and -n|-y|-f are mutually exclusive.")
         sys.exit(2)
 
     if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
