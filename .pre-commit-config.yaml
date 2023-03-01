@@ -42,7 +42,7 @@ repos:
       - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.42.0
+    rev: v2.42.1
     hooks:
       - id: commitizen
 
@@ -52,7 +52,7 @@ repos:
       - id: codespell
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.1.0
+    rev: v1.2.1
     hooks:
       - id: add-copyright
       - id: add-msg-issue
@@ -135,7 +135,7 @@ repos:
         exclude: ^tests/
 
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
+    rev: 6.3.0
     hooks:
     - id: pydocstyle
       args: ['--ignore=D107,D204,D212,D406,D407,D413']
