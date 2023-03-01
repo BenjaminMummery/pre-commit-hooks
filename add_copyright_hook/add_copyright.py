@@ -219,7 +219,6 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
         data = _read_config_file(config)
         if "year" in data:
             return data["year"]
-        print(f"Config file `{config}` has no year field.")
 
     return _get_current_year()
 
@@ -240,7 +239,7 @@ def _ensure_valid_format(format: str) -> str:
     keys = ["name", "year"]
     missing_keys = []
     for key in keys:
-        if r"{" + key + r"}" in format:
+        if not r"{" + key + r"}" in format:
             missing_keys.append(key)
     if len(missing_keys) > 0:
         raise KeyError(
@@ -271,6 +270,7 @@ def _resolve_format(
         if "format" in data:
             return _ensure_valid_format(data["format"])
         print(f"Config file `{config}` has no format field.")
+
     return _ensure_valid_format(DEFAULT_FORMAT)
 
 
@@ -308,7 +308,8 @@ def _read_config_file(file_path: str) -> dict:
         file_path (str): The path to the file.
 
     Raises:
-        FileNotFoundError: when the path does not point to an extant file.
+        FileNotFoundError: when the path does not point to an extant file, or points to
+            a file of an unsupported type.
 
     Returns:
         dict: The key values pairs interpreted from the file's contents.
