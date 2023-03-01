@@ -92,6 +92,7 @@ The `add-copyright` hook accepts the following command line arguments to control
 |------|-------------|
 | `-n` / `--name` | Set a custom name to be used rather than git's `user.name` |
 | `-y` / `--year` | Set a custom year to be used rather than the current year. |
+| `-f` / `--format` | Set a custom f-string for the copyright to be inserted. Must contain `{name}` and `{year}`. |
 | `-c` / `--config` | Specify a configuration file that contains the name and year to be used. |
 
 The name and/or year arguments cannot be used at the same time as the config argument.
@@ -104,7 +105,7 @@ repos:
     rev: v1.0.0
     hooks:
     -   id: add-copyright
-        args: ["-n", "James T. Kirk", "-y", "1701"]
+        args: ["-n", "James T. Kirk", "-y", "1701", "-f", "Property of {name} as of {year}"]
     -   id: add-msg-issue
 ```
 
@@ -120,7 +121,7 @@ repos:
     -   id: add-msg-issue
 ```
 
-The config file can contain the name and year. Any properties that are not set by the config file will be inferred from the current year / git user name. Currently supported config formats are: JSON and YAML.
+The config file can contain name and year, and format. Any properties that are not set by the config file will be inferred from the current year / git user name. Currently supported config formats are: JSON and YAML.
 
 
 #### 3.1.2 `.add-copyright-hook-config.yaml` file.
