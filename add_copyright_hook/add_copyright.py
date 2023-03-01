@@ -136,7 +136,7 @@ def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> i
 
         copyright_string = _construct_copyright_string(name, year, format)
 
-        print(f"Fixing file `{file}`: adding `{copyright_string}`")
+        print(f"Fixing file `{file}` - added line(s):\n{copyright_string}\n")
 
         f.seek(0, 0)
         f.write(_insert_copyright_string(copyright_string, contents))
