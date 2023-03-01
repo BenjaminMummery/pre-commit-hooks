@@ -2,6 +2,13 @@
 
 # Copyright (c) 2023 Benjamin Mummery
 
+"""
+Parse the branch name for anything resembling an issue id, and add it to the commit msg.
+
+This module is intended for use as a pre-commit hook. For more information please
+consult the README file.
+"""
+
 import argparse
 import re
 import subprocess
@@ -11,7 +18,8 @@ FALLBACK_TEMPLATE: str = "{message}\n[{issue_id}]"
 
 
 def _get_branch_name() -> str:
-    """Get the name of the current git branch.
+    """
+    Get the name of the current git branch.
 
     Returns:
         str: The branch name. this string will be empty if we're not in a git repo.
@@ -28,7 +36,8 @@ def _get_branch_name() -> str:
 
 
 def _get_issue_ids_from_branch_name(branch: str) -> list:
-    """Parse the branch name looking for an issue ID.
+    """
+    Parse the branch name looking for an issue ID.
 
     Issue IDs are assumed to follow "X-Y" where X is a string of 1-10 letters, and
     Y is a string of 1-5 numerals.
@@ -47,7 +56,8 @@ def _get_issue_ids_from_branch_name(branch: str) -> list:
 
 
 def _issue_is_in_message(issue_id: str, message: str) -> bool:
-    """Determine if the issue ID is already in the message.
+    """
+    Determine if the issue ID is already in the message.
 
     Ignores lines in the message that start with '#'.
 
@@ -68,7 +78,8 @@ def _issue_is_in_message(issue_id: str, message: str) -> bool:
 
 
 def _insert_issue_into_message(issue_id: str, message: str, template: str) -> str:
-    """Insert the issue_id into the commit message according to the template.
+    """
+    Insert the issue_id into the commit message according to the template.
 
     The existing message is parsed into two parts:
     - "Subject" is the first line, if that line is not a comment.
@@ -110,7 +121,8 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
 
 
 def _parse_args() -> argparse.Namespace:
-    """Parse the CLI arguments.
+    """
+    Parse the CLI arguments.
 
     Returns:
         argparse.Namespace with the following attributes:
@@ -157,6 +169,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main():
+    """Identify jira issue ids in the branch name and insert into the commit msg."""
     args = _parse_args()
 
     issue_ids: str = _get_issue_ids_from_branch_name(_get_branch_name())

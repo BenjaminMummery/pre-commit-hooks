@@ -52,7 +52,7 @@ class TestHasShebang:
 
     @staticmethod
     @pytest.mark.parametrize("input", ["#/usr/bin/python"])
-    def test_returns_false_for_not_shebang(input):
+    def test_returns_false_for_no_shebang(input):
         assert not add_copyright._has_shebang(input)
 
 
@@ -171,7 +171,7 @@ class TestGetCurrentYear:
 class TestGetGitUserName:
     @staticmethod
     def test_returns_configured_name(git_repo):
-        username = "stub username"
+        username = "<username sentinel>"
         git_repo.run(f"git config user.name '{username}'")
 
         with cwd(git_repo.workspace):
@@ -198,7 +198,7 @@ class TestResolveUserName:
         mock_get_git_name.assert_not_called()
 
     @staticmethod
-    def test_read_from_config_if_config_provided(mocker):
+    def test_read_name_from_config_if_config_provided(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file",
             return_value={"name": "<name sentinel>"},
@@ -230,7 +230,7 @@ class TestResolveUserName:
         mock_get_git_name.assert_called_once_with()
 
     @staticmethod
-    def test_falls_through_if_name_missing_from_config(mocker):
+    def test_calls_get_git_user_name_if_name_missing_from_config(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file",
             return_value={},
@@ -250,7 +250,7 @@ class TestResolveUserName:
 class TestResolveYear:
     @staticmethod
     @pytest.mark.parametrize("config", [None, "stub config"])
-    def test_returns_name_if_provided(config, mocker):
+    def test_returns_year_if_provided(config, mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file"
         )
@@ -258,14 +258,14 @@ class TestResolveYear:
             "add_copyright_hook.add_copyright._get_current_year"
         )
 
-        year = add_copyright._resolve_year("<year sentinel>", config)
+        year = add_copyright._resolve_year("<year sentinel>")
 
         assert year == "<year sentinel>"
         mock_read_config.assert_not_called()
         mock_get_current_year.assert_not_called()
 
     @staticmethod
-    def test_read_from_config_if_config_provided(mocker):
+    def test_read_year_from_config_if_config_provided(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file",
             return_value={"year": "<year sentinel>"},
@@ -281,50 +281,51 @@ class TestResolveYear:
         mock_get_current_year.assert_not_called()
 
     @staticmethod
-    def test_calls_get_git_user_name_if_no_name_or_config_provided(mocker):
+    def test_calls_get_current_year_if_no_year_or_config_provided(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_current_year = mocker.patch(
             "add_copyright_hook.add_copyright._get_current_year",
-            return_value="<year sentinel>",
+            return_value="<year_sentinel>",
         )
 
         year = add_copyright._resolve_year()
 
-        assert year == "<year sentinel>"
+        assert year == "<year_sentinel>"
         mock_read_config.assert_not_called()
-        mock_get_current_year.assert_called_once_with()
+        mock_get_current_year.assert_called_once()
 
     @staticmethod
-    def test_returns_year_if_provided():
-        inputyear = "stub_year"
-
-        year = add_copyright._resolve_year(inputyear)
-
-        assert year == inputyear
-
-    @staticmethod
-    def test_calls_get_current_year_if_no_year_provided(mocker):
-        currentyear = "1984"
-        mocked_get_current_year = mocker.patch(
+    def test_calls_get_current_year_if_year_missing_from_config(mocker):
+        mock_read_config = mocker.patch(
+            "add_copyright_hook.add_copyright._read_config_file"
+        )
+        mock_get_current_year = mocker.patch(
             "add_copyright_hook.add_copyright._get_current_year",
-            return_value=currentyear,
+            return_value="<year_sentinel>",
         )
 
-        year = add_copyright._resolve_year()
+        year = add_copyright._resolve_year(None, "<config file sentinel>")
 
-        assert year == currentyear
-        mocked_get_current_year.assert_called_once()
+        assert year == "<year_sentinel>"
+        mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_get_current_year.assert_called_once()
 
 
 class TestResolveFormat:
     @staticmethod
-    def test_returns_format_if_provided():
+    def test_returns_format_if_provided(mocker):
+        mock_ensure_valid_format = mocker.patch(
+            "add_copyright_hook.add_copyright._ensure_valid_format",
+            return_value="<checked format sentinel>",
+        )
+
         assert (
             add_copyright._resolve_format("<format sentinel>", None)
-            == "<format sentinel>"
+            == "<checked format sentinel>"
         )
+        mock_ensure_valid_format.assert_called_once_with("<format sentinel>")
 
     @staticmethod
     def test_read_from_config_if_config_provided(mocker):
@@ -332,49 +333,85 @@ class TestResolveFormat:
             "add_copyright_hook.add_copyright._read_config_file",
             return_value={"format": "<format sentinel>"},
         )
+        mock_ensure_valid_format = mocker.patch(
+            "add_copyright_hook.add_copyright._ensure_valid_format",
+            return_value="<checked format sentinel>",
+        )
 
         assert (
             add_copyright._resolve_format(None, "<config file sentinel>")
-            == "<format sentinel>"
+            == "<checked format sentinel>"
         )
-
         mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_ensure_valid_format.assert_called_once_with("<format sentinel>")
 
     @staticmethod
-    def test_falls_back_to_default_if_provided_config_lacks_format_field(
-        mocker, capsys
-    ):
+    def test_returns_default_if_provided_config_lacks_format_field(mocker, capsys):
         mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file",
             return_value={},
         )
+        mock_ensure_valid_format = mocker.patch(
+            "add_copyright_hook.add_copyright._ensure_valid_format",
+            return_value="<checked format sentinel>",
+        )
 
         assert (
             add_copyright._resolve_format(None, "<config file sentinel>")
-            == mock_default
+            == "<checked format sentinel>"
         )
-
         mock_read_config.assert_called_once_with("<config file sentinel>")
+        mock_ensure_valid_format.assert_called_once_with(mock_default)
 
     @staticmethod
     def test_chooses_format_arg_over_config(mocker):
         mock_read_config = mocker.patch(
             "add_copyright_hook.add_copyright._read_config_file"
         )
+        mock_ensure_valid_format = mocker.patch(
+            "add_copyright_hook.add_copyright._ensure_valid_format",
+            return_value="<checked format sentinel>",
+        )
 
         assert (
             add_copyright._resolve_format("<format sentinel>", "<config file sentinel>")
-            == "<format sentinel>"
+            == "<checked format sentinel>"
         )
 
         mock_read_config.assert_not_called()
+        mock_ensure_valid_format.assert_called_once_with("<format sentinel>")
 
     @staticmethod
     def test_returns_default_if_no_format_or_config(mocker):
         mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+        mock_ensure_valid_format = mocker.patch(
+            "add_copyright_hook.add_copyright._ensure_valid_format",
+            return_value="<checked format sentinel>",
+        )
 
-        assert add_copyright._resolve_format(None, None) == mock_default
+        assert add_copyright._resolve_format(None, None) == "<checked format sentinel>"
+        mock_ensure_valid_format.assert_called_once_with(mock_default)
+
+
+class TestEnsureValidFormat:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_format",
+        [
+            "{name} {year}",
+            "Property of {name} as of {year}.",
+            "Copyright (c) {year} {name}",
+        ],
+    )
+    def test_returns_valid_format_strings(input_format):
+        assert add_copyright._ensure_valid_format(input_format) == input_format
+
+    @staticmethod
+    @pytest.mark.parametrize("input_format", ["Nope"])
+    def test_raises_keyerror_for_invalid_format_strings(input_format):
+        with pytest.raises(KeyError):
+            assert add_copyright._ensure_valid_format(input_format) == input_format
 
 
 class TestResolveFiles:
@@ -418,10 +455,20 @@ class TestResolveFiles:
 
 class TestReadConfigFile:
     @staticmethod
+    def test_raises_exception_if_file_does_not_exist(tmp_path):
+        with cwd(tmp_path):
+            with pytest.raises(FileNotFoundError):
+                add_copyright._read_config_file("not_a_real_file.blah")
+
+    @staticmethod
     @pytest.mark.parametrize("invalid_file_name", ["foo.txt", "var.cfg"])
-    def test_raises_exception_if_not_supported_type(invalid_file_name):
-        with pytest.raises(FileNotFoundError):
-            add_copyright._read_config_file(invalid_file_name)
+    def test_raises_exception_if_not_supported_type(invalid_file_name, tmp_path):
+        p = tmp_path / invalid_file_name
+        p.write_text("")
+
+        with cwd(tmp_path):
+            with pytest.raises(FileNotFoundError):
+                add_copyright._read_config_file(invalid_file_name)
 
     @staticmethod
     @pytest.mark.parametrize(

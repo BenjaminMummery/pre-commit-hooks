@@ -2,6 +2,13 @@
 
 # Copyright (c) 2023 Benjamin Mummery
 
+"""
+Check that source files contain a copyright string, and add one to files that don't.
+
+This module is intended for use as a pre-commit hook. For more information please
+consult the README file.
+"""
+
 import argparse
 import datetime
 import json
@@ -19,7 +26,8 @@ DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
 
 
 def _contains_copyright_string(input: str) -> bool:
-    """Checks if the input string is a copyright comment.
+    """
+    Check if the input string is a copyright comment.
 
     Note: at present this assumes that we're looking for a python comment.
     Future versions will extend this to include other languages.
@@ -41,11 +49,21 @@ def _contains_copyright_string(input: str) -> bool:
 
 
 def _has_shebang(input: str) -> bool:
+    """
+    Check whether the input string starts with a shebang.
+
+    Args:
+        input (str): The string to check.
+
+    Returns:
+        bool: True if a shebang is found, false otherwise.
+    """
     return input.startswith("#!")
 
 
 def _construct_copyright_string(name: str, year: str, format: str) -> str:
-    """Construct a commented line containing the copyright information.
+    """
+    Construct a commented line containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
@@ -60,10 +78,12 @@ def _construct_copyright_string(name: str, year: str, format: str) -> str:
 
 
 def _insert_copyright_string(copyright: str, content: str) -> str:
-    """Insert the specified copyright string as a new line in the content. This
-    method attempts to place the copyright string at the top of the file, unless
-    the file starts with a shebang in which case the copyright string is
-    inserted after the shebang, separated by an empty line.
+    """
+    Insert the specified copyright string as a new line in the content.
+
+    This method attempts to place the copyright string at the top of the file, unless
+    the file starts with a shebang in which case the copyright string is inserted after
+    the shebang, separated by an empty line.
 
     Args:
         copyright (str): The copyright string.
@@ -91,7 +111,10 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
 
 
 def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> int:
-    """Check that the specified file has a copyright string, adding one if it is
+    """
+    Ensure that the specified file has a copyright string.
+
+    Check the file contents for the presence a copyright string, adding one if it is
     not already present.
 
     Args:
@@ -127,7 +150,8 @@ def _get_current_year() -> str:
 
 
 def _get_git_user_name() -> str:
-    """Get the user name as configured in git.
+    """
+    Get the user name as configured in git.
 
     Raises:
         ValueError: when the user name has not been configured.
@@ -146,7 +170,8 @@ def _get_git_user_name() -> str:
 def _resolve_user_name(
     name: t.Optional[str] = None, config: t.Optional[str] = None
 ) -> str:
-    """Resolve the user name to attach to the copyright.
+    """
+    Resolve the user name to attach to the copyright.
 
     If the name argument is provided, it is returned as the username. Otherwise
     the user name is inferred from the git configuration.
@@ -174,13 +199,15 @@ def _resolve_user_name(
 
 
 def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
-    """Resolve the year to attach to the copyright.
+    """
+    Resolve the year to attach to the copyright.
 
     If the year argument is provided, it is returned as the year. Otherwise the
     year is inferred from the system clock.
 
     Args:
         year (str, optional): The year argument if provided. Defaults to None.
+        config (str, optional): The config argument if provided. Defaults to None.
 
     Returns:
         str: The resolved year.
@@ -192,28 +219,64 @@ def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) 
         data = _read_config_file(config)
         if "year" in data:
             return data["year"]
-        print(f"Config file `{config}` has no year field.")
 
     return _get_current_year()
+
+
+def _ensure_valid_format(format: str) -> str:
+    """
+    Ensure that the provided format string contains the required keys.
+
+    Args:
+        format (str): The string to be checked.
+
+    Raises:
+        KeyError: when one or more keys is missing.
+
+    Returns:
+        str: the checked format string.
+    """
+    keys = ["name", "year"]
+    missing_keys = []
+    for key in keys:
+        if not r"{" + key + r"}" in format:
+            missing_keys.append(key)
+    if len(missing_keys) > 0:
+        raise KeyError(
+            f"The format string '{format}' is missing the following required keys: "
+            f"{missing_keys}"
+        )
+    return format
 
 
 def _resolve_format(
     format: t.Optional[str] = None, config: t.Optional[str] = None
 ) -> str:
+    """
+    Resolve the format with which the copyright string should be constructed.
+
+    Args:
+        format (str, optional): The format argument if provided. Defaults to None.
+        config (str, optional): The config argument if provided. Defaults to None.
+
+    Returns:
+        str: The resolved format.
+    """
     if format is not None:
-        return format
+        return _ensure_valid_format(format)
 
     if config is not None:
         data = _read_config_file(config)
         if "format" in data:
-            return data["format"]
+            return _ensure_valid_format(data["format"])
         print(f"Config file `{config}` has no format field.")
-    return DEFAULT_FORMAT
+
+    return _ensure_valid_format(DEFAULT_FORMAT)
 
 
 def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
-    """Convert the list of files into a list of paths, and ensure that they all
-    exist.
+    """
+    Convert the list of files into a list of paths.
 
     Args:
         files (str, List[str]): The list of changed files.
@@ -225,7 +288,6 @@ def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     Returns:
         List[Path]: A list of paths coressponding to the changed files.
     """
-
     if isinstance(files, str):
         files = [files]
 
@@ -239,6 +301,19 @@ def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
 
 
 def _read_config_file(file_path: str) -> dict:
+    """
+    Read in the parameters from the specified configuration file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Raises:
+        FileNotFoundError: when the path does not point to an extant file, or points to
+            a file of an unsupported type.
+
+    Returns:
+        dict: The key values pairs interpreted from the file's contents.
+    """
     _file_path = Path(file_path)
     data: dict
     with open(_file_path, "r") as f:
@@ -253,7 +328,8 @@ def _read_config_file(file_path: str) -> dict:
 
 
 def _parse_args() -> argparse.Namespace:
-    """Parse the CLI arguments.
+    """
+    Parse the CLI arguments.
 
     Returns:
         argparse.Namespace with the following attributes:
@@ -284,6 +360,11 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """
+    Entrypoint for the add_copyright hook.
+
+    Check that source files contain a copyright string, and add one to files that don't.
+    """
     args = _parse_args()
 
     # Early exit if no files provided
