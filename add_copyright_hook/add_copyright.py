@@ -39,9 +39,15 @@ def _contains_copyright_string(input: str) -> bool:
         bool: True if the input string is a copyright comment, false otherwise.
     """
     exp = re.compile(
+        # The line should start with the comment escape character '#'.
         r"^(?P<commentmarker>#)\s?"
+        # One or more ways of writing 'copyright': the word, the character `©`, or the
+        # approximation `(c)`.
         r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
-        r"(?P<year>\d{4})\s"
+        # Year information - either 4 digits, or 2 sets of 4 digits separated by a dash.
+        r"(?P<year>(\d{4}|\d{4}\s?-\s?\d{4})+)\s"
+        # The name of the copyright holder. No restrictions on this, just take whatever
+        # is left in the string as long as it's not nothing.
         r"(?P<name>.*)",
         re.IGNORECASE | re.MULTILINE,
     )

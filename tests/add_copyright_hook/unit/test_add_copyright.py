@@ -33,6 +33,8 @@ class TestContainsCopyrightString:
             "unconnected first line\n# Copyright 1984 Aldous Huxley",
             "# © 9999 Obi Wan Kenobi",
             "# Copyright © 9876 Gandalf the Grey",
+            "# copyright 1234-5678 Huron Blackheart",
+            "# (c) 8524 - 6987 Horus Lupercal",
         ],
     )
     def test_returns_true_for_correct_strings(input_string):
