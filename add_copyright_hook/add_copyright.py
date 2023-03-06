@@ -41,7 +41,7 @@ def _contains_copyright_string(input: str) -> bool:
     exp = re.compile(
         r"^(?P<commentmarker>#)\s?"
         r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
-        r"(?P<year>\d{4})\s"
+        r"(?P<year>(\d{4}|\d{4}\s?-\s?\d{4})+)\s"
         r"(?P<name>.*)",
         re.IGNORECASE | re.MULTILINE,
     )
