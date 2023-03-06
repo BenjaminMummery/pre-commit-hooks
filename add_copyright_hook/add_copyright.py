@@ -39,7 +39,10 @@ def _contains_copyright_string(input: str) -> bool:
         bool: True if the input string is a copyright comment, false otherwise.
     """
     exp = re.compile(
-        r"^#\s?(?P<signifiers>copyright(\s?\(c\))?)\s(?P<year>\d{4})\s(?P<name>.*)",
+        r"^(?P<commentmarker>#)\s?"
+        r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
+        r"(?P<year>\d{4})\s"
+        r"(?P<name>.*)",
         re.IGNORECASE | re.MULTILINE,
     )
     m = re.search(exp, input)
