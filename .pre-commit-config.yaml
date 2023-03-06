@@ -51,7 +51,7 @@ repos:
       - id: codespell
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.2.1
+    rev: v1.2.3
     hooks:
       - id: add-copyright
       - id: add-msg-issue
