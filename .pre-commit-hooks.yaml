@@ -16,3 +16,11 @@
   always_run: true
   stages: [commit]
   types: [python]
+- id: sort-gitignore
+  name: Sort gitignore sections
+  description: Sorts the contents of .gitignore while preserving sections.
+  entry: sort-gitignore
+  language: python
+  always_run: true
+  stages: [commit]
+  files: ^.gitignore
