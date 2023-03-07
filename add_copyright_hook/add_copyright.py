@@ -21,6 +21,8 @@ from pathlib import Path
 import yaml
 from git import Repo
 
+from _shared import resolvers
+
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
 
@@ -283,32 +285,6 @@ def _resolve_format(
     return _ensure_valid_format(DEFAULT_FORMAT)
 
 
-def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
-    """
-    Convert the list of files into a list of paths.
-
-    Args:
-        files (str, List[str]): The list of changed files.
-
-    Raises:
-        FileNotFoundError: When one or more of the specified files does not
-        exist.
-
-    Returns:
-        List[Path]: A list of paths coressponding to the changed files.
-    """
-    if isinstance(files, str):
-        files = [files]
-
-    _files: t.List[Path] = [Path(file) for file in files]
-
-    for file in _files:
-        if not os.path.isfile(file):
-            raise FileNotFoundError(file)
-
-    return _files
-
-
 def _read_config_file(file_path: str) -> dict:
     """
     Read in the parameters from the specified configuration file.
@@ -363,7 +339,7 @@ def _parse_args() -> argparse.Namespace:
     args.name = _resolve_user_name(args.name, args.config)
     args.year = _resolve_year(args.year, args.config)
     args.format = _resolve_format(args.format, args.config)
-    args.files = _resolve_files(args.files)
+    args.files = resolvers._resolve_files(args.files)
 
     return args
 
