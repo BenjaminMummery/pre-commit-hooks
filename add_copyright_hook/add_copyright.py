@@ -248,7 +248,7 @@ def _ensure_valid_format(format: str) -> str:
     keys = ["name", "year"]
     missing_keys = []
     for key in keys:
-        if not r"{" + key + r"}" in format:
+        if "{" + key + "}" not in format:
             missing_keys.append(key)
     if len(missing_keys) > 0:
         raise KeyError(
