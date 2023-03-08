@@ -2,7 +2,7 @@
 
 import pytest
 
-from sort_gitignore_hook import sort_gitignore
+from sort_file_contents_hook import sort_file_contents
 
 
 class TestParseArgs:
@@ -17,7 +17,7 @@ class TestParseArgs:
         )
         mocker.patch("sys.argv", ["stub", *file_arg])
 
-        args = sort_gitignore._parse_args()
+        args = sort_file_contents._parse_args()
 
         mock_file_resolver.assert_called_once_with(file_arg)
         assert args.files == "<file sentinel>"

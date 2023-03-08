@@ -13,7 +13,7 @@ test: test_venv
 	--cov=_shared \
 	--cov=add_msg_issue_hook \
 	--cov=add_copyright_hook \
-	--cov=sort_gitignore_hook \
+	--cov=sort_file_contents_hook \
 	tests/
 
 test_shared: test_venv
@@ -34,11 +34,11 @@ test_add_copyright: test_venv
 	--cov=add_copyright_hook \
 	tests/add_copyright_hook -x
 
-test_sort_gitignore: test_venv
+test_sort_file_contents: test_venv
 	. test_venv/bin/activate; pytest \
 	--cov-report term-missing \
-	--cov=sort_gitignore_hook \
-	tests/sort_gitignore_hook -x
+	--cov=sort_file_contents_hook \
+	tests/sort_file_contents_hook -x
 
 clean:
 	rm -rf test_venv

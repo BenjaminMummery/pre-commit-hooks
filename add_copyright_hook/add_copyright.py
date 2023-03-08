@@ -318,7 +318,7 @@ def _parse_args() -> argparse.Namespace:
 
     Returns:
         argparse.Namespace with the following attributes:
-        - files (list of str): the paths to each changed file relevant to this hook.
+        - files (list of Path): the paths to each changed file relevant to this hook.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
@@ -349,6 +349,9 @@ def main() -> int:
     Entrypoint for the add_copyright hook.
 
     Check that source files contain a copyright string, and add one to files that don't.
+
+    Returns:
+        int: 1 if files have been modified, 0 otherwise.
     """
     args = _parse_args()
 
