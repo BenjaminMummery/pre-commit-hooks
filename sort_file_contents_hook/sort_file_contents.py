@@ -17,14 +17,52 @@ from path import Path
 from _shared import resolvers
 
 
+def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
+    """
+    Break down a list of strings into "sections".
+
+    Sections are assumed to be a series of one or more lines separated from other
+    sections by one or more empty line.
+
+    Arguments:
+        lines (list of str): the lines to be parsed.
+
+    Returns:
+        list of list of str: a list whose entries correspond to the individual
+            sections. Each entry contains a list of the lines that make up that section.
+    """
+    blank_lines = ["\n", ""]
+
+    # Early exit for empty file
+    if len(lines) < 2:
+        return [lines]
+
+    # Ensure we have a blank line at the beginning and end:
+    _lines = lines
+    if _lines[0] not in blank_lines:
+        _lines = ["\n"] + _lines
+    if _lines[-1] not in blank_lines:
+        _lines = _lines + ["\n"]
+
+    # find linebreaks
+    linebreaks = [i for i, line in enumerate(_lines) if line in ["\n", ""]]
+
+    # Iterate through linebreaks separating out the sections
+    sections = []
+    for current, next in zip(linebreaks[0:-1], linebreaks[1:]):
+        if next - current == 1:
+            continue
+        sections.append(_lines[current + 1 : next])
+
+    return sections
 
 
 def _sort_contents(file: Path):
     """WIP."""
-    with open(file, 'r') as file_obj:
+    with open(file, "r") as file_obj:
         lines = list(file_obj)
-        
-    sections = _parse_sections(lines)
+
+    sections = _identify_sections(lines)
     print(sections)
     pass
 
