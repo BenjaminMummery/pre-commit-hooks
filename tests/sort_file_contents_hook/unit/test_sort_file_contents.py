@@ -5,6 +5,77 @@ import pytest
 from sort_file_contents_hook import sort_file_contents
 
 
+class TestSeparateLeadingComment:
+    @staticmethod
+    def test_single_line_comment():
+        lines = [
+            "# <comment sentinel>",
+            "<sortable sentinel 1>",
+            "<sortable sentinel 2>",
+        ]
+
+        comment, section = sort_file_contents._separate_leading_comment(lines)
+
+        assert comment == ["# <comment sentinel>"]
+        assert section == ["<sortable sentinel 1>", "<sortable sentinel 2>"]
+
+    @staticmethod
+    def test_multiple_line_comment():
+        lines = [
+            "# <comment sentinel 1>",
+            "# <comment sentinel 2>",
+            "<sortable sentinel 1>",
+            "<sortable sentinel 2>",
+        ]
+
+        comment, section = sort_file_contents._separate_leading_comment(lines)
+
+        assert comment == ["# <comment sentinel 1>", "# <comment sentinel 2>"]
+        assert section == ["<sortable sentinel 1>", "<sortable sentinel 2>"]
+
+    @staticmethod
+    def test_nested_comment():
+        lines = [
+            "# <comment sentinel 1>",
+            "<sortable sentinel 1>",
+            "# <comment sentinel 2>",
+            "<sortable sentinel 2>",
+        ]
+
+        comment, section = sort_file_contents._separate_leading_comment(lines)
+
+        assert comment == ["# <comment sentinel 1>"]
+        assert section == [
+            "<sortable sentinel 1>",
+            "# <comment sentinel 2>",
+            "<sortable sentinel 2>",
+        ]
+
+    @staticmethod
+    def test_no_comment():
+        lines = [
+            "<sortable sentinel 1>",
+            "<sortable sentinel 2>",
+        ]
+
+        comment, section = sort_file_contents._separate_leading_comment(lines)
+
+        assert comment is None
+        assert section == ["<sortable sentinel 1>", "<sortable sentinel 2>"]
+
+    @staticmethod
+    def test_no_sortable_lines():
+        lines = [
+            "# <comment sentinel 1>",
+            "# <comment sentinel 2>",
+        ]
+
+        comment, section = sort_file_contents._separate_leading_comment(lines)
+
+        assert comment == ["# <comment sentinel 1>", "# <comment sentinel 2>"]
+        assert section is None
+
+
 class TestIdentifySections:
     @staticmethod
     @pytest.mark.parametrize(

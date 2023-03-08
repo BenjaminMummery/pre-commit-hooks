@@ -17,6 +17,36 @@ from path import Path
 from _shared import resolvers
 
 
+def _separate_leading_comment(
+    lines: t.List[str],
+) -> t.Tuple[t.Union[t.List[str], None], t.Union[t.List[str], None]]:
+    """
+    Separate a leading comment string or strings from a list of strings.
+
+    Arguments:
+        lines (list of str): the lines to be parsed.
+
+    Returns:
+        list of str (optional), list of str (optional): the list of comment lines and
+            sortable lines respectively. If no lines of the specified type were found,
+            returns None.
+    """
+    comment_lines: t.Optional[t.List[str]] = None
+    sortable_lines: t.Optional[t.List[str]] = None
+
+    for i, line in enumerate(lines):
+        if not line.startswith("#"):
+            sortable_lines = lines[i:]
+            break
+
+        if comment_lines is None:
+            comment_lines = [line]
+        else:
+            comment_lines.append(line)
+
+    return comment_lines, sortable_lines
+
+
 def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
     """
     Break down a list of strings into "sections".
