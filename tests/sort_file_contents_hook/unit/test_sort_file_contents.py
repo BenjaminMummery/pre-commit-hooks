@@ -5,6 +5,26 @@ import pytest
 from sort_file_contents_hook import sort_file_contents
 
 
+class TestSortLines:
+    @staticmethod
+    def test_single_line():
+        lines = ["A"]
+
+        assert sort_file_contents._sort_lines(lines) == lines
+
+    @staticmethod
+    def test_already_sorted():
+        lines = ["A", "B"]
+
+        assert sort_file_contents._sort_lines(lines) == lines
+
+    @staticmethod
+    def test_sorting():
+        lines = ["B", "A"]
+
+        assert sort_file_contents._sort_lines(lines) == sorted(lines)
+
+
 class TestSeparateLeadingComment:
     @staticmethod
     def test_single_line_comment():

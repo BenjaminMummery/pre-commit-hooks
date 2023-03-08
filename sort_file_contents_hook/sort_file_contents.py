@@ -17,6 +17,11 @@ from path import Path
 from _shared import resolvers
 
 
+def _sort_lines(lines: t.List[str]) -> t.List[str]:
+    """Sorts the lines."""
+    return sorted(lines)
+
+
 def _separate_leading_comment(
     lines: t.List[str],
 ) -> t.Tuple[t.Union[t.List[str], None], t.Union[t.List[str], None]]:
