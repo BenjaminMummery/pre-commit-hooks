@@ -11,8 +11,7 @@ consult the README file.
 
 import argparse
 import typing as t
-
-from path import Path
+from pathlib import Path
 
 from _shared import resolvers
 
@@ -97,9 +96,39 @@ def _sort_contents(file: Path):
     with open(file, "r") as file_obj:
         lines = list(file_obj)
 
+    # Identify sections
     sections = _identify_sections(lines)
-    print(sections)
-    pass
+
+    # Sort each section
+    sections_changed = False
+    for i, section in enumerate(sections):
+        # Remove leading comment
+        comment_lines, sortable_lines = _separate_leading_comment(section)
+
+        # Skip this section if there's nothing to sort
+        if sortable_lines is None:
+            continue
+
+        # Sort the lines
+        sorted = _sort_lines(sortable_lines)
+
+        # Skip this section if sorting hasn't changed anything
+        if sorted == sortable_lines:
+            continue
+
+        sections_changed |= True
+        if comment_lines is not None:
+            sorted = comment_lines + sorted
+        sections[i] = sorted
+
+    # Early return if nothing has changed
+    if not sections_changed:
+        return 0
+
+    # write back to file
+    with open(file, "w") as file_obj:
+        file_obj.write("\n".join(["".join(section) for section in sections]))
+    return 1
 
 
 def _parse_args() -> argparse.Namespace:
@@ -140,7 +169,7 @@ def main() -> int:
     for file in args.files:
         file_retv = _sort_contents(file)
         if file_retv:
-            print(f"Sorting file '{file_retv}'")
+            print(f"Sorting file '{file}'")
         retv |= file_retv
 
     return retv
