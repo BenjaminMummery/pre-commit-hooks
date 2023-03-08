@@ -35,7 +35,7 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
 
     # Early exit for empty file
     if len(lines) < 2:
-        return [lines]
+        return [[line for line in lines if line not in blank_lines]]
 
     # Ensure we have a blank line at the beginning and end:
     _lines = lines
@@ -45,7 +45,7 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
         _lines = _lines + ["\n"]
 
     # find linebreaks
-    linebreaks = [i for i, line in enumerate(_lines) if line in ["\n", ""]]
+    linebreaks = [i for i, line in enumerate(_lines) if line in blank_lines]
 
     # Iterate through linebreaks separating out the sections
     sections = []

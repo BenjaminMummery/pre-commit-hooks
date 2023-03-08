@@ -11,8 +11,8 @@ class TestIdentifySections:
         "lines, expected_sections",
         [
             ([], [[]]),
-            ([""], [[""]]),
-            (["\n"], [["\n"]]),
+            ([""], [[]]),
+            (["\n"], [[]]),
         ],
     )
     def test_parses_empty_file(lines, expected_sections):
