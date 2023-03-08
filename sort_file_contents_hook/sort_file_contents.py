@@ -39,7 +39,7 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     """
-    Entrypoint for the sort_gitignore hook.
+    Entrypoint for the sort_file_contents hook.
 
     Identifies sections within the input files by looking for a comment following a
     blank line. The contents of each section are then sorted alphabetically.
