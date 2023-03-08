@@ -10,12 +10,22 @@ consult the README file.
 """
 
 import argparse
+import typing as t
+
+from path import Path
 
 from _shared import resolvers
 
 
-def _sort_contents(file: str):
+
+
+def _sort_contents(file: Path):
     """WIP."""
+    with open(file, 'r') as file_obj:
+        lines = list(file_obj)
+        
+    sections = _parse_sections(lines)
+    print(sections)
     pass
 
 
@@ -55,7 +65,10 @@ def main() -> int:
 
     retv = 0
     for file in args.files:
-        retv |= _sort_contents(file)
+        file_retv = _sort_contents(file)
+        if file_retv:
+            print(f"Sorting file '{file_retv}'")
+        retv |= file_retv
 
     return retv
 
