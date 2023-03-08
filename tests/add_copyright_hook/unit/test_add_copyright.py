@@ -2,7 +2,6 @@
 
 import os
 from contextlib import contextmanager
-from pathlib import Path
 
 import pytest
 from freezegun import freeze_time
@@ -418,45 +417,6 @@ class TestEnsureValidFormat:
             assert add_copyright._ensure_valid_format(input_format) == input_format
 
 
-class TestResolveFiles:
-    @staticmethod
-    def test_returns_empty_list_for_empty_input():
-        files = add_copyright._resolve_files([])
-
-        assert files == []
-
-    @staticmethod
-    def test_returns_list_for_single_valid_file(tmp_path):
-        p = tmp_path / "hello.txt"
-        p.write_text("")
-
-        with cwd(tmp_path):
-            files = add_copyright._resolve_files("hello.txt")
-
-        assert files == [Path("hello.txt")]
-
-    @staticmethod
-    def test_returns_list_for_multiple_valid_files(tmp_path):
-        p1 = tmp_path / "hello.txt"
-        p2 = tmp_path / "goodbye.py"
-        for file in [p1, p2]:
-            file.write_text("")
-
-        with cwd(tmp_path):
-            files = add_copyright._resolve_files(["hello.txt", "goodbye.py"])
-
-        assert files == [Path("hello.txt"), Path("goodbye.py")]
-
-    @staticmethod
-    def test_raises_exception_for_missing_file(tmp_path):
-        p1 = tmp_path / "hello.txt"
-        p1.write_text("")
-
-        with cwd(tmp_path):
-            with pytest.raises(FileNotFoundError):
-                add_copyright._resolve_files(["hello.txt", "goodbye.py"])
-
-
 class TestReadConfigFile:
     @staticmethod
     def test_raises_exception_if_file_does_not_exist(tmp_path):
@@ -554,7 +514,7 @@ class TestParseArgs:
             return_value="<format sentinel>",
         )
         mock_file_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_files",
+            "_shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *format_arg, *year_arg])
@@ -596,7 +556,7 @@ class TestParseArgs:
             return_value="<format sentinel>",
         )
         mock_file_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_files",
+            "_shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *config_arg])

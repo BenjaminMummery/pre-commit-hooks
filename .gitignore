@@ -1,5 +1,6 @@
 *.egg-info
 *__pycache__
 .coverage
+.ruff_cache
 .vscode
 test_venv
