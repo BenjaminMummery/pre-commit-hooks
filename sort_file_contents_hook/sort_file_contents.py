@@ -18,7 +18,15 @@ from _shared import resolvers
 
 def _sort_lines(lines: t.List[str]) -> t.List[str]:
     """Sorts the lines."""
-    return sorted(lines)
+
+    def _ignore_comments_in_section(input: str) -> str:
+        """Key function for sorting section entries."""
+        output = input.strip().lower()
+        if output.startswith("#"):
+            output = output[1:].strip()
+        return output
+
+    return sorted(lines, key=_ignore_comments_in_section)
 
 
 def _separate_leading_comment(
