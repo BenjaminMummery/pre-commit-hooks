@@ -92,7 +92,7 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
 
 
 def _sort_contents(file: Path):
-    """WIP."""
+    """Sort the contents of the file."""
     with open(file, "r") as file_obj:
         lines = list(file_obj)
 
