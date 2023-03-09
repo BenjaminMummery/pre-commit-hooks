@@ -182,14 +182,23 @@ class TestParseArgs:
     @pytest.mark.parametrize(
         "file_arg", [[], ["stub_file"], ["stub_file_1", "stub_file_2"]]
     )
-    def test_argument_passing(mocker, file_arg):
+    @pytest.mark.parametrize(
+        "unique_arg, expected_unique",
+        [
+            ([], False),
+            (["-u"], True),
+            (["--unique"], True),
+        ],
+    )
+    def test_argument_passing(mocker, file_arg, unique_arg, expected_unique):
         mock_file_resolver = mocker.patch(
             "_shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
-        mocker.patch("sys.argv", ["stub", *file_arg])
+        mocker.patch("sys.argv", ["stub", *file_arg, *unique_arg])
 
         args = sort_file_contents._parse_args()
 
         mock_file_resolver.assert_called_once_with(file_arg)
         assert args.files == "<file sentinel>"
+        assert args.unique == expected_unique

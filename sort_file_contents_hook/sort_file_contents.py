@@ -146,8 +146,16 @@ def _parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace with the following attributes:
         - files (list of Path): the paths to each changed file relevant to this hook.
+        - unique (bool): True if the unique CLI flag was set, False otherwise.
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-u",
+        "--unique",
+        action="store_true",
+        default=False,
+        help="Ensure that all entries in the file are unique.",
+    )
     parser.add_argument("files", nargs="*", default=[], help="Files to sort.")
     args = parser.parse_args()
 
