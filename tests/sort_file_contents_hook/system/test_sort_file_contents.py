@@ -43,7 +43,6 @@ class TestFileSorting:
 
         with open(file, "r") as f:
             content: str = f.read()
-            print(content)
         assert content == sorted_file
 
     @staticmethod

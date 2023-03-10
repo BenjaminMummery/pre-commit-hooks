@@ -7,6 +7,24 @@ test_venv/touchfile: test_requirements.txt
 	pip install -e .
 	touch test_venv/touchfile
 
+unit_test_coverage: test_venv
+	. test_venv/bin/activate; pytest \
+	--cov-report term-missing \
+	--cov=_shared \
+	--cov=add_msg_issue_hook \
+	--cov=add_copyright_hook \
+	--cov=sort_file_contents_hook \
+	tests/*/unit/
+
+system_test_coverage: test_venv
+	. test_venv/bin/activate; pytest \
+	--cov-report term-missing \
+	--cov=_shared \
+	--cov=add_msg_issue_hook \
+	--cov=add_copyright_hook \
+	--cov=sort_file_contents_hook \
+	tests/*/system/
+
 test: test_venv
 	. test_venv/bin/activate; pytest \
 	--cov-report term-missing \

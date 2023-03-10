@@ -10,14 +10,28 @@ consult the README file.
 """
 
 import argparse
+import collections
 import typing as t
 from pathlib import Path
 
 from _shared import resolvers
 
 
-def _sort_lines(lines: t.List[str]) -> t.List[str]:
-    """Sorts the lines."""
+def _sort_lines(lines: t.List[str], unique: bool = False) -> t.List[str]:
+    """
+    Sorts the lines.
+
+    Arguments:
+        lines (list of str): the lines to be sorted.
+
+    Keyword Arguments:
+        unique (bool): If True, duplicate values will be removed. (default: {False})
+
+    Returns:
+        list of str: the sorted lines.
+    """
+    if unique:
+        lines = list(set(lines))
 
     def _ignore_comments_in_section(input: str) -> str:
         """Key function for sorting section entries."""
@@ -99,43 +113,84 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
     return sections
 
 
-def _sort_contents(file: Path):
+def _find_duplicates(lines) -> t.List[t.Tuple[str, int]]:
+    """
+    Identify duplicate entries in the list.
+
+    'None' entries are not counted as duplicates.
+
+    Arguments:
+        lines: the list of strings to check for duplicates.
+
+    Returns:
+        list(tuple(str, int)): a list of tuples containing the duplicated string, and
+            the number of instances within the lines.
+    """
+    _lines: t.List[str] = [line for line in lines if line is not None]
+    duplicates = [
+        (item, count)
+        for item, count in collections.Counter(_lines).items()
+        if count > 1
+    ]
+    return duplicates
+
+
+def _sort_contents(file: Path, unique: bool = False):
     """Sort the contents of the file."""
     with open(file, "r") as file_obj:
-        lines = list(file_obj)
+        lines: t.List[str] = [line.strip("\n") for line in list(file_obj)]
 
     # Identify sections
-    sections = _identify_sections(lines)
+    sections: t.List[t.List[str]] = _identify_sections(lines)
+
+    # Separate leading comments from sections
+    section_headers: t.List[t.Optional[t.List[str]]] = [None for _ in sections]
+    section_contents: t.List[t.Optional[t.List[str]]] = [None for _ in sections]
+    for i, section in enumerate(sections):
+        section_headers[i], section_contents[i] = _separate_leading_comment(section)
 
     # Sort each section
-    sections_changed = False
-    for i, section in enumerate(sections):
-        # Remove leading comment
-        comment_lines, sortable_lines = _separate_leading_comment(section)
-
-        # Skip this section if there's nothing to sort
-        if sortable_lines is None:
+    sections_changed: bool = False
+    for section_lines in section_contents:
+        if section_lines is None:
             continue
 
-        # Sort the lines
-        sorted = _sort_lines(sortable_lines)
+        sorted = _sort_lines(section_lines, unique=unique)
 
         # Skip this section if sorting hasn't changed anything
-        if sorted == sortable_lines:
+        if sorted == section_lines:
             continue
 
+        # Update the section contents
         sections_changed |= True
-        if comment_lines is not None:
-            sorted = comment_lines + sorted
-        sections[i] = sorted
+        section_contents[i] = sorted
+
+    # Check for uniqueness
+    if unique:
+        duplicates = _find_duplicates(*section_contents)
+        if len(duplicates) > 0:
+            print("The following entries appear in multiple sections:")
+            for item, count in duplicates:
+                print(f"- '{item}' appears in {count} sections.")
+            return 1
 
     # Early return if nothing has changed
     if not sections_changed:
         return 0
 
-    # write back to file
     with open(file, "w") as file_obj:
-        file_obj.write("\n".join(["".join(section) for section in sections]))
+        file_obj.write(
+            "\n\n".join(
+                [
+                    "\n".join(section)
+                    for section in [
+                        (header or []) + (contents or [])
+                        for header, contents in zip(section_headers, section_contents)
+                    ]
+                ]
+            )
+            + "\n"
+        )
     return 1
 
 
@@ -183,7 +238,7 @@ def main() -> int:
 
     retv = 0
     for file in args.files:
-        file_retv = _sort_contents(file)
+        file_retv = _sort_contents(file, unique=args.unique)
         if file_retv:
             print(f"Sorting file '{file}'")
         retv |= file_retv
