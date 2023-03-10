@@ -287,6 +287,7 @@ class TestSortContents:
         mock_sort_lines.assert_called_once_with(["<contents_sentinel>"], unique=True)
         mock_find_duplicates.assert_called_once_with(["<sorted lines sentinel>"])
         assert capsys.readouterr().out == (
+            f"Could not sort '{f}'. "
             "The following entries appear in multiple sections:\n"
             "- '<duplicate sentinel' appears in 0 sections.\n"
         )
@@ -347,17 +348,3 @@ class TestMain:
 
         assert sort_file_contents.main() == 0
         mock_sort_contents.assert_called_once_with("<file sentinel>", unique=False)
-
-    @staticmethod
-    def test_reports_sorted_files(mocker, capsys):
-        mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._parse_args",
-            return_value=mocker.Mock(files=["<file sentinel>"], unique=False),
-        )
-        mock_sort_contents = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_contents", return_value=1
-        )
-
-        assert sort_file_contents.main() == 1
-        mock_sort_contents.assert_called_once_with("<file sentinel>", unique=False)
-        assert capsys.readouterr().out == "Sorting file '<file sentinel>'\n"

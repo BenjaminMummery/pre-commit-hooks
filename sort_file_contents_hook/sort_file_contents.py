@@ -11,6 +11,7 @@ consult the README file.
 
 import argparse
 import collections
+import itertools
 import typing as t
 from pathlib import Path
 
@@ -113,7 +114,7 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
     return sections
 
 
-def _find_duplicates(lines) -> t.List[t.Tuple[str, int]]:
+def _find_duplicates(lines: t.List[str]) -> t.List[t.Tuple[str, int]]:
     """
     Identify duplicate entries in the list.
 
@@ -126,11 +127,8 @@ def _find_duplicates(lines) -> t.List[t.Tuple[str, int]]:
         list(tuple(str, int)): a list of tuples containing the duplicated string, and
             the number of instances within the lines.
     """
-    _lines: t.List[str] = [line for line in lines if line is not None]
     duplicates = [
-        (item, count)
-        for item, count in collections.Counter(_lines).items()
-        if count > 1
+        (item, count) for item, count in collections.Counter(lines).items() if count > 1
     ]
     return duplicates
 
@@ -151,7 +149,7 @@ def _sort_contents(file: Path, unique: bool = False):
 
     # Sort each section
     sections_changed: bool = False
-    for section_lines in section_contents:
+    for i, section_lines in enumerate(section_contents):
         if section_lines is None:
             continue
 
@@ -167,9 +165,18 @@ def _sort_contents(file: Path, unique: bool = False):
 
     # Check for uniqueness
     if unique:
-        duplicates = _find_duplicates(*section_contents)
+        duplicates = _find_duplicates(
+            list(
+                itertools.chain.from_iterable(
+                    [contents for contents in section_contents if contents is not None]
+                )
+            )
+        )
         if len(duplicates) > 0:
-            print("The following entries appear in multiple sections:")
+            print(
+                f"Could not sort '{file}'. "
+                "The following entries appear in multiple sections:"
+            )
             for item, count in duplicates:
                 print(f"- '{item}' appears in {count} sections.")
             return 1
@@ -191,6 +198,7 @@ def _sort_contents(file: Path, unique: bool = False):
             )
             + "\n"
         )
+    print(f"Sorting file '{file}'")
     return 1
 
 
@@ -238,10 +246,7 @@ def main() -> int:
 
     retv = 0
     for file in args.files:
-        file_retv = _sort_contents(file, unique=args.unique)
-        if file_retv:
-            print(f"Sorting file '{file}'")
-        retv |= file_retv
+        retv |= _sort_contents(file, unique=args.unique)
 
     return retv
 

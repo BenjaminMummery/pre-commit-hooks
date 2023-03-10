@@ -108,6 +108,53 @@ class TestFileSorting:
         assert content == sorted_file
 
 
+class TestUnique:
+    @staticmethod
+    def test_with_no_duplicates(tmp_path, mocker):
+        file_contents = "beta\n" "delta\n" "gamma\n" "alpha\n"
+        sorted_file = "alpha\n" "beta\n" "delta\n" "gamma\n"
+        file = tmp_path / ".gitignore"
+        file.write_text(file_contents)
+        mocker.patch("sys.argv", ["stub_name", str(file), "-u"])
+
+        assert sort_file_contents.main() == 1
+
+        with open(file, "r") as f:
+            content: str = f.read()
+        assert content == sorted_file
+
+    @staticmethod
+    def test_with_duplicates_in_section(tmp_path, mocker):
+        file_contents = "beta\n" "delta\n" "gamma\n" "alpha\n" "beta\n"
+        sorted_file = "alpha\n" "beta\n" "delta\n" "gamma\n"
+        file = tmp_path / ".gitignore"
+        file.write_text(file_contents)
+        mocker.patch("sys.argv", ["stub_name", str(file), "-u"])
+
+        assert sort_file_contents.main() == 1
+
+        with open(file, "r") as f:
+            content: str = f.read()
+        assert content == sorted_file
+
+    @staticmethod
+    def test_with_duplicates_in_separate_section(tmp_path, mocker, capsys):
+        file_contents = "beta\n" "delta\n" "gamma\n" "alpha\n" "\n" "epsilon\n" "beta\n"
+        file = tmp_path / ".gitignore"
+        file.write_text(file_contents)
+        mocker.patch("sys.argv", ["stub_name", str(file), "-u"])
+
+        assert sort_file_contents.main() == 1
+
+        with open(file, "r") as f:
+            content: str = f.read()
+        assert content == file_contents
+        assert (
+            "The following entries appear in multiple sections:\n"
+            "- 'beta' appears in 2 sections.\n"
+        ) in capsys.readouterr().out
+
+
 class TestNoChanges:
     @staticmethod
     def test_empty_file(tmp_path, mocker):
