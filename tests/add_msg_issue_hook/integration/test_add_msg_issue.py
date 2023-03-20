@@ -2,20 +2,8 @@
 
 import os
 import subprocess
-from contextlib import contextmanager
 
 import pytest
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
-
 
 branches_and_issues = [("ORQSDK-314/dev/task", "ORQSDK-314")]
 
@@ -31,7 +19,9 @@ branches_and_issues = [("ORQSDK-314/dev/task", "ORQSDK-314")]
         "ver/foo",
     ],
 )
-def test_make_no_changes_when_no_issue_in_branch_name(branch_name, git_repo, mocker):
+def test_make_no_changes_when_no_issue_in_branch_name(
+    branch_name, git_repo, mocker, cwd
+):
     message_contents_in = (
         "Lorem ipsum dolor sit amet,\n\n"
         "consectetur adipiscing elit, "
@@ -51,7 +41,7 @@ def test_make_no_changes_when_no_issue_in_branch_name(branch_name, git_repo, moc
 
 @pytest.mark.parametrize("branch_name, issue_id", branches_and_issues)
 def test_make_no_changes_when_issue_already_in_message(
-    branch_name, issue_id, git_repo, mocker
+    branch_name, issue_id, git_repo, mocker, cwd
 ):
     message_contents_in = (
         "Lorem ipsum dolor sit amet,\n\n"
@@ -132,7 +122,7 @@ def test_make_no_changes_when_issue_already_in_message(
 )
 @pytest.mark.parametrize("branch_name, issue_id", branches_and_issues)
 def test_default_formatting(
-    branch_name, issue_id, message_in, message_out, git_repo, mocker
+    branch_name, issue_id, message_in, message_out, git_repo, mocker, cwd
 ):
     msg_file_path = git_repo.workspace / "msgfile"
     msg_file_path.write_text(message_in)

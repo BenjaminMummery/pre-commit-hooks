@@ -1,22 +1,10 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import os
-from contextlib import contextmanager
 
 import pytest
 from freezegun import freeze_time
 
-from add_copyright_hook import add_copyright
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
+from src.add_copyright_hook import add_copyright
 
 
 class TestContainsCopyrightString:
@@ -114,7 +102,7 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
         mock_copyright_check = mocker.patch(
-            "add_copyright_hook.add_copyright._contains_copyright_string",
+            "src.add_copyright_hook.add_copyright._contains_copyright_string",
             return_value=True,
         )
 
@@ -133,15 +121,15 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
         mocker.patch(
-            "add_copyright_hook.add_copyright._contains_copyright_string",
+            "src.add_copyright_hook.add_copyright._contains_copyright_string",
             return_value=False,
         )
         mock_construct_string = mocker.patch(
-            "add_copyright_hook.add_copyright._construct_copyright_string",
+            "src.add_copyright_hook.add_copyright._construct_copyright_string",
             return_value="<copyright string sentinel>",
         )
         mock_insert_string = mocker.patch(
-            "add_copyright_hook.add_copyright._insert_copyright_string",
+            "src.add_copyright_hook.add_copyright._insert_copyright_string",
             return_value="<modified contents sentinel>",
         )
 
@@ -173,7 +161,7 @@ class TestGetCurrentYear:
 
 class TestGetGitUserName:
     @staticmethod
-    def test_returns_configured_name(git_repo):
+    def test_returns_configured_name(git_repo, cwd):
         username = "<username sentinel>"
         git_repo.run(f"git config user.name '{username}'")
 
@@ -188,10 +176,10 @@ class TestResolveUserName:
     @pytest.mark.parametrize("config", [None, "stub config"])
     def test_returns_name_if_provided(config, mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_git_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name"
+            "src.add_copyright_hook.add_copyright._get_git_user_name"
         )
 
         name = add_copyright._resolve_user_name("<name sentinel>", config)
@@ -203,11 +191,11 @@ class TestResolveUserName:
     @staticmethod
     def test_read_name_from_config_if_config_provided(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file",
+            "src.add_copyright_hook.add_copyright._read_config_file",
             return_value={"name": "<name sentinel>"},
         )
         mock_get_git_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name"
+            "src.add_copyright_hook.add_copyright._get_git_user_name"
         )
 
         name = add_copyright._resolve_user_name(None, "<config file sentinel>")
@@ -219,10 +207,10 @@ class TestResolveUserName:
     @staticmethod
     def test_calls_get_git_user_name_if_no_name_or_config_provided(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_git_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name",
+            "src.add_copyright_hook.add_copyright._get_git_user_name",
             return_value="<name sentinel>",
         )
 
@@ -235,11 +223,11 @@ class TestResolveUserName:
     @staticmethod
     def test_calls_get_git_user_name_if_name_missing_from_config(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file",
+            "src.add_copyright_hook.add_copyright._read_config_file",
             return_value={},
         )
         mock_get_git_name = mocker.patch(
-            "add_copyright_hook.add_copyright._get_git_user_name",
+            "src.add_copyright_hook.add_copyright._get_git_user_name",
             return_value="<name sentinel>",
         )
 
@@ -255,10 +243,10 @@ class TestResolveYear:
     @pytest.mark.parametrize("config", [None, "stub config"])
     def test_returns_year_if_provided(config, mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_current_year = mocker.patch(
-            "add_copyright_hook.add_copyright._get_current_year"
+            "src.add_copyright_hook.add_copyright._get_current_year"
         )
 
         year = add_copyright._resolve_year("<year sentinel>")
@@ -270,11 +258,11 @@ class TestResolveYear:
     @staticmethod
     def test_read_year_from_config_if_config_provided(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file",
+            "src.add_copyright_hook.add_copyright._read_config_file",
             return_value={"year": "<year sentinel>"},
         )
         mock_get_current_year = mocker.patch(
-            "add_copyright_hook.add_copyright._get_current_year"
+            "src.add_copyright_hook.add_copyright._get_current_year"
         )
 
         year = add_copyright._resolve_year(None, "<config file sentinel>")
@@ -286,10 +274,10 @@ class TestResolveYear:
     @staticmethod
     def test_calls_get_current_year_if_no_year_or_config_provided(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_current_year = mocker.patch(
-            "add_copyright_hook.add_copyright._get_current_year",
+            "src.add_copyright_hook.add_copyright._get_current_year",
             return_value="<year_sentinel>",
         )
 
@@ -302,10 +290,10 @@ class TestResolveYear:
     @staticmethod
     def test_calls_get_current_year_if_year_missing_from_config(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_get_current_year = mocker.patch(
-            "add_copyright_hook.add_copyright._get_current_year",
+            "src.add_copyright_hook.add_copyright._get_current_year",
             return_value="<year_sentinel>",
         )
 
@@ -320,7 +308,7 @@ class TestResolveFormat:
     @staticmethod
     def test_returns_format_if_provided(mocker):
         mock_ensure_valid_format = mocker.patch(
-            "add_copyright_hook.add_copyright._ensure_valid_format",
+            "src.add_copyright_hook.add_copyright._ensure_valid_format",
             return_value="<checked format sentinel>",
         )
 
@@ -333,11 +321,11 @@ class TestResolveFormat:
     @staticmethod
     def test_read_from_config_if_config_provided(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file",
+            "src.add_copyright_hook.add_copyright._read_config_file",
             return_value={"format": "<format sentinel>"},
         )
         mock_ensure_valid_format = mocker.patch(
-            "add_copyright_hook.add_copyright._ensure_valid_format",
+            "src.add_copyright_hook.add_copyright._ensure_valid_format",
             return_value="<checked format sentinel>",
         )
 
@@ -350,13 +338,15 @@ class TestResolveFormat:
 
     @staticmethod
     def test_returns_default_if_provided_config_lacks_format_field(mocker, capsys):
-        mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+        mock_default = mocker.patch(
+            "src.add_copyright_hook.add_copyright.DEFAULT_FORMAT"
+        )
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file",
+            "src.add_copyright_hook.add_copyright._read_config_file",
             return_value={},
         )
         mock_ensure_valid_format = mocker.patch(
-            "add_copyright_hook.add_copyright._ensure_valid_format",
+            "src.add_copyright_hook.add_copyright._ensure_valid_format",
             return_value="<checked format sentinel>",
         )
 
@@ -370,10 +360,10 @@ class TestResolveFormat:
     @staticmethod
     def test_chooses_format_arg_over_config(mocker):
         mock_read_config = mocker.patch(
-            "add_copyright_hook.add_copyright._read_config_file"
+            "src.add_copyright_hook.add_copyright._read_config_file"
         )
         mock_ensure_valid_format = mocker.patch(
-            "add_copyright_hook.add_copyright._ensure_valid_format",
+            "src.add_copyright_hook.add_copyright._ensure_valid_format",
             return_value="<checked format sentinel>",
         )
 
@@ -387,9 +377,11 @@ class TestResolveFormat:
 
     @staticmethod
     def test_returns_default_if_no_format_or_config(mocker):
-        mock_default = mocker.patch("add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+        mock_default = mocker.patch(
+            "src.add_copyright_hook.add_copyright.DEFAULT_FORMAT"
+        )
         mock_ensure_valid_format = mocker.patch(
-            "add_copyright_hook.add_copyright._ensure_valid_format",
+            "src.add_copyright_hook.add_copyright._ensure_valid_format",
             return_value="<checked format sentinel>",
         )
 
@@ -419,14 +411,14 @@ class TestEnsureValidFormat:
 
 class TestReadConfigFile:
     @staticmethod
-    def test_raises_exception_if_file_does_not_exist(tmp_path):
+    def test_raises_exception_if_file_does_not_exist(tmp_path, cwd):
         with cwd(tmp_path):
             with pytest.raises(FileNotFoundError):
                 add_copyright._read_config_file("not_a_real_file.blah")
 
     @staticmethod
     @pytest.mark.parametrize("invalid_file_name", ["foo.txt", "var.cfg"])
-    def test_raises_exception_if_not_supported_type(invalid_file_name, tmp_path):
+    def test_raises_exception_if_not_supported_type(invalid_file_name, tmp_path, cwd):
         p = tmp_path / invalid_file_name
         p.write_text("")
 
@@ -502,19 +494,19 @@ class TestParseArgs:
         expected_format,
     ):
         mock_name_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_user_name",
+            "src.add_copyright_hook.add_copyright._resolve_user_name",
             return_value="<name sentinel>",
         )
         mock_year_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_year",
+            "src.add_copyright_hook.add_copyright._resolve_year",
             return_value="<year sentinel>",
         )
         mock_format_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_format",
+            "src.add_copyright_hook.add_copyright._resolve_format",
             return_value="<format sentinel>",
         )
         mock_file_resolver = mocker.patch(
-            "_shared.resolvers._resolve_files",
+            "src._shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *format_arg, *year_arg])
@@ -544,19 +536,19 @@ class TestParseArgs:
     )
     def test_argument_passing_config(file_arg, config_arg, expected_config, mocker):
         mock_name_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_user_name",
+            "src.add_copyright_hook.add_copyright._resolve_user_name",
             return_value="<name sentinel>",
         )
         mock_year_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_year",
+            "src.add_copyright_hook.add_copyright._resolve_year",
             return_value="<year sentinel>",
         )
         mock_format_resolver = mocker.patch(
-            "add_copyright_hook.add_copyright._resolve_format",
+            "src.add_copyright_hook.add_copyright._resolve_format",
             return_value="<format sentinel>",
         )
         mock_file_resolver = mocker.patch(
-            "_shared.resolvers._resolve_files",
+            "src._shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *config_arg])

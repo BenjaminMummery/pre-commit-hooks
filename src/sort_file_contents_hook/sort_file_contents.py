@@ -13,7 +13,7 @@ import argparse
 import typing as t
 from pathlib import Path
 
-from _shared import resolvers
+from src._shared import resolvers
 
 
 def _sort_lines(lines: t.List[str]) -> t.List[str]:

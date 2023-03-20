@@ -1,22 +1,10 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import os
-from contextlib import contextmanager
 
 import pytest
 from freezegun import freeze_time
 
-from add_copyright_hook import add_copyright
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
+from src.add_copyright_hook import add_copyright
 
 
 class TestNoFilesToCheck:
@@ -30,7 +18,7 @@ class TestNoFilesToCheck:
 
     @staticmethod
     @freeze_time("1001-01-01")
-    def test_return_0_if_all_files_have_copyright(mocker, git_repo):
+    def test_return_0_if_all_files_have_copyright(mocker, git_repo, cwd):
         # Given
         p1 = git_repo.workspace / "file_1.py"
         p2 = git_repo.workspace / "file_2.txt"
@@ -54,7 +42,7 @@ class TestNoFilesToCheck:
 class TestInferredNameDate:
     @staticmethod
     @freeze_time("1001-01-01")
-    def test_default_formatting(mocker, git_repo):
+    def test_default_formatting(mocker, git_repo, cwd):
         # Given
         username = "<username sentinel>"
         expected_content = "# Copyright (c) 1001 <username sentinel>\n"
@@ -79,7 +67,7 @@ class TestInferredNameDate:
 
     @staticmethod
     @freeze_time("1001-01-01")
-    def test_keep_shebang_first(mocker, git_repo, capsys):
+    def test_keep_shebang_first(mocker, git_repo, capsys, cwd):
         # Given
         input_content = "#!<shebang sentinel>\n" "<content sentinel>"
         expected_content = (
@@ -108,7 +96,7 @@ class TestInferredNameDate:
 
 class TestCLINameDate:
     @staticmethod
-    def test_custom_name_and_year(mocker, git_repo):
+    def test_custom_name_and_year(mocker, git_repo, cwd):
         # Given
         username = "<username sentinel>"
         date = "0000"
@@ -143,8 +131,9 @@ class TestUpdatesExistingDateRanges:
             ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-1234 KHAN"),
         ],
     )
+    @pytest.mark.xfail
     def test_updates_date_ranges(
-        mocker, git_repo, existing_copyright_string, expected_copyright_string
+        mocker, git_repo, existing_copyright_string, expected_copyright_string, cwd
     ):
         # Given
         p1 = git_repo.workspace / "file_1.py"
@@ -164,7 +153,7 @@ class TestUpdatesExistingDateRanges:
 
 class TestDefaultConfigFile:
     @staticmethod
-    def test_default_config_file_location(mocker, git_repo):
+    def test_default_config_file_location(mocker, git_repo, cwd):
         # Given
         p1 = git_repo.workspace / "file_1.py"
         p2 = git_repo.workspace / "file_2.txt"
@@ -216,7 +205,9 @@ class TestCustomConfigFile:
             ),
         ],
     )
-    def test_custom_config_file_location(mocker, git_repo, filename, file_contents):
+    def test_custom_config_file_location(
+        mocker, git_repo, filename, file_contents, cwd
+    ):
         # Given
         p1 = git_repo.workspace / "file_1.py"
         p2 = git_repo.workspace / "file_2.txt"

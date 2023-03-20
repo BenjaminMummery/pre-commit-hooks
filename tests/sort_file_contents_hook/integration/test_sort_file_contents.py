@@ -1,19 +1,7 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import os
-from contextlib import contextmanager
 
-from sort_file_contents_hook import sort_file_contents
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
+from src.sort_file_contents_hook import sort_file_contents
 
 
 class TestFileSorting:

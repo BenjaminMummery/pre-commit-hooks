@@ -21,7 +21,7 @@ from pathlib import Path
 import yaml
 from git import Repo
 
-from _shared import resolvers
+from src._shared import resolvers
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
