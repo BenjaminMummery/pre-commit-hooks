@@ -4,9 +4,12 @@ import datetime
 import os
 import subprocess
 
+import pytest
+
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
 
 
+@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo, cwd):
@@ -52,6 +55,7 @@ class TestNoChanges:
             )
 
 
+@pytest.mark.slow
 class TestChanges:
     @staticmethod
     def test_inferred_name_date(git_repo, cwd):
@@ -109,3 +113,27 @@ class TestChanges:
                 content
                 == f"# Belongs to <name sentinel> as of 0000.\n\n<file {file} content sentinel>"  # noqa: E501
             )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "existing_copyright_string, expected_copyright_string",
+        [
+            ("# Copyright 1002 James T. Kirk", "# Copyright 1002-1234 James T. Kirk"),
+            ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-1234 KHAN"),
+        ],
+    )
+    @pytest.mark.xfail
+    def test_update_date_ranges(
+        git_repo, cwd, existing_copyright_string, expected_copyright_string
+    ):
+        datetime.date.today().year
+
+        file = git_repo.workspace / "file_1.py"
+        file.write_text(existing_copyright_string)
+
+        with cwd(git_repo.workspace):
+            subprocess.run(COMMAND)
+
+        with open(file, "r") as f:
+            content = f.read()
+        assert content.startswith(expected_copyright_string)

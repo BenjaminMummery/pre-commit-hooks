@@ -8,6 +8,7 @@ import pytest
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "sort-file-contents"]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "unsorted, sorted, description",
     [
@@ -57,6 +58,7 @@ def test_sorting(git_repo, cwd, unsorted, sorted, description):
     assert content == sorted, f"failed to sort file with {description}"
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "file_contents, description",
     [

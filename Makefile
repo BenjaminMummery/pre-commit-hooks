@@ -7,8 +7,15 @@ test_venv/touchfile: test_requirements.txt
 	pip install -e .
 	touch test_venv/touchfile
 
+test_all: test_venv
+	. test_venv/bin/activate; pytest \
+	--cov-report term-missing \
+	--cov=src \
+	tests/
+
 test: test_venv
 	. test_venv/bin/activate; pytest \
+	-m "not slow" \
 	--cov-report term-missing \
 	--cov=src \
 	tests/
