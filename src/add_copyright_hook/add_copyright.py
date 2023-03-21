@@ -27,7 +27,7 @@ DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
 
 
-def _contains_copyright_string(input: str) -> bool:
+def _parse_copyright_string(input: str) -> t.Optional[dict]:
     """
     Check if the input string is a copyright comment.
 
@@ -38,7 +38,9 @@ def _contains_copyright_string(input: str) -> bool:
         input (str): The string to be checked
 
     Returns:
-        bool: True if the input string is a copyright comment, false otherwise.
+        dict or None: If a matching copyright string was found, returns a dict
+            containing its information with the following keys: commentmarker,
+            signifiers, year, name. If a match was not found, returns None.
     """
     exp = re.compile(
         # The line should start with the comment escape character '#'.
@@ -55,8 +57,8 @@ def _contains_copyright_string(input: str) -> bool:
     )
     m = re.search(exp, input)
     if m is None:
-        return False
-    return True
+        return None
+    return m.groupdict()
 
 
 def _has_shebang(input: str) -> bool:
@@ -84,7 +86,7 @@ def _construct_copyright_string(name: str, year: str, format: str) -> str:
     """
     outstr = format.format(year=year, name=name)
     if format == DEFAULT_FORMAT:
-        assert _contains_copyright_string(outstr)
+        assert _parse_copyright_string(outstr)
     return outstr
 
 
@@ -142,7 +144,9 @@ def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> i
     with open(file, "r+") as f:
         contents: str = f.read()
 
-        if _contains_copyright_string(contents):
+        parsed_copyright_string = _parse_copyright_string(contents)
+
+        if parsed_copyright_string:
             return 0
 
         copyright_string = _construct_copyright_string(name, year, format)

@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from src.add_copyright_hook import add_copyright
 
 
-class TestContainsCopyrightString:
+class TestParseCopyrightString:
     @staticmethod
     @pytest.mark.parametrize(
         "input_string",
@@ -25,14 +25,14 @@ class TestContainsCopyrightString:
         ],
     )
     def test_returns_true_for_correct_strings(input_string):
-        assert add_copyright._contains_copyright_string(input_string)
+        assert add_copyright._parse_copyright_string(input_string)
 
     @staticmethod
     @pytest.mark.parametrize(
         "input_string", ["Not a comment", "# Not a copyright string"]
     )
     def test_returns_false_for_incorrect_strings(input_string):
-        assert not add_copyright._contains_copyright_string(input_string)
+        assert not add_copyright._parse_copyright_string(input_string)
 
 
 class TestHasShebang:
@@ -102,7 +102,7 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
         mock_copyright_check = mocker.patch(
-            "src.add_copyright_hook.add_copyright._contains_copyright_string",
+            "src.add_copyright_hook.add_copyright._parse_copyright_string",
             return_value=True,
         )
 
@@ -121,7 +121,7 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
         mocker.patch(
-            "src.add_copyright_hook.add_copyright._contains_copyright_string",
+            "src.add_copyright_hook.add_copyright._parse_copyright_string",
             return_value=False,
         )
         mock_construct_string = mocker.patch(
