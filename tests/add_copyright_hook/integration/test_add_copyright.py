@@ -147,7 +147,7 @@ class TestUpdatesExistingDateRanges:
 
         # Then
         with open(p1, "r") as f:
-            content: str = f.read
+            content: str = f.read()
         assert content.startswith(expected_copyright_string)
 
 
