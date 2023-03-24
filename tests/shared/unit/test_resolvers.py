@@ -1,22 +1,10 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import os
-from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 
-from _shared import resolvers
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
+from src._shared import resolvers
 
 
 class TestResolveFiles:
@@ -27,7 +15,7 @@ class TestResolveFiles:
         assert files == []
 
     @staticmethod
-    def test_returns_list_for_single_valid_file(tmp_path):
+    def test_returns_list_for_single_valid_file(tmp_path, cwd):
         p = tmp_path / "hello.txt"
         p.write_text("")
 
@@ -37,7 +25,7 @@ class TestResolveFiles:
         assert files == [Path("hello.txt")]
 
     @staticmethod
-    def test_returns_list_for_multiple_valid_files(tmp_path):
+    def test_returns_list_for_multiple_valid_files(tmp_path, cwd):
         p1 = tmp_path / "hello.txt"
         p2 = tmp_path / "goodbye.py"
         for file in [p1, p2]:
@@ -49,7 +37,7 @@ class TestResolveFiles:
         assert files == [Path("hello.txt"), Path("goodbye.py")]
 
     @staticmethod
-    def test_raises_exception_for_missing_file(tmp_path):
+    def test_raises_exception_for_missing_file(tmp_path, cwd):
         p1 = tmp_path / "hello.txt"
         p1.write_text("")
 

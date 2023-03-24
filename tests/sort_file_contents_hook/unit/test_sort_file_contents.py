@@ -2,7 +2,7 @@
 
 import pytest
 
-from sort_file_contents_hook import sort_file_contents
+from src.sort_file_contents_hook import sort_file_contents
 
 
 class TestSortLines:
@@ -169,7 +169,7 @@ class TestSortContents:
         f = tmp_path / "blah.txt"
         f.write_text(file_contents)
         mock_parse_sections = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._identify_sections"
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections"
         )
 
         sort_file_contents._sort_contents(f)
@@ -184,7 +184,7 @@ class TestParseArgs:
     )
     def test_argument_passing(mocker, file_arg):
         mock_file_resolver = mocker.patch(
-            "_shared.resolvers._resolve_files",
+            "src._shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg])

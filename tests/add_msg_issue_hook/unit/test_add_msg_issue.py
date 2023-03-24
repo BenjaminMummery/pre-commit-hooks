@@ -1,24 +1,12 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import os
-from contextlib import contextmanager
 
 import pytest
 
-from add_msg_issue_hook import add_msg_issue
+from src.add_msg_issue_hook import add_msg_issue
 
 DEFAULT_TEMPLATE = "{subject}\n\n[{issue_id}]\n{body}"
 FALLBACK_TEMPLATE = "{message}\n[{issue_id}]"
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
 
 
 class TestGetBranchName:
@@ -26,7 +14,7 @@ class TestGetBranchName:
     @pytest.mark.parametrize(
         "branch_name", ["test-branch", "feature/TESTID-010/something"]
     )
-    def test_gets_branch_name(branch_name, git_repo):
+    def test_gets_branch_name(branch_name, git_repo, cwd):
         git_repo.run(f"git checkout -b {branch_name}")
 
         with cwd(git_repo.workspace):
