@@ -243,4 +243,4 @@ delta
 
 ### 5.2 Uniqueness
 
-WIP
+The `-u` or `--unique` flag causes the hook to check the sorted lines for uniqueness. Duplicate entries within the same section will be removed automatically; lines that are duplicated between sections will be left in place and a warning raised to the user. This latter behaviour is due to us not knowing which section the line should belong to.
