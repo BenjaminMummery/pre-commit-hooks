@@ -107,7 +107,7 @@ If you're using a `.pre-commit-config.yaml`, these can be configured as follows:
 ```yaml
 repos:
 -   repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.0
+    rev: v1.4.0
     hooks:
     -   id: add-copyright
         args: ["-n", "James T. Kirk", "-y", "1701", "-f", "Property of {name} as of {year}"]
