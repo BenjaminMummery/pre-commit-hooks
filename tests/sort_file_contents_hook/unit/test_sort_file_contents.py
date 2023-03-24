@@ -2,7 +2,7 @@
 
 import pytest
 
-from sort_file_contents_hook import sort_file_contents
+from src.sort_file_contents_hook import sort_file_contents
 
 
 class TestSortLines:
@@ -188,15 +188,15 @@ class TestSortContents:
         f = tmp_path / "blah.txt"
         f.write_text("<file contents sentinel 1>\n<file contents sentinel 2>")
         mock_identify_sections = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._identify_sections",
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
             return_value=[["<section sentinel"]],
         )
         mock_separate_comment = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
             return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
         )
         mock_sort_lines = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_lines",
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
             return_value=["<sorted lines sentinel>"],
         )
 
@@ -215,15 +215,15 @@ class TestSortContents:
         f = tmp_path / "blah.txt"
         f.write_text("<file contents sentinel>")
         mock_identify_sections = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._identify_sections",
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
             return_value=[["<section sentinel"]],
         )
         mock_separate_comment = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
             return_value=(["<header_sentinel>"], None),
         )
         mock_sort_lines = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_lines",
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
         )
 
         assert sort_file_contents._sort_contents(f) == 0
@@ -239,15 +239,15 @@ class TestSortContents:
         f = tmp_path / "blah.txt"
         f.write_text("<file contents sentinel>")
         mock_identify_sections = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._identify_sections",
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
             return_value=[["<section sentinel"]],
         )
         mock_separate_comment = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
             return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
         )
         mock_sort_lines = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_lines",
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
             return_value=["<contents_sentinel>"],
         )
 
@@ -264,19 +264,19 @@ class TestSortContents:
         f = tmp_path / "blah.txt"
         f.write_text("<file contents sentinel>")
         mock_identify_sections = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._identify_sections",
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
             return_value=[["<section sentinel"]],
         )
         mock_separate_comment = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
             return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
         )
         mock_sort_lines = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_lines",
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
             return_value=["<sorted lines sentinel>"],
         )
         mock_find_duplicates = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._find_duplicates",
+            "src.sort_file_contents_hook.sort_file_contents._find_duplicates",
             return_value=[("<duplicate sentinel", 0)],
         )
 
@@ -310,7 +310,7 @@ class TestParseArgs:
     )
     def test_argument_passing(mocker, file_arg, unique_arg, expected_unique):
         mock_file_resolver = mocker.patch(
-            "_shared.resolvers._resolve_files",
+            "src._shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
         mocker.patch("sys.argv", ["stub", *file_arg, *unique_arg])
@@ -326,11 +326,11 @@ class TestMain:
     @staticmethod
     def test_argument_passing_no_files(mocker):
         mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._parse_args",
+            "src.sort_file_contents_hook.sort_file_contents._parse_args",
             return_value=mocker.Mock(files=[], unique=False),
         )
         mock_sort_contents = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_contents"
+            "src.sort_file_contents_hook.sort_file_contents._sort_contents"
         )
 
         assert sort_file_contents.main() == 0
@@ -339,11 +339,12 @@ class TestMain:
     @staticmethod
     def test_argument_passing(mocker):
         mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._parse_args",
+            "src.sort_file_contents_hook.sort_file_contents._parse_args",
             return_value=mocker.Mock(files=["<file sentinel>"], unique=False),
         )
         mock_sort_contents = mocker.patch(
-            "sort_file_contents_hook.sort_file_contents._sort_contents", return_value=0
+            "src.sort_file_contents_hook.sort_file_contents._sort_contents",
+            return_value=0,
         )
 
         assert sort_file_contents.main() == 0

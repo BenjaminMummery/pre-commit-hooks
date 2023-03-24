@@ -15,7 +15,7 @@ import itertools
 import typing as t
 from pathlib import Path
 
-from _shared import resolvers
+from src._shared import resolvers
 
 
 def _sort_lines(lines: t.List[str], unique: bool = False) -> t.List[str]:

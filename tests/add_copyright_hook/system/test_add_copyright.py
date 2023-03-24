@@ -1,183 +1,151 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+import datetime
 import os
-from contextlib import contextmanager
+import subprocess
 
 import pytest
-from freezegun import freeze_time
 
-from add_copyright_hook import add_copyright
-
-
-@contextmanager
-def cwd(path):
-    oldcwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(oldcwd)
+COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
 
 
-class TestNoFilesToCheck:
+@pytest.mark.slow
+class TestNoChanges:
     @staticmethod
-    def test_return_0_for_no_changed_files(mocker):
-        mocker.patch("sys.argv", ["stub_name"])
-        assert add_copyright.main() == 0
+    def test_no_files_changed(git_repo, cwd):
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+        assert process.returncode == 0
 
     @staticmethod
-    def test_return_0_if_all_files_have_copyright(mocker, git_repo):
-        p1 = git_repo.workspace / "file_1.py"
-        p2 = git_repo.workspace / "file_2.txt"
-        p1.write_text("# Copyright 1701 James T. Kirk")
-        p2.write_text("#COPYRIGHT 2087 KHAN")
-        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
+    def test_no_supported_files_changed(git_repo, cwd):
+        files = ["hello.txt", ".gitignore", "test.yaml"]
+        for file in files:
+            f = git_repo.workspace / file
+            f.write_text(f"<file {file} content sentinel>")
+            git_repo.run(f"git add {file}")
 
         with cwd(git_repo.workspace):
-            assert add_copyright.main() == 0
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
+        assert process.returncode == 0
+        for file in files:
+            with open(git_repo.workspace / file, "r") as f:
+                content = f.read()
+            assert content == f"<file {file} content sentinel>"
 
-class TestInferredNameDate:
     @staticmethod
-    @freeze_time("1001-01-01")
-    def test_default_formatting(mocker, git_repo):
+    def test_all_changed_files_have_copyright(git_repo, cwd):
+        # Check the current year
+        this_year = datetime.date.today().year
+
+        files = ["hello.py", ".hello.py", "_hello.py"]
+        for file in files:
+            f = git_repo.workspace / file
+            f.write_text(
+                f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
+            )
+            git_repo.run(f"git add {file}")
+
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+        assert process.returncode == 0
+        for file in files:
+            with open(git_repo.workspace / file, "r") as f:
+                content = f.read()
+            assert (
+                content
+                == f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
+            )
+
+
+@pytest.mark.slow
+class TestChanges:
+    @staticmethod
+    def test_inferred_name_date(git_repo, cwd):
+        # Check the current year
+        this_year = datetime.date.today().year
+
+        # Create changed files
+        files = [git_repo.workspace / file for file in ["hello.py"]]
+        for file in files:
+            f = git_repo.workspace / file
+            f.write_text(f"<file {file} content sentinel>")
+            git_repo.run(f"git add {file}")
+
+        # Set git username
         username = "<username sentinel>"
-        expected_content = "# Copyright (c) 1001 <username sentinel>\n"
         git_repo.run(f"git config user.name '{username}'")
-        p1 = git_repo.workspace / "file_1.py"
-        p2 = git_repo.workspace / "file_2.txt"
-        files = [p1, p2]
-        for file in files:
-            file.write_text("")
-        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
 
         with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
+        assert process.returncode == 1
         for file in files:
-            with open(file, "r") as f:
-                content: str = f.read()
-
-            assert content == expected_content
+            with open(git_repo.workspace / file, "r") as f:
+                content = f.read()
+            assert (
+                content
+                == f"# Copyright (c) {this_year} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+            )
 
     @staticmethod
-    @freeze_time("1001-01-01")
-    def test_keep_shebang_first(mocker, git_repo, capsys):
-        input_content = "#!<shebang sentinel>\n" "<content sentinel>"
-        expected_content = (
-            "#!<shebang sentinel>\n"
-            "\n"
-            "# Copyright (c) 1001 <username sentinel>\n"
-            "\n"
-            "<content sentinel>"
-        )
-
-        username = "<username sentinel>"
-        git_repo.run(f"git config user.name '{username}'")
-        p1 = git_repo.workspace / "file_1.py"
-        p1.write_text(input_content)
-        mocker.patch("sys.argv", ["stub_name", "file_1.py"])
-
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
-
-        with open(p1) as f:
-            out: str = f.read()
-
-        assert out == expected_content
-
-
-class TestCLINameDate:
-    @staticmethod
-    def test_custom_name_and_year(mocker, git_repo):
-        username = "<username sentinel>"
-        date = "0000"
-        p1 = git_repo.workspace / "file_1.py"
-        p2 = git_repo.workspace / "file_2.txt"
-        files = [p1, p2]
+    def test_autodetect_config(git_repo, cwd):
+        # Create changed files
+        files = [git_repo.workspace / file for file in ["hello.py"]]
         for file in files:
-            file.write_text("")
-        mocker.patch(
-            "sys.argv",
-            ["stub_name", "file_1.py", "file_2.txt", "-n", username, "-y", date],
-        )
+            f = git_repo.workspace / file
+            f.write_text(f"<file {file} content sentinel>")
+            git_repo.run(f"git add {file}")
 
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
-
-        for file in files:
-            with open(file, "r") as f:
-                content: str = f.read()
-            assert content.startswith("# Copyright (c) 0000 <username sentinel>")
-
-
-class TestDefaultConfigFile:
-    @staticmethod
-    def test_default_config_file_location(mocker, git_repo):
-        p1 = git_repo.workspace / "file_1.py"
-        p2 = git_repo.workspace / "file_2.txt"
-        files = [p1, p2]
-        for file in files:
-            file.write_text("")
+        # Create config file
         c = git_repo.workspace / ".add-copyright-hook-config.yaml"
         c.write_text(
             "name: <name sentinel>\n"
-            "year: '0000'\nformat: '# Belongs to {name} as of {year}.'"
+            "year: '0000'\n"
+            "format: '# Belongs to {name} as of {year}.'"
         )
-        mocker.patch("sys.argv", ["stub_name", "file_1.py", "file_2.txt"])
 
         with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
+        assert process.returncode == 1
         for file in files:
-            with open(file, "r") as f:
-                content: str = f.read()
-            print(content)
-            assert content.startswith("# Belongs to <name sentinel> as of 0000.")
+            with open(git_repo.workspace / file, "r") as f:
+                content = f.read()
+            assert (
+                content
+                == f"# Belongs to <name sentinel> as of 0000.\n\n<file {file} content sentinel>"  # noqa: E501
+            )
 
-
-class TestCustomConfigFile:
     @staticmethod
     @pytest.mark.parametrize(
-        "filename, file_contents",
+        "existing_copyright_string, expected_copyright_string",
         [
             (
-                "stub_filename.json",
-                (
-                    "{\n"
-                    '    "name": "<name sentinel>",\n'
-                    '    "year": "0000",\n'
-                    '    "format": "# <format sentinel> {name} {year}"\n'
-                    "}\n"
-                ),
+                "# Copyright 1002 James T. Kirk",
+                "# Copyright 1002 - {year} James T. Kirk",
             ),
-            (
-                "stub_filename.yaml",
-                (
-                    "name: <name sentinel>\n"
-                    "year: '0000'\n"
-                    "format: '# <format sentinel> {name} {year}'\n"
-                ),
-            ),
+            ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-{year} KHAN"),
         ],
     )
-    def test_custom_config_file_location(mocker, git_repo, filename, file_contents):
-        p1 = git_repo.workspace / "file_1.py"
-        p2 = git_repo.workspace / "file_2.txt"
-        files = [p1, p2]
-        for file in files:
-            file.write_text("")
-        c = git_repo.workspace / filename
-        c.write_text(file_contents)
-        mocker.patch(
-            "sys.argv", ["stub_name", "file_1.py", "file_2.txt", "-c", filename]
-        )
+    def test_update_date_ranges(
+        git_repo, cwd, existing_copyright_string, expected_copyright_string
+    ):
+        current_year = datetime.date.today().year
+        expected_copyright_string = expected_copyright_string.format(year=current_year)
+        file = git_repo.workspace / "file_1.py"
+        file.write_text(existing_copyright_string)
+        git_repo.run(f"git add {file}")
 
         with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            subprocess.run(COMMAND)
 
-        for file in files:
-            with open(file, "r") as f:
-                content: str = f.read()
-            print(content)
-            assert content.startswith("# <format sentinel> <name sentinel> 0000")
+        with open(file, "r") as f:
+            content = f.read()
+
+        assert content.startswith(
+            expected_copyright_string
+        ), f"did not find\n'{expected_copyright_string}' in \n'{content}'"
