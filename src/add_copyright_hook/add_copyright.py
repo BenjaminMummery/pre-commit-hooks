@@ -101,7 +101,7 @@ def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
         start_year,
         end_year,
         matchdict["name"],
-        match.string,
+        match.group().strip(),
     )
 
 
@@ -121,7 +121,6 @@ def _parse_years(year: str) -> t.Tuple[int, int]:
     """
     match = re.match(r"^(?P<start_year>(\d{4}))\s*-\s*(?P<end_year>(\d{4}))", year)
     if match:
-        print(match.groupdict())
         return (
             int(match.groupdict()["start_year"]),
             int(match.groupdict()["end_year"]),
@@ -145,7 +144,11 @@ def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int):
         parsed_string (ParsedCopyrightString): The copyright string to be updated.
         year (int): The year to be inserted.
     """
-    pass
+    if parsed_string.end_year == parsed_string.start_year:
+        return parsed_string.string.replace(
+            str(parsed_string.start_year), f"{parsed_string.start_year} - {year}"
+        )
+    return parsed_string.string.replace(str(parsed_string.end_year), str(year))
 
 
 def _has_shebang(input: str) -> bool:
@@ -244,13 +247,16 @@ def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> i
             copyright_string = _update_copyright_string(parsed_copyright_string, year)
             print(
                 f"Fixing file `{file}` - updating existing copyright string:\n "
-                f"`{parsed_copyright_string.string}` --> `{copyright_string}`"
+                f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
             )
+
             new_contents = contents.replace(
                 parsed_copyright_string.string, copyright_string
             )
+            f.seek(0, 0)
             f.truncate()
             f.write(new_contents)
+            return 1
 
         # Case 3: The file has no copyright string, so we need to add one.
         copyright_string = _construct_copyright_string(name, year, format)

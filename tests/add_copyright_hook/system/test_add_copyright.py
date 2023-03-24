@@ -37,10 +37,15 @@ class TestNoChanges:
 
     @staticmethod
     def test_all_changed_files_have_copyright(git_repo, cwd):
+        # Check the current year
+        this_year = datetime.date.today().year
+
         files = ["hello.py", ".hello.py", "_hello.py"]
         for file in files:
             f = git_repo.workspace / file
-            f.write_text(f"# Copyright 1234 Heimdal\n\n<file {file} content sentinel>")
+            f.write_text(
+                f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
+            )
             git_repo.run(f"git add {file}")
 
         with cwd(git_repo.workspace):
@@ -51,7 +56,8 @@ class TestNoChanges:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
             assert (
-                content == f"# Copyright 1234 Heimdal\n\n<file {file} content sentinel>"
+                content
+                == f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
             )
 
 
@@ -118,22 +124,28 @@ class TestChanges:
     @pytest.mark.parametrize(
         "existing_copyright_string, expected_copyright_string",
         [
-            ("# Copyright 1002 James T. Kirk", "# Copyright 1002-1234 James T. Kirk"),
-            ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-1234 KHAN"),
+            (
+                "# Copyright 1002 James T. Kirk",
+                "# Copyright 1002 - {year} James T. Kirk",
+            ),
+            ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-{year} KHAN"),
         ],
     )
-    @pytest.mark.xfail
     def test_update_date_ranges(
         git_repo, cwd, existing_copyright_string, expected_copyright_string
     ):
-        datetime.date.today().year
-
+        current_year = datetime.date.today().year
+        expected_copyright_string = expected_copyright_string.format(year=current_year)
         file = git_repo.workspace / "file_1.py"
         file.write_text(existing_copyright_string)
+        git_repo.run(f"git add {file}")
 
         with cwd(git_repo.workspace):
             subprocess.run(COMMAND)
 
         with open(file, "r") as f:
             content = f.read()
-        assert content.startswith(expected_copyright_string)
+
+        assert content.startswith(
+            expected_copyright_string
+        ), f"did not find\n'{expected_copyright_string}' in \n'{content}'"

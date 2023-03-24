@@ -127,11 +127,10 @@ class TestUpdatesExistingDateRanges:
     @pytest.mark.parametrize(
         "existing_copyright_string, expected_copyright_string",
         [
-            ("# Copyright 1002 James T. Kirk", "# Copyright 1002-1234 James T. Kirk"),
+            ("# Copyright 1002 James T. Kirk", "# Copyright 1002 - 1234 James T. Kirk"),
             ("#COPYRIGHT 1098-1156 KHAN", "#COPYRIGHT 1098-1234 KHAN"),
         ],
     )
-    @pytest.mark.xfail
     def test_updates_date_ranges(
         mocker, git_repo, existing_copyright_string, expected_copyright_string, cwd
     ):
@@ -148,7 +147,9 @@ class TestUpdatesExistingDateRanges:
         # Then
         with open(p1, "r") as f:
             content: str = f.read()
-        assert content.startswith(expected_copyright_string)
+        assert content.startswith(
+            expected_copyright_string
+        ), f"did not find\n'{expected_copyright_string}' in \n'{content}'"
 
 
 class TestDefaultConfigFile:
