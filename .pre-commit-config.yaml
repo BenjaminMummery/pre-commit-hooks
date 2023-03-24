@@ -124,7 +124,7 @@ repos:
     hooks:
       - id: flake8
         args: [
-          '--ignore=E203,E266,F401,W503', 
+          '--ignore=E203,E266,F401,W503',
           --max-line-length=88,
         ]
 
@@ -140,7 +140,7 @@ repos:
     hooks:
       - id: interrogate
         args: [
-          --fail-under=100, 
+          --fail-under=100,
           --verbose,
         ]
         exclude: (?x)(^tests/)
