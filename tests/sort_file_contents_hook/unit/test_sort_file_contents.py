@@ -24,6 +24,19 @@ class TestSortLines:
 
         assert sort_file_contents._sort_lines(lines) == sorted(lines)
 
+    @staticmethod
+    def test_unique():
+        lines = ["A", "B", "C", "A"]
+
+        assert sort_file_contents._sort_lines(lines) == ["A", "A", "B", "C"]
+        assert sort_file_contents._sort_lines(lines, unique=True) == ["A", "B", "C"]
+
+    @staticmethod
+    def test_sorts_comments_like_they_are_not_comments():
+        lines = ["A", "C", "# B", "# D", "E"]
+
+        assert sort_file_contents._sort_lines(lines) == ["A", "# B", "C", "# D", "E"]
+
 
 class TestSeparateLeadingComment:
     @staticmethod
@@ -156,25 +169,130 @@ class TestIdentifySections:
         assert sort_file_contents._identify_sections(lines) == expected_sections
 
 
+class TestFindDuplicates:
+    @staticmethod
+    def test_identifies_duplicates():
+        assert sort_file_contents._find_duplicates(["A", "B", "C", "A", "B", "A"]) == [
+            ("A", 3),
+            ("B", 2),
+        ]
+
+    @staticmethod
+    def test_returns_empty_list_for_no_duplicates():
+        assert sort_file_contents._find_duplicates(["A", "B", "C"]) == []
+
+
 class TestSortContents:
     @staticmethod
-    @pytest.mark.parametrize(
-        "file_contents, expected_call",
-        [
-            ("A\nC\nB", ["A\n", "C\n", "B"]),
-            ("A\n\nC\n", ["A\n", "\n", "C\n"]),
-        ],
-    )
-    def test_file_read(file_contents, expected_call, tmp_path, mocker):
+    def test_argument_passing(tmp_path, mocker):
         f = tmp_path / "blah.txt"
-        f.write_text(file_contents)
-        mock_parse_sections = mocker.patch(
-            "src.sort_file_contents_hook.sort_file_contents._identify_sections"
+        f.write_text("<file contents sentinel 1>\n<file contents sentinel 2>")
+        mock_identify_sections = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
+            return_value=[["<section sentinel"]],
+        )
+        mock_separate_comment = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
+        )
+        mock_sort_lines = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
+            return_value=["<sorted lines sentinel>"],
         )
 
-        sort_file_contents._sort_contents(f)
+        assert sort_file_contents._sort_contents(f) == 1
 
-        mock_parse_sections.assert_called_once_with(expected_call)
+        mock_identify_sections.assert_called_once_with(
+            ["<file contents sentinel 1>", "<file contents sentinel 2>"]
+        )
+        mock_separate_comment.assert_called_once_with(["<section sentinel"])
+        mock_sort_lines.assert_called_once_with(["<contents_sentinel>"], unique=False)
+        with open(f, "r") as file:
+            assert list(file) == ["<header_sentinel>\n", "<sorted lines sentinel>\n"]
+
+    @staticmethod
+    def test_with_nothing_to_sort(tmp_path, mocker):
+        f = tmp_path / "blah.txt"
+        f.write_text("<file contents sentinel>")
+        mock_identify_sections = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
+            return_value=[["<section sentinel"]],
+        )
+        mock_separate_comment = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            return_value=(["<header_sentinel>"], None),
+        )
+        mock_sort_lines = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
+        )
+
+        assert sort_file_contents._sort_contents(f) == 0
+
+        mock_identify_sections.assert_called_once_with(["<file contents sentinel>"])
+        mock_separate_comment.assert_called_once_with(["<section sentinel"])
+        mock_sort_lines.assert_not_called()
+        with open(f, "r") as file:
+            assert file.read() == "<file contents sentinel>"
+
+    @staticmethod
+    def test_early_exit_for_already_sorted_sections(tmp_path, mocker):
+        f = tmp_path / "blah.txt"
+        f.write_text("<file contents sentinel>")
+        mock_identify_sections = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
+            return_value=[["<section sentinel"]],
+        )
+        mock_separate_comment = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
+        )
+        mock_sort_lines = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
+            return_value=["<contents_sentinel>"],
+        )
+
+        assert sort_file_contents._sort_contents(f) == 0
+
+        mock_identify_sections.assert_called_once_with(["<file contents sentinel>"])
+        mock_separate_comment.assert_called_once_with(["<section sentinel"])
+        mock_sort_lines.assert_called_once_with(["<contents_sentinel>"], unique=False)
+        with open(f, "r") as file:
+            assert file.read() == "<file contents sentinel>"
+
+    @staticmethod
+    def test_with_unique(tmp_path, mocker, capsys):
+        f = tmp_path / "blah.txt"
+        f.write_text("<file contents sentinel>")
+        mock_identify_sections = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._identify_sections",
+            return_value=[["<section sentinel"]],
+        )
+        mock_separate_comment = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._separate_leading_comment",
+            return_value=(["<header_sentinel>"], ["<contents_sentinel>"]),
+        )
+        mock_sort_lines = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_lines",
+            return_value=["<sorted lines sentinel>"],
+        )
+        mock_find_duplicates = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._find_duplicates",
+            return_value=[("<duplicate sentinel", 0)],
+        )
+
+        assert sort_file_contents._sort_contents(f, unique=True) == 1
+
+        mock_identify_sections.assert_called_once_with(["<file contents sentinel>"])
+        mock_separate_comment.assert_called_once_with(["<section sentinel"])
+        mock_sort_lines.assert_called_once_with(["<contents_sentinel>"], unique=True)
+        mock_find_duplicates.assert_called_once_with(["<sorted lines sentinel>"])
+        assert capsys.readouterr().out == (
+            f"Could not sort '{f}'. "
+            "The following entries appear in multiple sections:\n"
+            "- '<duplicate sentinel' appears in 0 sections.\n"
+        )
+        with open(f, "r") as file:
+            assert file.read() == "<file contents sentinel>"
 
 
 class TestParseArgs:
@@ -182,14 +300,52 @@ class TestParseArgs:
     @pytest.mark.parametrize(
         "file_arg", [[], ["stub_file"], ["stub_file_1", "stub_file_2"]]
     )
-    def test_argument_passing(mocker, file_arg):
+    @pytest.mark.parametrize(
+        "unique_arg, expected_unique",
+        [
+            ([], False),
+            (["-u"], True),
+            (["--unique"], True),
+        ],
+    )
+    def test_argument_passing(mocker, file_arg, unique_arg, expected_unique):
         mock_file_resolver = mocker.patch(
             "src._shared.resolvers._resolve_files",
             return_value="<file sentinel>",
         )
-        mocker.patch("sys.argv", ["stub", *file_arg])
+        mocker.patch("sys.argv", ["stub", *file_arg, *unique_arg])
 
         args = sort_file_contents._parse_args()
 
         mock_file_resolver.assert_called_once_with(file_arg)
         assert args.files == "<file sentinel>"
+        assert args.unique == expected_unique
+
+
+class TestMain:
+    @staticmethod
+    def test_argument_passing_no_files(mocker):
+        mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._parse_args",
+            return_value=mocker.Mock(files=[], unique=False),
+        )
+        mock_sort_contents = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_contents"
+        )
+
+        assert sort_file_contents.main() == 0
+        mock_sort_contents.assert_not_called()
+
+    @staticmethod
+    def test_argument_passing(mocker):
+        mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._parse_args",
+            return_value=mocker.Mock(files=["<file sentinel>"], unique=False),
+        )
+        mock_sort_contents = mocker.patch(
+            "src.sort_file_contents_hook.sort_file_contents._sort_contents",
+            return_value=0,
+        )
+
+        assert sort_file_contents.main() == 0
+        mock_sort_contents.assert_called_once_with("<file sentinel>", unique=False)
