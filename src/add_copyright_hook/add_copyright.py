@@ -27,7 +27,40 @@ DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
 
 
-def _parse_copyright_string(input: str) -> t.Optional[dict]:
+class ParsedCopyrightString:
+    """Class for storing the components of a parsed copyright string."""
+
+    def __init__(
+        self,
+        commentmarker: str,
+        signifiers: str,
+        start_year: int,
+        end_year: int,
+        name: str,
+        string: str,
+    ):
+        """
+        Construct ParsedCopyrightString.
+
+        Arguments:
+            commentmarker (str): The character(s) that denote that the line is a
+                comment.
+            signifiers (str): The string that indicates that this comment relates to
+                copyright.
+            start_year (int): The earlier year attached to the copyright.
+            end_year (int): The later year attached to the copyright.
+            name (str): The name of the copyright holder.
+            string (str): The full copyright string as it exists in the source file.
+        """
+        self.commentmarker: str = commentmarker
+        self.signifiers: str = signifiers
+        self.start_year: int = start_year
+        self.end_year: int = end_year
+        self.name: str = name
+        self.string: str = string
+
+
+def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
     """
     Check if the input string is a copyright comment.
 
@@ -38,9 +71,9 @@ def _parse_copyright_string(input: str) -> t.Optional[dict]:
         input (str): The string to be checked
 
     Returns:
-        dict or None: If a matching copyright string was found, returns a dict
-            containing its information with the following keys: commentmarker,
-            signifiers, year, name. If a match was not found, returns None.
+        ParsedCopyrightString or None: If a matching copyright string was found,
+            returns an object containing its information. If a match was not found,
+            returns None.
     """
     exp = re.compile(
         # The line should start with the comment escape character '#'.
@@ -49,16 +82,70 @@ def _parse_copyright_string(input: str) -> t.Optional[dict]:
         # approximation `(c)`.
         r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
         # Year information - either 4 digits, or 2 sets of 4 digits separated by a dash.
-        r"(?P<year>(\d{4}|\d{4}\s?-\s?\d{4})+)\s"
+        r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)" r"\s*"
         # The name of the copyright holder. No restrictions on this, just take whatever
         # is left in the string as long as it's not nothing.
         r"(?P<name>.*)",
         re.IGNORECASE | re.MULTILINE,
     )
-    m = re.search(exp, input)
-    if m is None:
+    match = re.search(exp, input)
+    if match is None:
         return None
-    return m.groupdict()
+
+    matchdict = match.groupdict()
+    start_year, end_year = _parse_years(matchdict["year"])
+
+    return ParsedCopyrightString(
+        matchdict["commentmarker"],
+        matchdict["signifiers"],
+        start_year,
+        end_year,
+        matchdict["name"],
+        match.string,
+    )
+
+
+def _parse_years(year: str) -> t.Tuple[int, int]:
+    """
+    Parse the identified year string as a range of years.
+
+    Arguments:
+        year (str): the string to be parsed.
+
+    Returns:
+        int, int: the start and end yers of the range. If the range is a single year,
+            these values will be the same.
+
+    Raises:
+        SyntaxError: When the year string cannot be parsed.
+    """
+    match = re.match(r"^(?P<start_year>(\d{4}))\s*-\s*(?P<end_year>(\d{4}))", year)
+    if match:
+        print(match.groupdict())
+        return (
+            int(match.groupdict()["start_year"]),
+            int(match.groupdict()["end_year"]),
+        )
+
+    match = re.match(r"^(?P<year>(\d{4}))$", year)
+    if match:
+        return (int(match.groupdict()["year"]), int(match.groupdict()["year"]))
+
+    raise SyntaxError(f"Could not interpret year value '{year}'.")
+
+
+def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int):
+    """
+    Update the end year in the copyright string to match the specified year.
+
+    If the string contains a year range, updates the later year. If it contains a single
+    year, converts this to a year range.
+
+    Arguments:
+        parsed_string (ParsedCopyrightString): The copyright string to be updated.
+        year (int): The year to be inserted.
+    """
+    pass
 
 
 def _has_shebang(input: str) -> bool:
@@ -74,7 +161,7 @@ def _has_shebang(input: str) -> bool:
     return input.startswith("#!")
 
 
-def _construct_copyright_string(name: str, year: str, format: str) -> str:
+def _construct_copyright_string(name: str, year: int, format: str) -> str:
     """
     Construct a commented line containing the copyright information.
 
@@ -123,7 +210,7 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
     return "\n".join(lines)
 
 
-def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> int:
+def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> int:
     """
     Ensure that the specified file has a copyright string.
 
@@ -147,21 +234,36 @@ def _ensure_copyright_string(file: Path, name: str, year: str, format: str) -> i
         parsed_copyright_string = _parse_copyright_string(contents)
 
         if parsed_copyright_string:
-            return 0
+            if parsed_copyright_string.end_year >= int(year):
+                # Case 1: The file already has an up-to-date copyright string, nothing
+                # to do.
+                return 0
 
+            # Case 2: The file has a copyright string, but it needs updating to cover
+            # the current year.
+            copyright_string = _update_copyright_string(parsed_copyright_string, year)
+            print(
+                f"Fixing file `{file}` - updating existing copyright string:\n "
+                f"`{parsed_copyright_string.string}` --> `{copyright_string}`"
+            )
+            new_contents = contents.replace(
+                parsed_copyright_string.string, copyright_string
+            )
+            f.truncate()
+            f.write(new_contents)
+
+        # Case 3: The file has no copyright string, so we need to add one.
         copyright_string = _construct_copyright_string(name, year, format)
-
         print(f"Fixing file `{file}` - added line(s):\n{copyright_string}\n")
-
         f.seek(0, 0)
         f.write(_insert_copyright_string(copyright_string, contents))
     return 1
 
 
-def _get_current_year() -> str:
+def _get_current_year() -> int:
     """Get the current year from the system clock."""
     today = datetime.date.today()
-    return str(today.year)
+    return today.year
 
 
 def _get_git_user_name() -> str:
@@ -213,7 +315,7 @@ def _resolve_user_name(
     return _get_git_user_name()
 
 
-def _resolve_year(year: t.Optional[str] = None, config: t.Optional[str] = None) -> str:
+def _resolve_year(year: t.Optional[int] = None, config: t.Optional[str] = None) -> int:
     """
     Resolve the year to attach to the copyright.
 

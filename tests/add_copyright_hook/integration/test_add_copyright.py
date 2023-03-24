@@ -18,7 +18,7 @@ class TestNoFilesToCheck:
 
     @staticmethod
     @freeze_time("1001-01-01")
-    def test_return_0_if_all_files_have_copyright(mocker, git_repo, cwd):
+    def test_return_0_if_all_files_have_current_copyright(mocker, git_repo, cwd):
         # Given
         p1 = git_repo.workspace / "file_1.py"
         p2 = git_repo.workspace / "file_2.txt"

@@ -13,6 +13,10 @@ test_all: test_venv
 	--cov=src \
 	tests/
 
+test_unit: test_venv
+	. test_venv/bin/activate; pytest \
+	tests/*/unit/ -x
+
 test: test_venv
 	. test_venv/bin/activate; pytest \
 	-m "not slow" \
@@ -43,6 +47,7 @@ test_sort_file_contents: test_venv
 	--cov-report term-missing \
 	--cov=src/sort_file_contents_hook \
 	tests/sort_file_contents_hook -x
+
 
 clean:
 	rm -rf test_venv

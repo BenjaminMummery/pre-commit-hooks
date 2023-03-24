@@ -98,18 +98,16 @@ class TestInsertCopyrightString:
 
 class TestEnsureCopyrightString:
     @staticmethod
-    def test_returns_0_if_file_has_copyright(tmp_path, mocker):
+    def test_returns_0_if_file_has_current_copyright(tmp_path, mocker):
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
         mock_copyright_check = mocker.patch(
             "src.add_copyright_hook.add_copyright._parse_copyright_string",
-            return_value=True,
+            return_value=mocker.Mock(end_year=1111),
         )
 
         assert (
-            add_copyright._ensure_copyright_string(
-                p, "<name sentinel>", "<year sentinel>", None
-            )
+            add_copyright._ensure_copyright_string(p, "<name sentinel>", "1111", None)
             == 0
         )
         mock_copyright_check.assert_called_once_with("<file_contents sentinel>")
@@ -152,11 +150,11 @@ class TestEnsureCopyrightString:
 class TestGetCurrentYear:
     @staticmethod
     @freeze_time("2012-01-01")
-    def test_returns_year_string():
+    def test_returns_year_int():
         year = add_copyright._get_current_year()
 
-        assert isinstance(year, str)
-        assert year == "2012"
+        assert isinstance(year, int)
+        assert year == 2012
 
 
 class TestGetGitUserName:
