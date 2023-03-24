@@ -16,6 +16,9 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [4.1 Example 1: Usage when defining the commit msg from command line](#41-example-1-usage-when-defining-the-commit-msg-from-command-line)
     - [4.2 Example 2: Usage when defining the commit msg from editor](#42-example-2-usage-when-defining-the-commit-msg-from-editor)
     - [4.3 Defining a custom template](#43-defining-a-custom-template)
+  - [5. The `sort-file-contents` hook](#5-the-sort-file-contents-hook)
+    - [5.1 Section - aware sorting](#51-section---aware-sorting)
+    - [5.2 Uniqueness](#52-uniqueness)
 
 <!--TOC-->
 
@@ -32,6 +35,8 @@ repos:
     hooks:
     -   id: add-copyright
     -   id: add-msg-issue
+    -   id: sort-file-contents
+        files: .gitignore
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -194,3 +199,48 @@ These correspond to the issue id, subject line, and body of the commit message. 
 ```python
 "{subject}\n\n[{issue_id}]\n{body}"
 ```
+
+## 5. The `sort-file-contents` hook
+
+The `sort-file-contents` hook sorts the lines in the specified files while retaining sections. This is primarily aimed at managing large .gitignore files.
+
+### 5.1 Section - aware sorting
+
+Sections are identified as sets of sequential lines preceded by a comment and separated from other sections by a blank line. The contents of each section are sorted alphabetically, while the overall structure of sections is unchanged. For example:
+
+```python
+# section 1
+delta
+bravo
+
+# section 2
+charlie
+alpha
+```
+
+would be sorted as:
+
+```python
+# section 1
+bravo
+delta
+
+# section 2
+alpha
+charlie
+```
+
+Development of this hook was motivated by encountering file contents sorters that would produce the following:
+
+```python
+# section 1
+# section 2
+alpha
+bravo
+charlie
+delta
+```
+
+### 5.2 Uniqueness
+
+WIP
