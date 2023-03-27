@@ -58,6 +58,7 @@ class ParsedCopyrightString:
         self.end_year: int = end_year
         self.name: str = name
         self.string: str = string
+        assert self.end_year >= self.start_year, "Time does not flow backwards."
 
 
 def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
@@ -213,6 +214,24 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
     return "\n".join(lines)
 
 
+def _copyright_is_current(
+    parsed_copyright_string: ParsedCopyrightString, current_year: int
+) -> bool:
+    """
+    Check if the copyright string is up to date.
+
+    Arguments:
+        parsed_copyright_string (ParsedCopyrightString): The copyright string to check.
+        current_year (int): The current year.
+
+    Returns:
+        bool: True if the copyright covers the current year, otherwise False.
+    """
+    if parsed_copyright_string.end_year >= current_year:
+        return True
+    return False
+
+
 def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> int:
     """
     Ensure that the specified file has a copyright string.
@@ -233,36 +252,34 @@ def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> i
     """
     with open(file, "r+") as f:
         contents: str = f.read()
+        new_contents: str
 
         parsed_copyright_string = _parse_copyright_string(contents)
+        if parsed_copyright_string and _copyright_is_current(
+            parsed_copyright_string, year
+        ):
+            return 0
 
+        print(f"Fixing file `{file}` ", end="")
         if parsed_copyright_string:
-            if parsed_copyright_string.end_year >= int(year):
-                # Case 1: The file already has an up-to-date copyright string, nothing
-                # to do.
-                return 0
-
-            # Case 2: The file has a copyright string, but it needs updating to cover
-            # the current year.
-            copyright_string = _update_copyright_string(parsed_copyright_string, year)
-            print(
-                f"Fixing file `{file}` - updating existing copyright string:\n "
-                f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
+            copyright_string: str = _update_copyright_string(
+                parsed_copyright_string, year
             )
-
             new_contents = contents.replace(
                 parsed_copyright_string.string, copyright_string
             )
-            f.seek(0, 0)
-            f.truncate()
-            f.write(new_contents)
-            return 1
+            print(
+                "- updating existing copyright string:\n "
+                f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
+            )
+        else:
+            copyright_string = _construct_copyright_string(name, year, format)
+            new_contents = _insert_copyright_string(copyright_string, contents)
+            print(f"- added line(s):\n{copyright_string}\n")
 
-        # Case 3: The file has no copyright string, so we need to add one.
-        copyright_string = _construct_copyright_string(name, year, format)
-        print(f"Fixing file `{file}` - added line(s):\n{copyright_string}\n")
         f.seek(0, 0)
-        f.write(_insert_copyright_string(copyright_string, contents))
+        f.truncate()
+        f.write(new_contents)
     return 1
 
 

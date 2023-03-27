@@ -34,6 +34,8 @@ def mock_resolve_files(mocker):
 # region: add_copyright fixtures
 ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_construct_copyright_string",
+    "mock_copyright_is_current",
+    "mock_default_config_file",
     "mock_default_format",
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
@@ -57,6 +59,16 @@ def mock_construct_copyright_string(mocker):
     return mocker.patch(
         "src.add_copyright_hook.add_copyright._construct_copyright_string"
     )
+
+
+@pytest.fixture
+def mock_copyright_is_current(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._copyright_is_current")
+
+
+@pytest.fixture
+def mock_default_config_file(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright.DEFAULT_CONFIG_FILE")
 
 
 @pytest.fixture
