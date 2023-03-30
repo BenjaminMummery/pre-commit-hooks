@@ -482,7 +482,9 @@ def main() -> int:
     Returns:
         int: 1 if files have been modified, 0 otherwise.
     """
+    print("HERE")
     args = _parse_args()
+    print("HERE 2")
 
     # Early exit if no files provided
     if len(args.files) < 1:

@@ -13,7 +13,11 @@ import argparse
 import re
 import subprocess
 
+# The default template to use when the commit message has a subject line and body. Can
+# be overridden by the 'format' argument.
 DEFAULT_TEMPLATE: str = "{subject}\n\n[{issue_id}]\n{body}"
+
+# Used when there is no separable subject line. This is not user-configurable.
 FALLBACK_TEMPLATE: str = "{message}\n[{issue_id}]"
 
 
@@ -97,12 +101,15 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
     Returns:
         str: the modified message.
     """
+    # Separate subject line from message body.
     content_sections: list = [line.strip() for line in message.split("\n", maxsplit=1)]
     subject: str = content_sections[0]
     body: str = ""
     if len(content_sections) > 1:
         body = " ".join(content_sections[1:])
 
+    # Early return - if the identified subject line is a comment, and will therefore be
+    # ignored by Git
     if subject.startswith("#"):
         return FALLBACK_TEMPLATE.format(issue_id=issue_id, message=message).strip()
 
@@ -110,7 +117,7 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
         # Depending on the template, a body starting with a comment could be appended
         # to a non-comment line, meaning that git will not ignore it in the message. To
         # avoid this, we add a newline so that the # character always comes at the start
-        # of the line.
+        # of a line.
         body = f"\n{body}"
 
     return template.format(
@@ -183,6 +190,7 @@ def main():
             return  # If the ID is already in the message, then there's nothing to do
 
         f.seek(0, 0)
+        f.truncate()
         f.write(_insert_issue_into_message(issue_ids[0], message, args.template))
 
 

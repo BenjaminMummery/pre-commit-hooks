@@ -594,7 +594,7 @@ class TestReadConfigFile:
         assert data == {"name": "<name sentinel>", "year": "<year sentinel>"}
 
 
-@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_args"])
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_add_copyright_args"])
 class TestParseArgs:
     @staticmethod
     @pytest.mark.parametrize(
@@ -755,9 +755,11 @@ class TestParseArgs:
 @pytest.mark.usefixtures(*FIXTURES)
 class TestMain:
     @staticmethod
-    def test_early_return_for_no_files(mock_parse_args, mock_ensure_copyright_string):
+    def test_early_return_for_no_files(
+        mock_parse_add_copyright_args, mock_ensure_copyright_string
+    ):
         # GIVEN
-        mock_parse_args.return_value = Mock(files=[])
+        mock_parse_add_copyright_args.return_value = Mock(files=[])
 
         # WHEN
         assert add_copyright.main() == 0
@@ -766,9 +768,11 @@ class TestMain:
         mock_ensure_copyright_string.assert_not_called()
 
     @staticmethod
-    def test_return_1_for_changed_files(mock_parse_args, mock_ensure_copyright_string):
+    def test_return_1_for_changed_files(
+        mock_parse_add_copyright_args, mock_ensure_copyright_string
+    ):
         # GIVEN
-        mock_parse_args.return_value = argparse.Namespace(
+        mock_parse_add_copyright_args.return_value = argparse.Namespace(
             files=["<file sentinel 1>", "<filesentinel 2>"],
             year="<year sentinel>",
             format="<format sentinel>",
