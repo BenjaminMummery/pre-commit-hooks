@@ -7,6 +7,20 @@ Check that source files contain a copyright string, and add one to files that do
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
+
+Code structure:
+
+main()
+├── _parse_args()
+└── _ensure_copyright_string()
+    ├── _parse_copyright_string()
+    |   └── _parse_years()
+    ├── _copyright_is_current()
+    ├── _update_copyright_string()
+    ├── _construct_copyright_string
+    |   └── [_parse_copyright_string]
+    └── _insert_copyright_string
+        └── _has_shebang()
 """
 
 import argparse
@@ -203,7 +217,9 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
         shebang = lines[0]
         lines = lines[1:]
 
-    if lines[0] == "":
+    if len(lines) == 0:
+        lines = [copyright]
+    elif lines[0] == "":
         lines = [copyright] + lines
     else:
         lines = [copyright, ""] + lines
@@ -482,9 +498,7 @@ def main() -> int:
     Returns:
         int: 1 if files have been modified, 0 otherwise.
     """
-    print("HERE")
     args = _parse_args()
-    print("HERE 2")
 
     # Early exit if no files provided
     if len(args.files) < 1:
