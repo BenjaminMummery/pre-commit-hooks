@@ -152,6 +152,16 @@ repos:
       args: ['--ignore=D107,D203,D204,D212,D406,D407,D413']
       exclude: ^tests/
 
+  - repo: https://github.com/PyCQA/pylint
+    rev: 'v3.0.0a6'
+    hooks:
+      - id: pylint
+        args: [
+          "--disable=all",
+          "--enable=duplicate-code",
+          "--output-format=colorized",
+        ]
+
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0

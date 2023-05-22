@@ -47,6 +47,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_parse_add_copyright_args",
     "mock_parse_copyright_string",
     "mock_parse_years",
+    "mock_ParsedCopyrightString",
     "mock_read_config_file",
     "mock_resolve_format",
     "mock_resolve_user_name",
@@ -145,6 +146,14 @@ def mock_resolve_year(mocker):
 @pytest.fixture
 def mock_update_copyright_string(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._update_copyright_string")
+
+
+@pytest.fixture
+def mock_ParsedCopyrightString(mocker):
+    return mocker.patch(
+        "src.add_copyright_hook.add_copyright.ParsedCopyrightString",
+        Mock(),
+    )
 
 
 # endregion
