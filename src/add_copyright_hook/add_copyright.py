@@ -25,6 +25,11 @@ main()
     |   └── [_parse_copyright_string]
     └── _insert_copyright_string
         └── _has_shebang()
+
+ParsedCopyrightString
+├── __init__()
+├── __eq__()
+└── __repr__()
 """
 
 import argparse
@@ -77,10 +82,17 @@ class ParsedCopyrightString:
         self.name: str = name
         self.string: str = string
         assert self.end_year >= self.start_year, "Time does not flow backwards."
-        
+
     def __eq__(self, other):
-        return(self.commentmarker == other.commentmarker and self.signifiers == other.signifiers and self.start_year == other.start_year and self.end_year == other.end_year and self.name == other.name and self.string == other.string)
-    
+        return (
+            self.commentmarker == other.commentmarker
+            and self.signifiers == other.signifiers
+            and self.start_year == other.start_year
+            and self.end_year == other.end_year
+            and self.name == other.name
+            and self.string == other.string
+        )
+
     def __repr__(self):
         return (
             "ParsedCopyrightString object with:\n"
@@ -91,6 +103,7 @@ class ParsedCopyrightString:
             f"- name: {self.name}\n"
             f"- string: {self.string}"
         )
+
 
 def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
     """
@@ -162,7 +175,7 @@ def _parse_years(year: str) -> t.Tuple[int, int]:
     if match:
         return (int(match.groupdict()["year"]), int(match.groupdict()["year"]))
 
-    raise SyntaxError(f"Could not interpret year value '{year}'.") # pragma: no cover
+    raise SyntaxError(f"Could not interpret year value '{year}'.")  # pragma: no cover
 
 
 def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int):
@@ -207,7 +220,7 @@ def _construct_copyright_string(name: str, year: int, format: str) -> str:
             inserted.
     """
     outstr = format.format(year=year, name=name)
-    if format == DEFAULT_FORMAT: # pragma: no cover
+    if format == DEFAULT_FORMAT:  # pragma: no cover
         assert _parse_copyright_string(outstr)
     return outstr
 
@@ -234,8 +247,8 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
         shebang = lines[0]
         lines = lines[1:]
 
-    if len(lines) == 0: # pragma: no cover
-        # Included for safety, but the way 'lines' is defined makes this condition 
+    if len(lines) == 0:  # pragma: no cover
+        # Included for safety, but the way 'lines' is defined makes this condition
         # impossible.
         lines = [copyright]
     elif lines[0] == "":

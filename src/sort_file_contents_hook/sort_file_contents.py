@@ -7,6 +7,17 @@ Sort file contents while preserving section structure.
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
+
+Code structure:
+
+main()
+├── _parse_args()
+|   └── resolvers._resolve_files()
+└── _sort_contents()
+    ├── _identify_sections()
+    ├── _separate_leading_comment()
+    ├── _sort_lines()
+    └── _find_duplicates()
 """
 
 import argparse

@@ -1,8 +1,11 @@
 [report]
+show_missing=true
 exclude_lines =
     pragma: no cover
     def __repr__
+    def __eq__
     if __name__ == .__main__.:
+
 
 [run]
 omit =
