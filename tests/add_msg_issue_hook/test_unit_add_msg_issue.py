@@ -7,7 +7,7 @@ import pytest
 
 from src.add_msg_issue_hook import add_msg_issue
 
-from ...conftest import ADD_MSG_ISSUE_FIXTURE_LIST as FIXTURES
+from ..conftest import ADD_MSG_ISSUE_FIXTURE_LIST as FIXTURES
 
 DEFAULT_TEMPLATE = "{subject}\n\n[{issue_id}]\n{body}"
 FALLBACK_TEMPLATE = "{message}\n[{issue_id}]"

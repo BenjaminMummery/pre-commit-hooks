@@ -15,7 +15,9 @@ from freezegun import freeze_time
 
 from src.add_copyright_hook import add_copyright
 
-from ...conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
+from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
+
+
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_copyright_string"])
@@ -152,17 +154,20 @@ class TestConstructCopyrightString:
 class TestInsertCopyrightString:
     @staticmethod
     @pytest.mark.parametrize(
-        "content",
+        "content, expected",
         [
-            '"""docstring"""\ndef some_code():\n    pass',
+            ('"""docstring"""\ndef some_code():\n    pass', '<copyright sentinel>\n\n"""docstring"""\ndef some_code():\n    pass'),
+            ('','<copyright sentinel>\n'),
         ],
     )
-    def test_inserts_string(content, mock_has_shebang):
+    def test_inserts_string(content, expected, mock_has_shebang):
+        # GIVEN
         mock_has_shebang.return_value = False
-        expected = "<copyright sentinel>\n\n" + content
 
+        # WHEN
         out = add_copyright._insert_copyright_string("<copyright sentinel>", content)
 
+        # THEN
         assert out == expected, f"Out:\n{out}\nexpected:\n{expected}"
 
     @staticmethod
@@ -326,6 +331,7 @@ class TestGetGitUserName:
             name = add_copyright._get_git_user_name()
 
         assert name == username
+
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_resolve_user_name"])

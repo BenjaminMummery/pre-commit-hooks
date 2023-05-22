@@ -6,7 +6,7 @@ import pytest
 
 from src.sort_file_contents_hook import sort_file_contents
 
-from ...conftest import ADD_MSG_ISSUE_FIXTURE_LIST as FIXTURES
+from ..conftest import ADD_MSG_ISSUE_FIXTURE_LIST as FIXTURES
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_sort_lines"])

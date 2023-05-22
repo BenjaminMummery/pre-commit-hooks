@@ -244,3 +244,35 @@ delta
 ### 5.2 Uniqueness
 
 The `-u` or `--unique` flag causes the hook to check the sorted lines for uniqueness. Duplicate entries within the same section will be removed automatically; lines that are duplicated between sections will be left in place and a warning raised to the user. This latter behaviour is due to us not knowing which section the line should belong to.
+
+## 6. Development
+
+### 6.1 Testing
+
+#### 6.1.1 Testing scheme
+
+Tests are organised in three levels:
+1. Unit: tests for individual methods. All other methods should be mocked.
+2. Integration: tests for combinations of methods.
+3. System: end-to-end tests. Uses the `pre-commit try_repo` facility.
+
+We aim for 100% test coverage for each of these levels. Obviously actually reaching that is practically impossible, but we can dream!
+
+#### 6.1.2 Running Tests
+
+The provided `Makefile` defines commands for running various combinations of tests:
+
+- General Purpose:
+    - test: run all tests that aren't marked as slow.
+    - test_all: run all tests and show coverage.
+    - clean: remove the test venv and all temporary files.
+- Testing by Level: run all tests of the specified level and show coverage (fail fast).
+    - test_unit
+    - test_integration
+    - test_system
+- Testing by hook: run all tests for the specified hook and show coverage (fail fast).
+    - test_add_copyright
+    - test_add_issue
+    - test_sort_file_contents
+- Testing shared resources (fail fast):
+    - test_shared: run all tests for utilities on which multiple hooks rely and show coverage (fail fast).
