@@ -18,9 +18,12 @@ main()
 |   └── resolvers._resolve_files()
 └── _ensure_copyright_string()
     ├── _parse_copyright_string()
-    |   └── _parse_years()
+    |   ├── _parse_years()
+    |   └── ParsedCopyrightString
     ├── _copyright_is_current()
+    |   └── ParsedCopyrightString
     ├── _update_copyright_string()
+    |   └── ParsedCopyrightString
     ├── _construct_copyright_string
     |   └── [_parse_copyright_string]
     └── _insert_copyright_string
@@ -178,7 +181,7 @@ def _parse_years(year: str) -> t.Tuple[int, int]:
     raise SyntaxError(f"Could not interpret year value '{year}'.")  # pragma: no cover
 
 
-def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int):
+def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int) -> str:
     """
     Update the end year in the copyright string to match the specified year.
 
