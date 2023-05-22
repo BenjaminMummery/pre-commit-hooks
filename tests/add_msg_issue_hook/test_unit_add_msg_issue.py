@@ -1,5 +1,11 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+"""
+Unit tests for add_msg_issue.
+
+Tests mock every method except the one they are directly testing. This ensures that
+tests are true unit tests, and means that coverage reports for unit tests are accurate.
+"""
 
 from unittest.mock import Mock
 
@@ -20,11 +26,14 @@ class TestGetBranchName:
         "branch_name", ["test-branch", "feature/TESTID-010/something"]
     )
     def test_gets_branch_name(branch_name, git_repo, cwd):
+        # GIVEN
         git_repo.run(f"git checkout -b {branch_name}")
 
+        # WHEN
         with cwd(git_repo.workspace):
             branch = add_msg_issue._get_branch_name()
 
+        # THEN
         assert branch == branch_name, (
             f"_get_branch_name returned '{branch}' when we expected '{branch_name}'.\n"
             "Context:\n"
@@ -39,10 +48,13 @@ class TestGetBranchName:
     def test_on_exception_prints_exception_and_returns_empty_string(
         exception, mocker, capsys
     ):
+        # GIVEN
         mocker.patch("subprocess.check_output", side_effect=exception)
 
+        # WHEN
         branch = add_msg_issue._get_branch_name()
 
+        # THEN
         assert branch == ""
         assert str(exception) in capsys.readouterr().out
 
@@ -60,6 +72,7 @@ class TestGetIssueIDSFromBranch:
         ],
     )
     def test_finds_existing_id(branch_name, issue_ids):
+        # WHEN / THEN
         assert add_msg_issue._get_issue_ids_from_branch_name(branch_name) == issue_ids
 
     @staticmethod
@@ -67,6 +80,7 @@ class TestGetIssueIDSFromBranch:
         "branch_name", ["main", "dev", "feature/bmummery/confetti"]
     )
     def test_ignores_nonexistant_ids(branch_name):
+        # WHEN / THEN
         assert add_msg_issue._get_issue_ids_from_branch_name(branch_name) == []
 
 
@@ -77,6 +91,7 @@ class TestIssueIsInMessage:
         "issue_id, message", [("TESTID-010", "fix: TESTID-010: summary")]
     )
     def test_returns_true_if_issue_is_in_message(issue_id, message):
+        # WHEN / THEN
         assert add_msg_issue._issue_is_in_message(issue_id, message)
 
     @staticmethod
@@ -84,6 +99,7 @@ class TestIssueIsInMessage:
         "issue_id, message", [("TESTID-010", "fix: TESTID-011: summary")]
     )
     def test_returns_false_if_issue_is_not_in_message(issue_id, message):
+        # WHEN / THEN
         assert not add_msg_issue._issue_is_in_message(issue_id, message)
 
     @staticmethod
@@ -91,6 +107,7 @@ class TestIssueIsInMessage:
         "issue_id, message", [("TESTID-010", "# fix: TESTID-010: summary")]
     )
     def test_returns_false_if_issue_is_only_in_comments(issue_id, message):
+        # WHEN / THEN
         assert not add_msg_issue._issue_is_in_message(issue_id, message)
 
 
@@ -132,6 +149,7 @@ class TestInsertIssueIntoMessage:
         ],
     )
     def test_uses_full_template_if_possible(message, subject, body):
+        # WHEN / THEN
         assert (
             add_msg_issue._insert_issue_into_message(
                 "<issue ID sentinel>",
@@ -182,9 +200,13 @@ class TestParseArgs:
         @staticmethod
         @pytest.mark.parametrize("commit_msg_filepath", ["test/path/1", "test_path_2/"])
         def test_interprets_msg_filepath(commit_msg_filepath, mocker):
+            # GIVEN
             mocker.patch("sys.argv", ["stub_name", commit_msg_filepath])
+
+            # WHEN
             args = add_msg_issue._parse_args()
 
+            # THEN
             assert args.commit_msg_filepath == commit_msg_filepath
 
     class TestParsingTemplates:
@@ -202,29 +224,38 @@ class TestParseArgs:
 
         @staticmethod
         def test_uses_default_when_no_template_specified(mocker):
+            # GIVEN
             mocker.patch("sys.argv", ["stub_name", "stub_filepath"])
 
+            # WHEN
             args = add_msg_issue._parse_args()
 
+            # THEN
             assert args.template == DEFAULT_TEMPLATE
 
         @staticmethod
         @pytest.mark.parametrize("flag", ["-t", "--template"])
         @pytest.mark.parametrize("template", valid_templates)
         def test_interprets_valid_template(flag, template, mocker):
+            # GIVEN
             mocker.patch("sys.argv", ["stub_name", "stub_filepath", flag, template])
 
+            # WHEN
             args = add_msg_issue._parse_args()
 
+            # THEN
             assert args.template == template
 
         @staticmethod
         @pytest.mark.parametrize("template", invalid_templates)
         def test_uses_default_when_invalid_template_specified(template, mocker):
+            # GIVEN
             mocker.patch("sys.argv", ["stub_name", "stub_filepath", "-t", template])
 
+            # WHEN
             args = add_msg_issue._parse_args()
 
+            # THEN
             assert args.template == DEFAULT_TEMPLATE
 
 
@@ -232,7 +263,10 @@ class TestParseArgs:
 class TestMain:
     @staticmethod
     def test_early_return_for_no_issue_id(mock_get_issue_ids_from_branch_name):
+        # GIVEN
         mock_get_issue_ids_from_branch_name.return_value = []
+
+        # WHEN / THEN
         assert add_msg_issue.main() is None
 
     @staticmethod
