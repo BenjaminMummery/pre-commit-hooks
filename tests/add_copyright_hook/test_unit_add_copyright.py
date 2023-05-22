@@ -8,16 +8,15 @@ tests are true unit tests, and means that coverage reports for unit tests are ac
 """
 
 import argparse
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, create_autospec
 
+import git
 import pytest
 from freezegun import freeze_time
 
 from src.add_copyright_hook import add_copyright
 
 from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
-
-
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_copyright_string"])
@@ -39,7 +38,11 @@ class TestParseCopyrightString:
         ],
     )
     def test_returns_true_for_correct_strings(input_string, mock_parse_years):
+        # GIVEN
         mock_parse_years.return_value = (0, 0)
+
+        # WHEN
+        # THEN
         assert add_copyright._parse_copyright_string(input_string)
 
     @staticmethod
@@ -131,22 +134,31 @@ class TestConstructCopyrightString:
     def test_correct_construction_with_custom_format(
         name, year, format, mock_parse_copyright_string
     ):
+        # GIVEN
+        # WHEN
         assert add_copyright._construct_copyright_string(
             name, year, format
         ) == format.format(year=year, name=name)
+
+        # THEN
         mock_parse_copyright_string.assert_not_called(), (
             "Tried to check a custom formatted string against the default format."
         )
 
     @staticmethod
     def test_default_format(mock_default_format, mock_parse_copyright_string):
+        # GIVEN
         mock_default_format.format = Mock(return_value="<formatted string sentinel>")
+
+        # WHEN
         assert (
             add_copyright._construct_copyright_string(
                 "<name_sentinel>", "<year_sentinel>", mock_default_format
             )
             == "<formatted string sentinel>"
         )
+
+        # THEN
         mock_parse_copyright_string.assert_called_once()
 
 
@@ -156,8 +168,11 @@ class TestInsertCopyrightString:
     @pytest.mark.parametrize(
         "content, expected",
         [
-            ('"""docstring"""\ndef some_code():\n    pass', '<copyright sentinel>\n\n"""docstring"""\ndef some_code():\n    pass'),
-            ('','<copyright sentinel>\n'),
+            (
+                '"""docstring"""\ndef some_code():\n    pass',
+                '<copyright sentinel>\n\n"""docstring"""\ndef some_code():\n    pass',
+            ),
+            ("", "<copyright sentinel>\n"),
         ],
     )
     def test_inserts_string(content, expected, mock_has_shebang):
@@ -172,6 +187,7 @@ class TestInsertCopyrightString:
 
     @staticmethod
     def test_inserts_copyright_after_shebang(mock_has_shebang):
+        # GIVEN
         mock_has_shebang.return_value = True
         content = (
             "#!shebang\n" "\n" '"""docstring"""\n' "\n" "def some_code():\n" "    pass"
@@ -187,7 +203,10 @@ class TestInsertCopyrightString:
             "    pass"
         )
 
+        # WHEN
         out = add_copyright._insert_copyright_string("<copyright sentinel>", content)
+
+        # THEN
         assert out == expected
 
 
@@ -196,11 +215,17 @@ class TestCopyrightIsCurrent:
     @staticmethod
     @pytest.mark.parametrize("year", [1111, 1112, 2111, 9999])
     def test_returns_true_for_current_or_future_year(year):
+        # GIVEN
+        # WHEN
+        # THEN
         assert add_copyright._copyright_is_current(Mock(end_year=year), 1111)
 
     @staticmethod
     @pytest.mark.parametrize("year", [1110])
     def test_returns_false_for_past_year(year):
+        # GIVEN
+        # WHEN
+        # THEN
         assert not add_copyright._copyright_is_current(Mock(end_year=year), 1111)
 
 
@@ -314,8 +339,11 @@ class TestGetCurrentYear:
     @staticmethod
     @freeze_time("2012-01-01")
     def test_returns_year_int():
+        # GIVEN
+        # WHEN
         year = add_copyright._get_current_year()
 
+        # THEN
         assert isinstance(year, int)
         assert year == 2012
 
@@ -324,14 +352,29 @@ class TestGetCurrentYear:
 class TestGetGitUserName:
     @staticmethod
     def test_returns_configured_name(git_repo, cwd):
+        # GIVEN
         username = "<username sentinel>"
         git_repo.run(f"git config user.name '{username}'")
 
+        # WHEN
         with cwd(git_repo.workspace):
             name = add_copyright._get_git_user_name()
 
+        # THEN
         assert name == username
 
+    @staticmethod
+    def test_raises_exception_when_git_userneam_is_not_configured(mocker):
+        # GIVEN
+        mocked_repo = create_autospec(git.Repo)
+        mocker.patch("src.add_copyright_hook.add_copyright.Repo", mocked_repo)
+
+        # WHEN
+        with pytest.raises(ValueError) as e:
+            _ = add_copyright._get_git_user_name()
+
+        # THEN
+        assert e.exconly() == "ValueError: The git username is not configured."
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_resolve_user_name"])
@@ -341,8 +384,11 @@ class TestResolveUserName:
     def test_returns_name_if_provided(
         config, mock_read_config_file, mock_get_git_user_name
     ):
+        # GIVEN
+        # WHEN
         name = add_copyright._resolve_user_name("<name sentinel>", config)
 
+        # THEN
         assert name == "<name sentinel>"
         mock_read_config_file.assert_not_called()
         mock_get_git_user_name.assert_not_called()
@@ -402,6 +448,7 @@ class TestResolveYear:
     def test_returns_year_if_provided(
         config, mock_read_config_file, mock_get_current_year
     ):
+        # GIVEN
         # WHEN
         year = add_copyright._resolve_year("<year sentinel>", config=config)
 
@@ -475,13 +522,17 @@ class TestResolveFormat:
     def test_read_from_config_if_config_provided(
         mock_ensure_valid_format, mock_read_config_file
     ):
+        # GIVEN
         mock_read_config_file.return_value = {"format": "<format sentinel>"}
         mock_ensure_valid_format.return_value = "<checked format sentinel>"
 
+        # WHEN
         assert (
             add_copyright._resolve_format(None, "<config file sentinel>")
             == "<checked format sentinel>"
         )
+
+        # THEN
         mock_read_config_file.assert_called_once_with("<config file sentinel>")
         mock_ensure_valid_format.assert_called_once_with("<format sentinel>")
 
@@ -545,11 +596,17 @@ class TestEnsureValidFormat:
         ],
     )
     def test_returns_valid_format_strings(input_format):
+        # GIVEN
+        # WHEN
+        # THEN
         assert add_copyright._ensure_valid_format(input_format) == input_format
 
     @staticmethod
     @pytest.mark.parametrize("input_format", ["Nope"])
     def test_raises_keyerror_for_invalid_format_strings(input_format):
+        # GIVEN
+        # WHEN
+        # THEN
         with pytest.raises(KeyError):
             assert add_copyright._ensure_valid_format(input_format) == input_format
 
@@ -558,6 +615,9 @@ class TestEnsureValidFormat:
 class TestReadConfigFile:
     @staticmethod
     def test_raises_exception_if_file_does_not_exist(tmp_path, cwd):
+        # GIVEN
+        # WHEN
+        # THEN
         with cwd(tmp_path):
             with pytest.raises(FileNotFoundError):
                 add_copyright._read_config_file("not_a_real_file.blah")
@@ -565,9 +625,12 @@ class TestReadConfigFile:
     @staticmethod
     @pytest.mark.parametrize("invalid_file_name", ["foo.txt", "var.cfg"])
     def test_raises_exception_if_not_supported_type(invalid_file_name, tmp_path, cwd):
+        # GIVEN
         p = tmp_path / invalid_file_name
         p.write_text("")
 
+        # WHEN
+        # THEN
         with cwd(tmp_path):
             with pytest.raises(FileNotFoundError):
                 add_copyright._read_config_file(invalid_file_name)
@@ -592,11 +655,14 @@ class TestReadConfigFile:
         ],
     )
     def test_reads_config_file(tmp_path, filename, file_contents):
+        # GIVEN
         p = tmp_path / filename
         p.write_text(file_contents)
 
+        # WHEN
         data = add_copyright._read_config_file(p)
 
+        # THEN
         assert data == {"name": "<name sentinel>", "year": "<year sentinel>"}
 
 
@@ -697,8 +763,10 @@ class TestParseArgs:
         mocker.patch("os.path.isfile", return_value=False)
         mocker.patch("sys.argv", ["stub", *file_arg, *config_arg])
 
+        # WHEN
         args = add_copyright._parse_args()
 
+        # THEN
         mock_resolve_user_name.assert_called_once_with(None, expected_config)
         mock_resolve_year.assert_called_once_with(None, expected_config)
         mock_resolve_format.assert_called_once_with(None, expected_config)
@@ -718,12 +786,15 @@ class TestParseArgs:
         ],
     )
     def test_raises_sysexit_if_clashing_options(clashing_option, mocker, capsys):
+        # GIVEN
         sentinel = "-c and -n|-y|-f are mutually exclusive."
         mocker.patch("sys.argv", ["stub", *clashing_option, "-c", "stub_config"])
 
+        # WHEN
         with pytest.raises(SystemExit):
             add_copyright._parse_args()
 
+        # THEN
         assert sentinel in capsys.readouterr().out
 
     @staticmethod
