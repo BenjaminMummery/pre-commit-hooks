@@ -19,6 +19,8 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
   - [5. The `sort-file-contents` hook](#5-the-sort-file-contents-hook)
     - [5.1 Section - aware sorting](#51-section---aware-sorting)
     - [5.2 Uniqueness](#52-uniqueness)
+  - [6. Development](#6-development)
+    - [6.1 Testing](#61-testing)
 
 <!--TOC-->
 
@@ -256,7 +258,6 @@ Tests are organised in three levels:
 2. Integration: tests for combinations of methods.
 3. System: end-to-end tests. Uses the `pre-commit try_repo` facility.
 
-We aim for 100% test coverage for each of these levels. Obviously actually reaching that is practically impossible, but we can dream!
 
 #### 6.1.2 Running Tests
 
