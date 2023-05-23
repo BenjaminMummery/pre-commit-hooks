@@ -16,6 +16,11 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [4.1 Example 1: Usage when defining the commit msg from command line](#41-example-1-usage-when-defining-the-commit-msg-from-command-line)
     - [4.2 Example 2: Usage when defining the commit msg from editor](#42-example-2-usage-when-defining-the-commit-msg-from-editor)
     - [4.3 Defining a custom template](#43-defining-a-custom-template)
+  - [5. The `sort-file-contents` hook](#5-the-sort-file-contents-hook)
+    - [5.1 Section - aware sorting](#51-section---aware-sorting)
+    - [5.2 Uniqueness](#52-uniqueness)
+  - [6. Development](#6-development)
+    - [6.1 Testing](#61-testing)
 
 <!--TOC-->
 
@@ -32,6 +37,8 @@ repos:
     hooks:
     -   id: add-copyright
     -   id: add-msg-issue
+    -   id: sort-file-contents
+        files: .gitignore
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -102,7 +109,7 @@ If you're using a `.pre-commit-config.yaml`, these can be configured as follows:
 ```yaml
 repos:
 -   repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.0
+    rev: v1.4.0
     hooks:
     -   id: add-copyright
         args: ["-n", "James T. Kirk", "-y", "1701", "-f", "Property of {name} as of {year}"]
@@ -194,3 +201,79 @@ These correspond to the issue id, subject line, and body of the commit message. 
 ```python
 "{subject}\n\n[{issue_id}]\n{body}"
 ```
+
+## 5. The `sort-file-contents` hook
+
+The `sort-file-contents` hook sorts the lines in the specified files while retaining sections. This is primarily aimed at managing large .gitignore files.
+
+### 5.1 Section - aware sorting
+
+Sections are identified as sets of sequential lines preceded by a comment and separated from other sections by a blank line. The contents of each section are sorted alphabetically, while the overall structure of sections is unchanged. For example:
+
+```python
+# section 1
+delta
+bravo
+
+# section 2
+charlie
+alpha
+```
+
+would be sorted as:
+
+```python
+# section 1
+bravo
+delta
+
+# section 2
+alpha
+charlie
+```
+
+Development of this hook was motivated by encountering file contents sorters that would produce the following:
+
+```python
+# section 1
+# section 2
+alpha
+bravo
+charlie
+delta
+```
+
+### 5.2 Uniqueness
+
+The `-u` or `--unique` flag causes the hook to check the sorted lines for uniqueness. Duplicate entries within the same section will be removed automatically; lines that are duplicated between sections will be left in place and a warning raised to the user. This latter behaviour is due to us not knowing which section the line should belong to.
+
+## 6. Development
+
+### 6.1 Testing
+
+#### 6.1.1 Testing scheme
+
+Tests are organised in three levels:
+1. Unit: tests for individual methods. All other methods should be mocked.
+2. Integration: tests for combinations of methods.
+3. System: end-to-end tests. Uses the `pre-commit try_repo` facility.
+
+
+#### 6.1.2 Running Tests
+
+The provided `Makefile` defines commands for running various combinations of tests:
+
+- General Purpose:
+    - test: run all tests that aren't marked as slow.
+    - test_all: run all tests and show coverage.
+    - clean: remove the test venv and all temporary files.
+- Testing by Level: run all tests of the specified level and show coverage (fail fast).
+    - test_unit
+    - test_integration
+    - test_system
+- Testing by hook: run all tests for the specified hook and show coverage (fail fast).
+    - test_add_copyright
+    - test_add_issue
+    - test_sort_file_contents
+- Testing shared resources (fail fast):
+    - test_shared: run all tests for utilities on which multiple hooks rely and show coverage (fail fast).
