@@ -47,18 +47,22 @@ class TestInit:
     @staticmethod
     def test_linear_time():
         # WHEN
-        with pytest.raises(AssertionError) as e:
+        end_year = start_year - 1
+        with pytest.raises(ValueError) as e:
             _ = ParsedCopyrightString(
                 commentmarker,
                 signifiers,
                 start_year,
-                start_year - 1,
+                end_year,
                 name,
                 string,
             )
 
         # THEN
-        assert e.exconly() == "AssertionError: Time does not flow backwards."
+        assert e.exconly() == (
+            "ValueError: Copyright end year cannot be before the start year. "
+            f"Got {end_year} and {start_year} respectively."
+        )
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ParsedCopyrightString"])

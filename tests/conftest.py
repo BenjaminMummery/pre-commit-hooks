@@ -41,6 +41,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
     "mock_get_current_year",
+    "mock_get_earliest_commit_year",
     "mock_get_git_user_name",
     "mock_has_shebang",
     "mock_insert_copyright_string",
@@ -51,7 +52,6 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_read_config_file",
     "mock_resolve_format",
     "mock_resolve_user_name",
-    "mock_resolve_year",
     "mock_update_copyright_string",
 ] + SHARED_FIXTURE_LIST
 
@@ -91,6 +91,13 @@ def mock_ensure_valid_format(mocker):
 @pytest.fixture
 def mock_get_current_year(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._get_current_year")
+
+
+@pytest.fixture
+def mock_get_earliest_commit_year(mocker):
+    return mocker.patch(
+        "src.add_copyright_hook.add_copyright._get_earliest_commit_year"
+    )
 
 
 @pytest.fixture
@@ -136,11 +143,6 @@ def mock_resolve_format(mocker):
 @pytest.fixture
 def mock_resolve_user_name(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._resolve_user_name")
-
-
-@pytest.fixture
-def mock_resolve_year(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._resolve_year")
 
 
 @pytest.fixture

@@ -7,36 +7,36 @@ Check that source files contain a copyright string, and add one to files that do
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
-
-Code structure:
-
-main()
-├── _parse_args()
-|   ├── _resolve_user_name()
-|   |   └──_get_git_user_name()
-|   ├── _resolve_year()
-|   |   ├── _read_config_file()
-|   |   └── _get_current_year()
-|   ├── _resolve_format()
-|   └── resolvers._resolve_files()
-└── _ensure_copyright_string()
-    ├── _parse_copyright_string()
-    |   ├── _parse_years()
-    |   └── ParsedCopyrightString
-    ├── _copyright_is_current()
-    |   └── ParsedCopyrightString
-    ├── _update_copyright_string()
-    |   └── ParsedCopyrightString
-    ├── _construct_copyright_string
-    |   └── [_parse_copyright_string]
-    └── _insert_copyright_string
-        └── _has_shebang()
-
-ParsedCopyrightString
-├── __init__()
-├── __eq__()
-└── __repr__()
 """
+
+# Code structure:
+#
+# main()
+# ├── _parse_args()
+# |   ├── _resolve_user_name()
+# |   |   └──_get_git_user_name()
+# |   ├── _resolve_year()
+# |   |   └── _read_config_file()
+# |   ├── _resolve_format()
+# |   └── resolvers._resolve_files()
+# └── _ensure_copyright_string()
+#     ├── _get_earliest_commit_year()
+#     ├── _parse_copyright_string()
+#     |   ├── _parse_years()
+#     |   └── ParsedCopyrightString
+#     ├── _copyright_is_current()
+#     |   └── ParsedCopyrightString
+#     ├── _update_copyright_string()
+#     |   └── ParsedCopyrightString
+#     ├── _construct_copyright_string
+#     |   └── [_parse_copyright_string]
+#     └── _insert_copyright_string
+#         └── _has_shebang()
+#
+# ParsedCopyrightString
+# ├── __init__()
+# ├── __eq__()
+# └── __repr__()
 
 import argparse
 import datetime
@@ -87,7 +87,11 @@ class ParsedCopyrightString:
         self.end_year: int = end_year
         self.name: str = name
         self.string: str = string
-        assert self.end_year >= self.start_year, "Time does not flow backwards."
+        if not self.end_year >= self.start_year:
+            raise ValueError(
+                "Copyright end year cannot be before the start year. "
+                f"Got {self.end_year} and {self.start_year} respectively."
+            )
 
     def __eq__(self, other):
         return (
@@ -164,7 +168,7 @@ def _parse_years(year: str) -> t.Tuple[int, int]:
         year (str): the string to be parsed.
 
     Returns:
-        int, int: the start and end yers of the range. If the range is a single year,
+        int, int: the start and end years of the range. If the range is a single year,
             these values will be the same.
 
     Raises:
@@ -184,7 +188,9 @@ def _parse_years(year: str) -> t.Tuple[int, int]:
     raise SyntaxError(f"Could not interpret year value '{year}'.")  # pragma: no cover
 
 
-def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int) -> str:
+def _update_copyright_string(
+    parsed_string: ParsedCopyrightString, start_year: int, end_year: int
+) -> str:
     """
     Update the end year in the copyright string to match the specified year.
 
@@ -193,13 +199,38 @@ def _update_copyright_string(parsed_string: ParsedCopyrightString, year: int) ->
 
     Arguments:
         parsed_string (ParsedCopyrightString): The copyright string to be updated.
-        year (int): The year to be inserted.
+        start_year (int): The earliest date of work on the file.
+        end_year (int): The latest date of work on the file.
     """
     if parsed_string.end_year == parsed_string.start_year:
-        return parsed_string.string.replace(
-            str(parsed_string.start_year), f"{parsed_string.start_year} - {year}"
-        )
-    return parsed_string.string.replace(str(parsed_string.end_year), str(year))
+        if start_year == end_year:
+            # The existing string contains one year, and it needs to be replaced with a
+            # different year.
+            return parsed_string.string.replace(
+                str(parsed_string.start_year), f"{start_year}"
+            )
+        else:
+            # The existing string contains one year, and it needs to be replaced with a
+            # range.
+            return parsed_string.string.replace(
+                str(parsed_string.start_year), f"{start_year} - {end_year}"
+            )
+    else:
+        if start_year == end_year:
+            # The existing string contains a range, and it needs to be replaced with a
+            # single year.
+            return re.sub(
+                rf"{parsed_string.start_year}\s*-\s*{parsed_string.end_year}",
+                f"{start_year}",
+                parsed_string.string,
+            )
+        else:
+            # The existing string contains a range, and it needs to be replaced with a
+            # different range.
+            new_str = parsed_string.string.replace(
+                str(parsed_string.start_year), f"{start_year}"
+            )
+            return new_str.replace(str(parsed_string.end_year), f"{end_year}")
 
 
 def _has_shebang(input: str) -> bool:
@@ -215,16 +246,23 @@ def _has_shebang(input: str) -> bool:
     return input.startswith("#!")
 
 
-def _construct_copyright_string(name: str, year: int, format: str) -> str:
+def _construct_copyright_string(
+    name: str, start_year: int, end_year: int, format: str
+) -> str:
     """
     Construct a commented line containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
-        year (str): The year of the copyright.
+        start_year (str): The start year of the copyright.
+        end_year (str): The end year of the copyright.
         format (str): The f-string into which the name and year should be
             inserted.
     """
+    if start_year == end_year:
+        year = f"{start_year}"
+    else:
+        year = f"{start_year} - {end_year}"
     outstr = format.format(year=year, name=name)
     if format == DEFAULT_FORMAT:  # pragma: no cover
         assert _parse_copyright_string(outstr)
@@ -269,24 +307,48 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
 
 
 def _copyright_is_current(
-    parsed_copyright_string: ParsedCopyrightString, current_year: int
+    parsed_copyright_string: ParsedCopyrightString, start_year: int, end_year: int
 ) -> bool:
     """
     Check if the copyright string is up to date.
 
     Arguments:
         parsed_copyright_string (ParsedCopyrightString): The copyright string to check.
-        current_year (int): The current year.
+        start_year (int): The earliest year the copyright should cover.
+        end_year (int): The latest year the copyright should cover.
 
     Returns:
-        bool: True if the copyright covers the current year, otherwise False.
+        bool: True if the copyright covers the range, otherwise False.
     """
-    if parsed_copyright_string.end_year >= current_year:
+    if (
+        parsed_copyright_string.end_year >= end_year
+        and parsed_copyright_string.start_year <= start_year
+    ):
         return True
     return False
 
 
-def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> int:
+def _get_earliest_commit_year(file: Path) -> int:
+    """
+    Get the years of the earliest and latest commits made to the specified file.
+
+    Args:
+        file (Path): The path to the file to be checked
+
+    Returns:
+        Tuple(int, int): The years of the earliest and latest commits on the file,
+            respectively.
+    """
+    repo = Repo(".")
+
+    timestamps = set(blame[0].committed_date for blame in repo.blame(repo.head, file))
+
+    earliest_date = datetime.datetime.fromtimestamp(min(timestamps))
+
+    return earliest_date.year
+
+
+def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
     """
     Ensure that the specified file has a copyright string.
 
@@ -297,27 +359,39 @@ def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> i
         file (Path): the file to check.
         name (str): Name of the copyright holder to be added to uncopyrighted
             files.
-        year (str): Year of the copyright to be added to uncopyrighted files.
+        end_year (str): Year of the copyright to be added to uncopyrighted files.
         format (str): f-string specifying the structure of new copyright
             strings.
 
     Returns:
         int: 0 if the file is unchanged, 1 if it was modified.
     """
+    # Get the start and end years for the copyright.
+    # The start year is the date of the earliest commit to the file. The end year
+    # should be the commit that is currently in process, so we take the current year
+    # from the system clock.
+    start_year: int
+    end_year: int
+    start_year = _get_earliest_commit_year(file)
+    end_year = _get_current_year()
+
     with open(file, "r+") as f:
         contents: str = f.read()
         new_contents: str
 
         parsed_copyright_string = _parse_copyright_string(contents)
+
+        # If we have a copyright string, and it corresponds to the range of commit
+        # dates, then there's nothing to do.
         if parsed_copyright_string and _copyright_is_current(
-            parsed_copyright_string, year
+            parsed_copyright_string, start_year, end_year
         ):
             return 0
 
         print(f"Fixing file `{file}` ", end="")
         if parsed_copyright_string:
             copyright_string: str = _update_copyright_string(
-                parsed_copyright_string, year
+                parsed_copyright_string, start_year, end_year
             )
             new_contents = contents.replace(
                 parsed_copyright_string.string, copyright_string
@@ -327,7 +401,9 @@ def _ensure_copyright_string(file: Path, name: str, year: int, format: str) -> i
                 f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
             )
         else:
-            copyright_string = _construct_copyright_string(name, year, format)
+            copyright_string = _construct_copyright_string(
+                name, start_year, end_year, format
+            )
             new_contents = _insert_copyright_string(copyright_string, contents)
             print(f"- added line(s):\n{copyright_string}\n")
 
@@ -390,31 +466,6 @@ def _resolve_user_name(
             return data["name"]
 
     return _get_git_user_name()
-
-
-def _resolve_year(year: t.Optional[int] = None, config: t.Optional[str] = None) -> int:
-    """
-    Resolve the year to attach to the copyright.
-
-    If the year argument is provided, it is returned as the year. Otherwise the
-    year is inferred from the system clock.
-
-    Args:
-        year (str, optional): The year argument if provided. Defaults to None.
-        config (str, optional): The config argument if provided. Defaults to None.
-
-    Returns:
-        str: The resolved year.
-    """
-    if year is not None:
-        return year
-
-    if config is not None:
-        data = _read_config_file(config)
-        if "year" in data:
-            return data["year"]
-
-    return _get_current_year()
 
 
 def _ensure_valid_format(format: str) -> str:
@@ -506,13 +557,12 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
     parser.add_argument("-n", "--name", type=str, default=None)
-    parser.add_argument("-y", "--year", type=str, default=None)
     parser.add_argument("-f", "--format", type=str, default=None)
     parser.add_argument("-c", "--config", type=str, default=None)
     args = parser.parse_args()
 
-    if args.config and (args.name or args.year or args.format):
-        print("The arguments -c and -n|-y|-f are mutually exclusive.")
+    if args.config and (args.name or args.format):
+        print("The arguments -c and -n|-f are mutually exclusive.")
         sys.exit(2)
 
     if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
@@ -520,7 +570,6 @@ def _parse_args() -> argparse.Namespace:
         print(f"Found config file `{args.config}`.")
 
     args.name = _resolve_user_name(args.name, args.config)
-    args.year = _resolve_year(args.year, args.config)
     args.format = _resolve_format(args.format, args.config)
     args.files = resolvers._resolve_files(args.files)
 
@@ -545,7 +594,7 @@ def main() -> int:
     # Filter out files that already have a copyright string
     retv = 0
     for file in args.files:
-        retv |= _ensure_copyright_string(file, args.name, args.year, args.format)
+        retv |= _ensure_copyright_string(file, args.name, args.format)
 
     return retv
 
