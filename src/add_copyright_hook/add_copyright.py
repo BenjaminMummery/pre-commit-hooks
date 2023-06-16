@@ -26,7 +26,7 @@ from src._shared import resolvers
 from src._shared.exceptions import NoCommitsError
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
-DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
+DEFAULT_FORMAT: str = "Copyright (c) {year} {name}"
 
 
 class ParsedCopyrightString:
@@ -237,8 +237,7 @@ def _construct_copyright_string(
     else:
         year = f"{start_year} - {end_year}"
     outstr = format.format(year=year, name=name)
-    if format == DEFAULT_FORMAT:  # pragma: no cover
-        assert _parse_copyright_string(outstr)
+
     return outstr
 
 
@@ -363,6 +362,32 @@ def _infer_start_year(
     return end_year
 
 
+def _ensure_comment(string: str, file: Path) -> str:
+    """
+    Ensure that the string is a comment in the format of the specified file.
+
+    This function deals with three cases:
+    1. The string is already formatted as a comment. Returns the string
+        unchanged.
+    2. The string is unformatted. Adds the appropriate character(s) and returns
+        the string.
+    3. The string is formatted as a comment for a different file type. We can
+        handle cases as simple as a single-character substitution, but anything
+        more complex than that probably needs human oversight.
+
+    Args:
+        string (str): _description_
+        file (Path): _description_
+
+    Returns:
+        str: _description_
+    """
+    if not string.startswith("#"):
+        return f"# {string}"
+    else:
+        return string
+
+
 def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
     """
     Ensure that the specified file has a copyright string.
@@ -403,6 +428,7 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
 
         print(f"Fixing file `{file}` ", end="")
         if parsed_copyright_string:
+            # There's already a copyright string, we need to update it.
             copyright_string: str = _update_copyright_string(
                 parsed_copyright_string, start_year, end_year
             )
@@ -414,11 +440,12 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
                 f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
             )
         else:
-            copyright_string = _construct_copyright_string(
-                name, start_year, end_year, format
+            # There's no copyright string, we need to add one.
+            copyright_comment = _ensure_comment(
+                _construct_copyright_string(name, start_year, end_year, format), file
             )
-            new_contents = _insert_copyright_string(copyright_string, contents)
-            print(f"- added line(s):\n{copyright_string}\n")
+            new_contents = _insert_copyright_string(copyright_comment, contents)
+            print(f"- added line(s):\n{copyright_comment}\n")
 
         f.seek(0, 0)
         f.truncate()

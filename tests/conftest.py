@@ -38,6 +38,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_copyright_is_current",
     "mock_default_config_file",
     "mock_default_format",
+    "mock_ensure_comment",
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
     "mock_get_current_year",
@@ -77,6 +78,11 @@ def mock_default_config_file(mocker):
 @pytest.fixture
 def mock_default_format(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+
+
+@pytest.fixture
+def mock_ensure_comment(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._ensure_comment")
 
 
 @pytest.fixture
