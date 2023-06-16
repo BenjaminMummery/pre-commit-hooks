@@ -98,7 +98,6 @@ The `add-copyright` hook accepts the following command line arguments to control
 | Flag | Description |
 |------|-------------|
 | `-n` / `--name` | Set a custom name to be used rather than git's `user.name` |
-| `-y` / `--year` | Set a custom year to be used rather than the current year. |
 | `-f` / `--format` | Set a custom f-string for the copyright to be inserted. Must contain `{name}` and `{year}`. |
 | `-c` / `--config` | Specify a configuration file that contains the name and year to be used. |
 
@@ -112,7 +111,7 @@ repos:
     rev: v1.4.0
     hooks:
     -   id: add-copyright
-        args: ["-n", "James T. Kirk", "-y", "1701", "-f", "Property of {name} as of {year}"]
+        args: ["-n", "James T. Kirk", "-f", "Property of {name} as of {year}"]
     -   id: add-msg-issue
 ```
 
@@ -136,8 +135,8 @@ The config file can contain name and year, and format. Any properties that are n
 If command line arguments are not specified, the hook will look for a file named `.add-copyright-hook-config.yaml` in the root of the git repo, and read the name and year from there. This file should be formatted as follows:
 
 ```yaml
-name: <name sentinel>
-year: '0000'
+name: James T. Kirk
+format: Property of {name} as of {year}
 ```
 
 
@@ -145,8 +144,6 @@ year: '0000'
 ## 4. The `add-msg-issue` Hook
 
 Search the branch name for something that looks like an issue message, and insert it into the commit message.
-
-Please note that using this hook means that your commit messages will never be empty, so commits will not abort for that reason.
 
 ### 4.1 Example 1: Usage when defining the commit msg from command line
 
