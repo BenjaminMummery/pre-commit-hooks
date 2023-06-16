@@ -385,7 +385,6 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
         file (Path): the file to check.
         name (str): Name of the copyright holder to be added to uncopyrighted
             files.
-        end_year (str): Year of the copyright to be added to uncopyrighted files.
         format (str): f-string specifying the structure of new copyright
             strings.
 
