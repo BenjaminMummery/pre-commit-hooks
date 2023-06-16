@@ -151,7 +151,7 @@ repos:
     rev: 6.3.0
     hooks:
     - id: pydocstyle
-      args: ['--ignore=D105,D107,D203,D204,D212,D406,D407,D413']
+      args: ['--ignore=D105,D107,D200,D202,D203,D204,D212,D406,D407,D413']
       exclude: ^tests/
 
   - repo: https://github.com/PyCQA/pylint

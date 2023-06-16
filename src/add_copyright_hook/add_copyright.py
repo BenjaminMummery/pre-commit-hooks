@@ -9,35 +9,6 @@ This module is intended for use as a pre-commit hook. For more information pleas
 consult the README file.
 """
 
-# Code structure:
-#
-# main()
-# ├── _parse_args()
-# |   ├── _resolve_user_name()
-# |   |   └──_get_git_user_name()
-# |   ├── _resolve_year()
-# |   |   └── _read_config_file()
-# |   ├── _resolve_format()
-# |   └── resolvers._resolve_files()
-# └── _ensure_copyright_string()
-#     ├── _get_earliest_commit_year()
-#     ├── _parse_copyright_string()
-#     |   ├── _parse_years()
-#     |   └── ParsedCopyrightString
-#     ├── _copyright_is_current()
-#     |   └── ParsedCopyrightString
-#     ├── _update_copyright_string()
-#     |   └── ParsedCopyrightString
-#     ├── _construct_copyright_string
-#     |   └── [_parse_copyright_string]
-#     └── _insert_copyright_string
-#         └── _has_shebang()
-#
-# ParsedCopyrightString
-# ├── __init__()
-# ├── __eq__()
-# └── __repr__()
-
 import argparse
 import datetime
 import json
@@ -49,8 +20,10 @@ from pathlib import Path
 
 import yaml
 from git import Repo
+from git.exc import GitCommandError
 
 from src._shared import resolvers
+from src._shared.exceptions import NoCommitsError
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
@@ -335,17 +308,70 @@ def _get_earliest_commit_year(file: Path) -> int:
     Args:
         file (Path): The path to the file to be checked
 
+    Raises:
+        NoCommitsError: when the file has no commits for us to examine the blame.
+
     Returns:
         Tuple(int, int): The years of the earliest and latest commits on the file,
             respectively.
+
     """
+
     repo = Repo(".")
 
-    timestamps = set(blame[0].committed_date for blame in repo.blame(repo.head, file))
+    try:
+        print("repo:", repo)
+        print("args:", repo.head, file)
+        print("blame:", repo.blame(repo.head, file))
+        print([blame[0].committed_date for blame in repo.blame(repo.head, file)])
+        timestamps = set(
+            blame[0].committed_date for blame in repo.blame(repo.head, file)
+        )
+        print(timestamps)
+    except GitCommandError as e:
+        raise NoCommitsError from e
+
+    if len(timestamps) < 1:
+        raise NoCommitsError(f"File {file} has no Blame history.")
 
     earliest_date = datetime.datetime.fromtimestamp(min(timestamps))
 
     return earliest_date.year
+
+
+def _infer_start_year(
+    file: Path,
+    parsed_copyright_string: t.Optional[ParsedCopyrightString],
+    end_year: int,
+) -> int:
+    """
+    Infer the start year for the copyright string.
+
+    Ideally we use the date of the earliest commit, but if we don't have one (e.g. the
+    file has not been committed previously) we'll defer to the date of the existing
+    commit string. If we can't do either, we use the end date, i.e. the current year.
+
+    Args:
+        commits_start_year (Optional(int)): The year of the earliest commit, if we have
+            it.
+        parsed_copyright_string (Optional(ParsedCopyrightString)): The parsed copyright
+            string, if one exists.
+        end_year (int): The current year.
+
+    Returns:
+        int: the inferred start year.
+    """
+    commits_start_year: t.Optional[int] = None
+    try:
+        commits_start_year = _get_earliest_commit_year(file)
+    except NoCommitsError:
+        pass
+
+    if commits_start_year:
+        return commits_start_year
+    if parsed_copyright_string:
+        return parsed_copyright_string.start_year
+    return end_year
 
 
 def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
@@ -370,16 +396,15 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
     # The start year is the date of the earliest commit to the file. The end year
     # should be the commit that is currently in process, so we take the current year
     # from the system clock.
-    start_year: int
-    end_year: int
-    start_year = _get_earliest_commit_year(file)
-    end_year = _get_current_year()
+    end_year: int = _get_current_year()
 
     with open(file, "r+") as f:
         contents: str = f.read()
         new_contents: str
 
         parsed_copyright_string = _parse_copyright_string(contents)
+
+        start_year: int = _infer_start_year(file, parsed_copyright_string, end_year)
 
         # If we have a copyright string, and it corresponds to the range of commit
         # dates, then there's nothing to do.

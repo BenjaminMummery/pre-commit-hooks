@@ -7,6 +7,7 @@ import subprocess
 import pytest
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
+THIS_YEAR = datetime.date.today().year
 
 
 @pytest.mark.slow
@@ -37,27 +38,28 @@ class TestNoChanges:
 
     @staticmethod
     def test_all_changed_files_have_copyright(git_repo, cwd):
-        # Check the current year
-        this_year = datetime.date.today().year
-
+        # GIVEN
+        # create tracked but uncommitted files
         files = ["hello.py", ".hello.py", "_hello.py"]
         for file in files:
             f = git_repo.workspace / file
             f.write_text(
-                f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
+                f"# Copyright {THIS_YEAR} Heimdal\n\n<file {file} content sentinel>"
             )
             git_repo.run(f"git add {file}")
 
+        # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
+        # THEN
         assert process.returncode == 0
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
             assert (
                 content
-                == f"# Copyright {this_year} Heimdal\n\n<file {file} content sentinel>"
+                == f"# Copyright {THIS_YEAR} Heimdal\n\n<file {file} content sentinel>"
             )
 
 
@@ -65,9 +67,6 @@ class TestNoChanges:
 class TestChanges:
     @staticmethod
     def test_inferred_name_date(git_repo, cwd):
-        # Check the current year
-        this_year = datetime.date.today().year
-
         # Create changed files
         files = [git_repo.workspace / file for file in ["hello.py"]]
         for file in files:
@@ -88,7 +87,7 @@ class TestChanges:
                 content = f.read()
             assert (
                 content
-                == f"# Copyright (c) {this_year} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+                == f"# Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
             )
 
     @staticmethod
@@ -103,9 +102,7 @@ class TestChanges:
         # Create config file
         c = git_repo.workspace / ".add-copyright-hook-config.yaml"
         c.write_text(
-            "name: <name sentinel>\n"
-            "year: '0000'\n"
-            "format: '# Belongs to {name} as of {year}.'"
+            "name: <name sentinel>\n" "format: '# Belongs to {name} as of {year}.'"
         )
 
         with cwd(git_repo.workspace):
@@ -117,7 +114,7 @@ class TestChanges:
                 content = f.read()
             assert (
                 content
-                == f"# Belongs to <name sentinel> as of 0000.\n\n<file {file} content sentinel>"  # noqa: E501
+                == f"# Belongs to <name sentinel> as of {THIS_YEAR}.\n\n<file {file} content sentinel>"  # noqa: E501
             )
 
     @staticmethod

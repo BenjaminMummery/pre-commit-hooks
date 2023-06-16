@@ -15,6 +15,7 @@ import git
 import pytest
 from freezegun import freeze_time
 
+from src._shared.exceptions import NoCommitsError
 from src.add_copyright_hook import add_copyright
 
 from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
@@ -364,10 +365,45 @@ class TestGetEarliestCommitYear:
         )
 
         # WHEN
-        year = add_copyright._get_earliest_commit_year("blah")
+        year = add_copyright._get_earliest_commit_year("<file sentinel>")
 
         # THEN
         assert year == min(commit_years)
+
+    @staticmethod
+    def test_raises_NoCommitsError_if_git_command_fails(mocker):
+        # GIVEN
+        mock_repo = create_autospec(git.Repo, _name="foo")
+        mock_repo.blame = Mock(side_effect=git.GitCommandError("foo"))
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
+        # WHEN
+        with pytest.raises(NoCommitsError) as e:
+            _ = add_copyright._get_earliest_commit_year("<file sentinel>")
+
+        # THEN
+        assert e.exconly() == "src._shared.exceptions.NoCommitsError"
+
+    @staticmethod
+    def test_raises_NoCommitsError_if_blame_is_empty(mocker):
+        # GIVEN
+        mock_repo = create_autospec(git.Repo)
+        mock_repo.blame.return_value = []
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
+        # WHEN
+        with pytest.raises(NoCommitsError) as e:
+            _ = add_copyright._get_earliest_commit_year("<file sentinel>")
+
+        # THEN
+        assert e.exconly() == (
+            "src._shared.exceptions.NoCommitsError: "
+            "File <file sentinel> has no Blame history."
+        )
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])
@@ -375,9 +411,9 @@ class TestEnsureCopyrightString:
     @staticmethod
     def test_returns_0_if_file_has_current_copyright(
         tmp_path,
+        mock_infer_start_year,
         mock_parse_copyright_string,
         mock_copyright_is_current,
-        mock_get_earliest_commit_year,
         mock_get_current_year,
     ):
         # GIVEN
@@ -385,7 +421,7 @@ class TestEnsureCopyrightString:
         end_year = 1234
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
-        mock_get_earliest_commit_year.return_value = start_year
+        mock_infer_start_year.return_value = start_year
         mock_get_current_year.return_value = end_year
         mock_copyright_is_current.return_value = True
         mock_parse_copyright_string.return_value = Mock(
@@ -396,7 +432,6 @@ class TestEnsureCopyrightString:
         assert add_copyright._ensure_copyright_string(p, "<name sentinel>", None) == 0
 
         # THEN
-        mock_get_earliest_commit_year.assert_called_once_with(p)
         mock_copyright_is_current.assert_called_once_with(
             mock_parse_copyright_string.return_value, start_year, end_year
         )
@@ -407,8 +442,8 @@ class TestEnsureCopyrightString:
     @staticmethod
     def test_returns_1_if_copyright_is_updated(
         tmp_path,
-        mock_get_earliest_commit_year,
         mock_get_current_year,
+        mock_infer_start_year,
         mock_parse_copyright_string,
         mock_copyright_is_current,
         mock_update_copyright_string,
@@ -420,7 +455,7 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<original copyright string sentinel>")
 
-        mock_get_earliest_commit_year.return_value = start_year
+        mock_infer_start_year.return_value = start_year
         mock_get_current_year.return_value = end_year
         mock_copyright_is_current.return_value = False
         mock_parse_copyright_string.return_value = Mock(
@@ -436,7 +471,6 @@ class TestEnsureCopyrightString:
         assert add_copyright._ensure_copyright_string(p, "<name sentinel>", None) == 1
 
         # THEN
-        mock_get_earliest_commit_year.assert_called_once_with(p)
         mock_get_current_year.assert_called_once_with()
         mock_copyright_is_current.assert_called_once_with(
             mock_parse_copyright_string.return_value, start_year, end_year
@@ -458,6 +492,7 @@ class TestEnsureCopyrightString:
         mocker,
         mock_get_earliest_commit_year,
         mock_get_current_year,
+        mock_infer_start_year,
         mock_parse_copyright_string,
         mock_copyright_is_current,
         mock_construct_copyright_string,
@@ -470,7 +505,7 @@ class TestEnsureCopyrightString:
         p = tmp_path / "stub_file.py"
         p.write_text("<file contents sentinel>")
 
-        mock_get_earliest_commit_year.return_value = start_year
+        mock_infer_start_year.return_value = start_year
         mock_get_current_year.return_value = end_year
         mock_parse_copyright_string.return_value = None
         mock_copyright_is_current.return_value = False

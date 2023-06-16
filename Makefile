@@ -17,6 +17,7 @@ clean:
 # GENERAL TESTING
 test: test_venv
 	. test_venv/bin/activate; pytest \
+	--cov=src \
 	-m "not slow" \
 	tests/
 
@@ -42,20 +43,16 @@ test_system: test_venv
 # TESTING BY HOOK
 test_shared: test_venv
 	. test_venv/bin/activate; pytest \
-	--cov=src/_shared \
 	tests/shared -x
 
 test_add_issue: test_venv
 	. test_venv/bin/activate; pytest \
-	--cov=src/add_msg_issue_hook \
 	tests/add_msg_issue_hook -x
 
 test_add_copyright: test_venv
 	. test_venv/bin/activate; pytest \
-	--cov=src/add_copyright_hook \
 	tests/add_copyright_hook -x
 
 test_sort_file_contents: test_venv
 	. test_venv/bin/activate; pytest \
-	--cov=src/sort_file_contents_hook \
 	tests/sort_file_contents_hook -x

@@ -44,6 +44,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_get_earliest_commit_year",
     "mock_get_git_user_name",
     "mock_has_shebang",
+    "mock_infer_start_year",
     "mock_insert_copyright_string",
     "mock_parse_add_copyright_args",
     "mock_parse_copyright_string",
@@ -108,6 +109,11 @@ def mock_get_git_user_name(mocker):
 @pytest.fixture
 def mock_has_shebang(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._has_shebang")
+
+
+@pytest.fixture
+def mock_infer_start_year(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._infer_start_year")
 
 
 @pytest.fixture
