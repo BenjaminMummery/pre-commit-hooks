@@ -8,12 +8,14 @@ tests are true unit tests, and means that coverage reports for unit tests are ac
 """
 
 import argparse
+from datetime import datetime
 from unittest.mock import Mock, call, create_autospec
 
 import git
 import pytest
 from freezegun import freeze_time
 
+from src._shared.exceptions import NoCommitsError
 from src.add_copyright_hook import add_copyright
 
 from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
@@ -81,27 +83,70 @@ class TestParseYears:
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_update_copyright_string"])
 class TestUpdateCopyrightString:
     @staticmethod
-    def test_single_year():
+    def test_single_stored_year_single_new_year():
         assert (
             add_copyright._update_copyright_string(
                 Mock(end_year=1111, start_year=1111, string="<string sentinel 1111>"),
                 2222,
+                2222,
             )
-            == "<string sentinel 1111 - 2222>"
+            == "<string sentinel 2222>"
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start_year, end_year, expected_output_string",
+        [
+            (1111, 2222, "<string sentinel 1111 - 2222>"),
+            (1234, 5678, "<string sentinel 1234 - 5678>"),
+        ],
+    )
+    def test_single_stored_year_new_range(start_year, end_year, expected_output_string):
+        assert (
+            add_copyright._update_copyright_string(
+                Mock(end_year=1111, start_year=1111, string="<string sentinel 1111>"),
+                start_year,
+                end_year,
+            )
+            == expected_output_string
         )
 
     @staticmethod
     @pytest.mark.parametrize(
         "input_string, expected_output_string",
         [
-            ("<string sentinel 1111-1112>", "<string sentinel 1111-2222>"),
-            ("<string sentinel 1111 - 1112>", "<string sentinel 1111 - 2222>"),
+            ("<string sentinel 1111-1112>", "<string sentinel 2222>"),
+            ("<string sentinel 1111 - 1112>", "<string sentinel 2222>"),
         ],
     )
-    def test_year_range(input_string, expected_output_string):
+    def test_stored_range_single_new_year(input_string, expected_output_string):
         assert (
             add_copyright._update_copyright_string(
-                Mock(end_year=1112, start_year=1111, string=input_string), 2222
+                Mock(end_year=1112, start_year=1111, string=input_string), 2222, 2222
+            )
+            == expected_output_string
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start_year, end_year, expected_output_string",
+        [
+            (1111, 2222, "<string sentinel 1111 - 2222>"),
+            (1234, 5678, "<string sentinel 1234 - 5678>"),
+            (1111, 1234, "<string sentinel 1111 - 1234>"),
+            (1234, 2222, "<string sentinel 1234 - 2222>"),
+        ],
+    )
+    def test_stored_range_new_range(start_year, end_year, expected_output_string):
+        assert (
+            add_copyright._update_copyright_string(
+                Mock(
+                    start_year=1111,
+                    end_year=2222,
+                    string="<string sentinel 1111 - 2222>",
+                ),
+                start_year,
+                end_year,
             )
             == expected_output_string
         )
@@ -126,19 +171,30 @@ class TestHasShebang:
 class TestConstructCopyrightString:
     @staticmethod
     @pytest.mark.parametrize("name", ["Harold Hadrada"])
-    @pytest.mark.parametrize("year", ["1066"])
+    @pytest.mark.parametrize(
+        "start_year, end_year, expected_year_string",
+        [
+            (1991, 2002, "1991 - 2002"),
+            (2222, 2222, "2222"),
+        ],
+    )
     @pytest.mark.parametrize(
         "format",
         ["# Copyright (c) {year} {name}", "{name} owns this as of {year}, hands off!"],
     )
     def test_correct_construction_with_custom_format(
-        name, year, format, mock_parse_copyright_string
+        name,
+        format,
+        start_year,
+        end_year,
+        expected_year_string,
+        mock_parse_copyright_string,
     ):
         # GIVEN
         # WHEN
         assert add_copyright._construct_copyright_string(
-            name, year, format
-        ) == format.format(year=year, name=name)
+            name, start_year, end_year, format
+        ) == format.format(year=expected_year_string, name=name)
 
         # THEN
         mock_parse_copyright_string.assert_not_called(), (
@@ -153,7 +209,10 @@ class TestConstructCopyrightString:
         # WHEN
         assert (
             add_copyright._construct_copyright_string(
-                "<name_sentinel>", "<year_sentinel>", mock_default_format
+                "<name_sentinel>",
+                "<start_year_sentinel>",
+                "<end_year_sentinel>",
+                mock_default_format,
             )
             == "<formatted string sentinel>"
         )
@@ -213,43 +272,270 @@ class TestInsertCopyrightString:
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_copyright_is_current"])
 class TestCopyrightIsCurrent:
     @staticmethod
-    @pytest.mark.parametrize("year", [1111, 1112, 2111, 9999])
-    def test_returns_true_for_current_or_future_year(year):
-        # GIVEN
-        # WHEN
-        # THEN
-        assert add_copyright._copyright_is_current(Mock(end_year=year), 1111)
+    @pytest.mark.parametrize(
+        "parsed_copyright, start_year, end_year",
+        [
+            (Mock(start_year=1991, end_year=1992), 1991, 1992),
+            (Mock(start_year=1991, end_year=1991), 1991, 1991),
+        ],
+    )
+    def test_returns_true_if_parsed_copyright_matches_specified_range(
+        parsed_copyright, start_year, end_year
+    ):
+        assert add_copyright._copyright_is_current(
+            parsed_copyright, start_year, end_year
+        )
 
     @staticmethod
-    @pytest.mark.parametrize("year", [1110])
-    def test_returns_false_for_past_year(year):
+    @pytest.mark.parametrize(
+        "parsed_copyright, start_year, end_year",
+        [
+            (Mock(start_year=1978, end_year=2028), 1991, 1992),
+        ],
+    )
+    def test_returns_true_if_parsed_copyright_exceeds_commits_range(
+        parsed_copyright, start_year, end_year
+    ):
+        assert add_copyright._copyright_is_current(
+            parsed_copyright, start_year, end_year
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "parsed_copyright, start_year, end_year",
+        [
+            (Mock(start_year=1991, end_year=1992), 1990, 1993),
+        ],
+    )
+    def test_returns_false_if_parsed_copyright_less_than_commits_range(
+        parsed_copyright, start_year, end_year
+    ):
+        assert not add_copyright._copyright_is_current(
+            parsed_copyright, start_year, end_year
+        )
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_get_earliest_commit_year"])
+class TestGetEarliestCommitYear:
+    @staticmethod
+    def test_single_commit(mocker):
         # GIVEN
+        commit_year = 1776
+        mock_repo = create_autospec(git.Repo)
+
+        mock_repo.blame.return_value = [
+            [
+                Mock(
+                    committed_date=datetime.timestamp(
+                        datetime(commit_year, 1, 1, 1, 1, 1, 1)
+                    )
+                )
+            ]
+        ]
+
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
         # WHEN
+        year = add_copyright._get_earliest_commit_year("<file sentinel>")
+
         # THEN
-        assert not add_copyright._copyright_is_current(Mock(end_year=year), 1111)
+        assert year == commit_year
+
+    @staticmethod
+    def test_multiple_commits(mocker):
+        # GIVEN
+        commit_years = [1776, 1984, 2012]
+        mock_repo = create_autospec(git.Repo)
+
+        mock_repo.blame.return_value = [
+            [
+                Mock(
+                    committed_date=datetime.timestamp(
+                        datetime(commit_year, 1, 1, 1, 1, 1, 1)
+                    )
+                )
+            ]
+            for commit_year in commit_years
+        ]
+
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
+        # WHEN
+        year = add_copyright._get_earliest_commit_year("<file sentinel>")
+
+        # THEN
+        assert year == min(commit_years)
+
+    @staticmethod
+    def test_raises_NoCommitsError_if_git_command_fails(mocker):
+        # GIVEN
+        mock_repo = create_autospec(git.Repo, _name="foo")
+        mock_repo.blame = Mock(side_effect=git.GitCommandError("foo"))
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
+        # WHEN
+        with pytest.raises(NoCommitsError) as e:
+            _ = add_copyright._get_earliest_commit_year("<file sentinel>")
+
+        # THEN
+        assert e.exconly() == "src._shared.exceptions.NoCommitsError"
+
+    @staticmethod
+    def test_raises_NoCommitsError_if_blame_is_empty(mocker):
+        # GIVEN
+        mock_repo = create_autospec(git.Repo)
+        mock_repo.blame.return_value = []
+        mocker.patch(
+            "src.add_copyright_hook.add_copyright.Repo", return_value=mock_repo
+        )
+
+        # WHEN
+        with pytest.raises(NoCommitsError) as e:
+            _ = add_copyright._get_earliest_commit_year("<file sentinel>")
+
+        # THEN
+        assert e.exconly() == (
+            "src._shared.exceptions.NoCommitsError: "
+            "File <file sentinel> has no Blame history."
+        )
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_infer_start_year"])
+class TestInferStartYear:
+    @staticmethod
+    def test_returns_earliest_commit_year_if_available(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", None, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<commit year sentinel>"
+        mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+    @staticmethod
+    def test_returns_parsed_start_year_if_no_commit_year(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.side_effect = NoCommitsError()
+        mock_parsed_copyright_string = create_autospec(
+            add_copyright.ParsedCopyrightString
+        )
+        mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", mock_parsed_copyright_string, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<parsed year sentinel>"
+
+    @staticmethod
+    def test_returns_end_year_if_no_other_options(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.side_effect = NoCommitsError()
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", None, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<passed year sentinel>"
+
+    class TestPriority:
+        @staticmethod
+        def test_commit_year_first(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
+            mock_parsed_copyright_string = create_autospec(
+                add_copyright.ParsedCopyrightString
+            )
+            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>",
+                mock_parsed_copyright_string,
+                "<passed year sentinel>",
+            )
+
+            # WHEN
+            assert start_year == "<commit year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+        @staticmethod
+        def test_parsed_year_second(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.side_effect = NoCommitsError()
+            mock_parsed_copyright_string = create_autospec(
+                add_copyright.ParsedCopyrightString
+            )
+            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>",
+                mock_parsed_copyright_string,
+                "<passed year sentinel>",
+            )
+
+            # WHEN
+            assert start_year == "<parsed year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+        @staticmethod
+        def test_passed_year_last(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.side_effect = NoCommitsError()
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>", None, "<passed year sentinel>"
+            )
+
+            # WHEN
+            assert start_year == "<passed year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])
 class TestEnsureCopyrightString:
     @staticmethod
     def test_returns_0_if_file_has_current_copyright(
-        tmp_path, mock_parse_copyright_string, mock_copyright_is_current
+        tmp_path,
+        mock_infer_start_year,
+        mock_parse_copyright_string,
+        mock_copyright_is_current,
+        mock_get_current_year,
     ):
         # GIVEN
+        start_year = 1111
+        end_year = 1234
         p = tmp_path / "stub_file.py"
         p.write_text("<file_contents sentinel>")
+        mock_infer_start_year.return_value = start_year
+        mock_get_current_year.return_value = end_year
         mock_copyright_is_current.return_value = True
-        mock_parse_copyright_string.return_value = Mock(end_year=1111)
+        mock_parse_copyright_string.return_value = Mock(
+            start_year=start_year, end_year=end_year
+        )
 
         # WHEN
-        assert (
-            add_copyright._ensure_copyright_string(p, "<name sentinel>", 1111, None)
-            == 0
-        )
+        assert add_copyright._ensure_copyright_string(p, "<name sentinel>", None) == 0
 
         # THEN
         mock_copyright_is_current.assert_called_once_with(
-            mock_parse_copyright_string.return_value, 1111
+            mock_parse_copyright_string.return_value, start_year, end_year
         )
         mock_parse_copyright_string.assert_called_once_with("<file_contents sentinel>")
         with open(p) as f:
@@ -258,39 +544,46 @@ class TestEnsureCopyrightString:
     @staticmethod
     def test_returns_1_if_copyright_is_updated(
         tmp_path,
+        mock_get_current_year,
+        mock_infer_start_year,
         mock_parse_copyright_string,
         mock_copyright_is_current,
         mock_update_copyright_string,
         capsys,
     ):
         # GIVEN
+        start_year = 1111
+        end_year = start_year
         p = tmp_path / "stub_file.py"
         p.write_text("<original copyright string sentinel>")
+
+        mock_infer_start_year.return_value = start_year
+        mock_get_current_year.return_value = end_year
         mock_copyright_is_current.return_value = False
         mock_parse_copyright_string.return_value = Mock(
-            end_year=1111, string="<original copyright string sentinel>"
+            start_year=start_year,
+            end_year=end_year,
+            string="<original copyright string sentinel>",
         )
         mock_update_copyright_string.return_value = (
             "<updated copyright string sentinel>"
         )
 
         # WHEN
-        assert (
-            add_copyright._ensure_copyright_string(p, "<name sentinel>", 1111, None)
-            == 1
-        )
+        assert add_copyright._ensure_copyright_string(p, "<name sentinel>", None) == 1
 
         # THEN
+        mock_get_current_year.assert_called_once_with()
+        mock_copyright_is_current.assert_called_once_with(
+            mock_parse_copyright_string.return_value, start_year, end_year
+        )
+        mock_parse_copyright_string.assert_called_once_with(
+            "<original copyright string sentinel>"
+        )
         assert capsys.readouterr().out == (
             f"Fixing file `{p}` - updating existing copyright string:\n "
             "`<original copyright string sentinel>` --> "
             "`<updated copyright string sentinel>`\n\n"
-        )
-        mock_copyright_is_current.assert_called_once_with(
-            mock_parse_copyright_string.return_value, 1111
-        )
-        mock_parse_copyright_string.assert_called_once_with(
-            "<original copyright string sentinel>"
         )
         with open(p) as f:
             assert f.read() == "<updated copyright string sentinel>"
@@ -299,6 +592,9 @@ class TestEnsureCopyrightString:
     def test_returns_1_if_copyright_is_added(
         tmp_path,
         mocker,
+        mock_get_earliest_commit_year,
+        mock_get_current_year,
+        mock_infer_start_year,
         mock_parse_copyright_string,
         mock_copyright_is_current,
         mock_construct_copyright_string,
@@ -306,18 +602,20 @@ class TestEnsureCopyrightString:
         capsys,
     ):
         # GIVEN
+        start_year = 1111
+        end_year = start_year
         p = tmp_path / "stub_file.py"
         p.write_text("<file contents sentinel>")
+
+        mock_infer_start_year.return_value = start_year
+        mock_get_current_year.return_value = end_year
         mock_parse_copyright_string.return_value = None
         mock_copyright_is_current.return_value = False
         mock_construct_copyright_string.return_value = "<copyright string sentinel>"
         mock_insert_copyright_string.return_value = "<new file contents sentinel>"
 
         # WHEN
-        assert (
-            add_copyright._ensure_copyright_string(p, "<name sentinel>", 1111, None)
-            == 1
-        )
+        assert add_copyright._ensure_copyright_string(p, "<name sentinel>", None) == 1
 
         # THEN
         assert capsys.readouterr().out == (
@@ -325,7 +623,7 @@ class TestEnsureCopyrightString:
         )
         mock_parse_copyright_string.assert_called_once_with("<file contents sentinel>")
         mock_construct_copyright_string.assert_called_once_with(
-            "<name sentinel>", 1111, None
+            "<name sentinel>", start_year, end_year, None
         )
         mock_insert_copyright_string.assert_called_once_with(
             "<copyright string sentinel>", "<file contents sentinel>"
@@ -439,68 +737,6 @@ class TestResolveUserName:
         assert name == "<name sentinel>"
         mock_read_config_file.assert_called_once_with("<config file sentinel>")
         mock_get_git_user_name.assert_called_once_with()
-
-
-@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_resolve_year"])
-class TestResolveYear:
-    @staticmethod
-    @pytest.mark.parametrize("config", [None, "stub config"])
-    def test_returns_year_if_provided(
-        config, mock_read_config_file, mock_get_current_year
-    ):
-        # GIVEN
-        # WHEN
-        year = add_copyright._resolve_year("<year sentinel>", config=config)
-
-        # THEN
-        assert year == "<year sentinel>"
-        mock_read_config_file.assert_not_called()
-        mock_get_current_year.assert_not_called()
-
-    @staticmethod
-    def test_read_year_from_config_if_config_provided(
-        mock_read_config_file, mock_get_current_year
-    ):
-        # GIVEN
-        mock_read_config_file.return_value = {"year": "<year sentinel>"}
-
-        # WHEN
-        year = add_copyright._resolve_year(None, "<config file sentinel>")
-
-        # THEN
-        assert year == "<year sentinel>"
-        mock_read_config_file.assert_called_once_with("<config file sentinel>")
-        mock_get_current_year.assert_not_called()
-
-    @staticmethod
-    def test_calls_get_current_year_if_no_year_or_config_provided(
-        mock_read_config_file, mock_get_current_year
-    ):
-        # GIVEN
-        mock_get_current_year.return_value = "<year_sentinel>"
-
-        # WHEN
-        year = add_copyright._resolve_year()
-
-        # THEN
-        assert year == "<year_sentinel>"
-        mock_read_config_file.assert_not_called()
-        mock_get_current_year.assert_called_once()
-
-    @staticmethod
-    def test_calls_get_current_year_if_year_missing_from_config(
-        mock_read_config_file, mock_get_current_year
-    ):
-        # GIVEN
-        mock_get_current_year.return_value = "<year_sentinel>"
-
-        # WHEN
-        year = add_copyright._resolve_year(None, "<config file sentinel>")
-
-        # THEN
-        assert year == "<year_sentinel>"
-        mock_read_config_file.assert_called_once_with("<config file sentinel>")
-        mock_get_current_year.assert_called_once_with()
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_resolve_format"])
@@ -681,14 +917,6 @@ class TestParseArgs:
         ],
     )
     @pytest.mark.parametrize(
-        "year_arg, expected_year",
-        [
-            (["-y", "stub_year"], "stub_year"),
-            (["--year", "stub_year"], "stub_year"),
-            ([], None),
-        ],
-    )
-    @pytest.mark.parametrize(
         "format_arg, expected_format",
         [
             (["-f", "stub_format"], "stub_format"),
@@ -700,12 +928,9 @@ class TestParseArgs:
         file_arg,
         name_arg,
         expected_name,
-        year_arg,
-        expected_year,
         format_arg,
         expected_format,
         mock_resolve_user_name,
-        mock_resolve_year,
         mock_resolve_format,
         mock_resolve_files,
         mock_default_config_file,
@@ -713,23 +938,20 @@ class TestParseArgs:
     ):
         # GIVEN
         mock_resolve_user_name.return_value = "<name sentinel>"
-        mock_resolve_year.return_value = "<year sentinel>"
         mock_resolve_format.return_value = "<format sentinel>"
         mock_resolve_files.return_value = "<file sentinel>"
         mock_isfile = mocker.patch("os.path.isfile", return_value=False)
-        mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *format_arg, *year_arg])
+        mocker.patch("sys.argv", ["stub", *file_arg, *name_arg, *format_arg])
 
         # WHEN
         args = add_copyright._parse_args()
 
         # THEN
         mock_resolve_user_name.assert_called_once_with(expected_name, None)
-        mock_resolve_year.assert_called_once_with(expected_year, None)
         mock_resolve_format.assert_called_once_with(expected_format, None)
         mock_resolve_files.assert_called_once_with(file_arg)
         mock_isfile.assert_called_once_with(mock_default_config_file)
         assert args.name == "<name sentinel>"
-        assert args.year == "<year sentinel>"
         assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
 
@@ -751,13 +973,11 @@ class TestParseArgs:
         expected_config,
         mocker,
         mock_resolve_user_name,
-        mock_resolve_year,
         mock_resolve_format,
         mock_resolve_files,
     ):
         # GIVEN
         mock_resolve_user_name.return_value = "<name sentinel>"
-        mock_resolve_year.return_value = "<year sentinel>"
         mock_resolve_format.return_value = "<format sentinel>"
         mock_resolve_files.return_value = "<file sentinel>"
         mocker.patch("os.path.isfile", return_value=False)
@@ -768,11 +988,9 @@ class TestParseArgs:
 
         # THEN
         mock_resolve_user_name.assert_called_once_with(None, expected_config)
-        mock_resolve_year.assert_called_once_with(None, expected_config)
         mock_resolve_format.assert_called_once_with(None, expected_config)
         mock_resolve_files.assert_called_once_with(file_arg)
         assert args.name == "<name sentinel>"
-        assert args.year == "<year sentinel>"
         assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
 
@@ -781,13 +999,12 @@ class TestParseArgs:
         "clashing_option",
         [
             ["-n", "stub_name"],
-            ["-y", "stub_year"],
             ["-f", "stub_format"],
         ],
     )
     def test_raises_sysexit_if_clashing_options(clashing_option, mocker, capsys):
         # GIVEN
-        sentinel = "-c and -n|-y|-f are mutually exclusive."
+        sentinel = "-c and -n|-f are mutually exclusive."
         mocker.patch("sys.argv", ["stub", *clashing_option, "-c", "stub_config"])
 
         # WHEN
@@ -801,14 +1018,12 @@ class TestParseArgs:
     def test_detects_existing_config_file(
         mocker,
         mock_resolve_user_name,
-        mock_resolve_year,
         mock_resolve_format,
         mock_resolve_files,
         mock_default_config_file,
     ):
         # GIVEN
         mock_resolve_user_name.return_value = "<name sentinel>"
-        mock_resolve_year.return_value = "<year sentinel>"
         mock_resolve_format.return_value = "<format sentinel>"
         mock_resolve_files.return_value = "<file sentinel>"
         mocker.patch("os.path.isfile", return_value=True)
@@ -819,11 +1034,9 @@ class TestParseArgs:
 
         # THEN
         mock_resolve_user_name.assert_called_once_with(None, mock_default_config_file)
-        mock_resolve_year.assert_called_once_with(None, mock_default_config_file)
         mock_resolve_format.assert_called_once_with(None, mock_default_config_file)
         mock_resolve_files.assert_called_once_with([[]])
         assert args.name == "<name sentinel>"
-        assert args.year == "<year sentinel>"
         assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
         assert args.config == mock_default_config_file
@@ -845,13 +1058,12 @@ class TestMain:
         mock_ensure_copyright_string.assert_not_called()
 
     @staticmethod
-    def test_return_1_for_changed_files(
+    def test_returns_1_for_changed_files(
         mock_parse_add_copyright_args, mock_ensure_copyright_string
     ):
         # GIVEN
         mock_parse_add_copyright_args.return_value = argparse.Namespace(
             files=["<file sentinel 1>", "<filesentinel 2>"],
-            year="<year sentinel>",
             format="<format sentinel>",
             name="<name sentinel>",
         )
@@ -866,13 +1078,11 @@ class TestMain:
                 call(
                     "<file sentinel 1>",
                     "<name sentinel>",
-                    "<year sentinel>",
                     "<format sentinel>",
                 ),
                 call(
                     "<filesentinel 2>",
                     "<name sentinel>",
-                    "<year sentinel>",
                     "<format sentinel>",
                 ),
             ]
