@@ -406,6 +406,108 @@ class TestGetEarliestCommitYear:
         )
 
 
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_infer_start_year"])
+class TestInferStartYear:
+    @staticmethod
+    def test_returns_earliest_commit_year_if_available(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", None, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<commit year sentinel>"
+        mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+    @staticmethod
+    def test_returns_parsed_start_year_if_no_commit_year(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.side_effect = NoCommitsError()
+        mock_parsed_copyright_string = create_autospec(
+            add_copyright.ParsedCopyrightString
+        )
+        mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", mock_parsed_copyright_string, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<parsed year sentinel>"
+
+    @staticmethod
+    def test_returns_end_year_if_no_other_options(mock_get_earliest_commit_year):
+        # GIVEN
+        mock_get_earliest_commit_year.side_effect = NoCommitsError()
+
+        # WHEN
+        start_year = add_copyright._infer_start_year(
+            "<file sentinel>", None, "<passed year sentinel>"
+        )
+
+        # THEN
+        assert start_year == "<passed year sentinel>"
+
+    class TestPriority:
+        @staticmethod
+        def test_commit_year_first(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
+            mock_parsed_copyright_string = create_autospec(
+                add_copyright.ParsedCopyrightString
+            )
+            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>",
+                mock_parsed_copyright_string,
+                "<passed year sentinel>",
+            )
+
+            # WHEN
+            assert start_year == "<commit year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+        @staticmethod
+        def test_parsed_year_second(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.side_effect = NoCommitsError()
+            mock_parsed_copyright_string = create_autospec(
+                add_copyright.ParsedCopyrightString
+            )
+            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>",
+                mock_parsed_copyright_string,
+                "<passed year sentinel>",
+            )
+
+            # WHEN
+            assert start_year == "<parsed year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+        @staticmethod
+        def test_passed_year_last(mock_get_earliest_commit_year):
+            # GIVEN
+            mock_get_earliest_commit_year.side_effect = NoCommitsError()
+
+            # WHEN
+            start_year = add_copyright._infer_start_year(
+                "<file sentinel>", None, "<passed year sentinel>"
+            )
+
+            # WHEN
+            assert start_year == "<passed year sentinel>"
+            mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])
 class TestEnsureCopyrightString:
     @staticmethod
