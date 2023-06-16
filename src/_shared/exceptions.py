@@ -1,8 +1,6 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-"""
-Custom exceptions used by the various hooks.
-"""
+"""Custom exceptions used by the various hooks."""
 
 
 class NoCommitsError(Exception):
