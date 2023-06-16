@@ -312,22 +312,16 @@ def _get_earliest_commit_year(file: Path) -> int:
         NoCommitsError: when the file has no commits for us to examine the blame.
 
     Returns:
-        Tuple(int, int): The years of the earliest and latest commits on the file,
-            respectively.
+        int: The year of the earliest commit on the file.
 
     """
 
     repo = Repo(".")
 
     try:
-        print("repo:", repo)
-        print("args:", repo.head, file)
-        print("blame:", repo.blame(repo.head, file))
-        print([blame[0].committed_date for blame in repo.blame(repo.head, file)])
         timestamps = set(
             blame[0].committed_date for blame in repo.blame(repo.head, file)
         )
-        print(timestamps)
     except GitCommandError as e:
         raise NoCommitsError from e
 
@@ -352,8 +346,6 @@ def _infer_start_year(
     commit string. If we can't do either, we use the end date, i.e. the current year.
 
     Args:
-        commits_start_year (Optional(int)): The year of the earliest commit, if we have
-            it.
         parsed_copyright_string (Optional(ParsedCopyrightString)): The parsed copyright
             string, if one exists.
         end_year (int): The current year.
@@ -361,14 +353,11 @@ def _infer_start_year(
     Returns:
         int: the inferred start year.
     """
-    commits_start_year: t.Optional[int] = None
     try:
-        commits_start_year = _get_earliest_commit_year(file)
+        return _get_earliest_commit_year(file)
     except NoCommitsError:
         pass
 
-    if commits_start_year:
-        return commits_start_year
     if parsed_copyright_string:
         return parsed_copyright_string.start_year
     return end_year
