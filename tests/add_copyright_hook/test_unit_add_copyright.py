@@ -513,12 +513,55 @@ class TestEnsureComment:
         assert add_copyright._ensure_comment(string, file) == string
 
     @staticmethod
+    @pytest.mark.parametrize("extension", [".floop"])
+    def test_raises_NotImplementedError_for_unsupported_file_types(extension):
+        with pytest.raises(NotImplementedError) as e:
+            _ = add_copyright._ensure_comment("<string sentinel>", f"file{extension}")
+        assert (
+            e.exconly()
+            == f"NotImplementedError: The file extension '{extension}' is not currently supported."  # noqa: E501
+        )
+
+    @staticmethod
     @pytest.mark.parametrize(
-        "string, file, expected",
-        [("<comment sentinel>", "file.py", "# <comment sentinel>")],
+        "string, file",
+        [
+            ("<comment sentinel>", "file.py"),
+            ("<comment sentinel>", "file.pyi"),
+            ("<comment sentinel>", "file.pyc"),
+            ("<comment sentinel>", "file.pyd"),
+            ("<comment sentinel>", "file.pyo"),
+            ("<comment sentinel>", "file.pyw"),
+            ("<comment sentinel>", "file.pyz"),
+        ],
     )
-    def test_adds_leading_comment_marker(string, file, expected):
-        assert add_copyright._ensure_comment(string, file) == expected
+    def test_python(string, file):
+        assert add_copyright._ensure_comment(string, file) == "# <comment sentinel>"
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "string, file",
+        [
+            ("<comment sentinel>", "file.md"),
+        ],
+    )
+    def test_markdown(string, file):
+        assert (
+            add_copyright._ensure_comment(string, file)
+            == "<!--- <comment sentinel> -->"
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "string, file",
+        [
+            ("<comment sentinel>", "file.cpp"),
+            ("<comment sentinel>", "file.cxx"),
+            ("<comment sentinel>", "file.cc"),
+        ],
+    )
+    def test_cpp(string, file):
+        assert add_copyright._ensure_comment(string, file) == "// <comment sentinel>"
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])

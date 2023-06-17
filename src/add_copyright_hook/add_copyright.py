@@ -382,10 +382,33 @@ def _ensure_comment(string: str, file: Path) -> str:
     Returns:
         str: _description_
     """
-    if not string.startswith("#"):
-        return f"# {string}"
-    else:
-        return string
+    # Determine comment character(s) from file extension
+    with open(
+        os.path.join(
+            "src", "add_copyright_hook", "mapping_file_extensions_and_comments.json"
+        ),
+        "r",
+    ) as f:
+        comments_by_file_extension = json.load(f)
+    file_extension = os.path.splitext(file)[1]
+    try:
+        comment_line_start, comment_line_end = comments_by_file_extension[
+            file_extension
+        ]
+    except KeyError as e:
+        raise NotImplementedError(
+            f"The file extension '{file_extension}' is not currently supported."
+        ) from e
+
+    # Make sure the comment character(s) are at the start of line
+    if not string.startswith(comment_line_start):
+        string = f"{comment_line_start} {string}"
+
+    # If there's an end-line character, make sure it's at the end of the line.
+    if comment_line_end and not string.endswith(comment_line_end):
+        string = f"{string} {comment_line_end}"
+
+    return string
 
 
 def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
