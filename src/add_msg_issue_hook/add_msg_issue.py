@@ -7,15 +7,6 @@ Parse the branch name for anything resembling an issue id, and add it to the com
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
-
-Code structure:
-
-main()
-├── _parse_args()
-├── _get_branch_name()
-├── _get_issue_ids_from_branch_name()
-├── _issue_is_in_message()
-└── _insert_issue_into_message()
 """
 
 import argparse

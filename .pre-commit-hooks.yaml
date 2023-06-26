@@ -24,3 +24,13 @@
   always_run: true
   stages: [commit]
   files: ^.gitignore
+- id: Check CHANGELOG clashes
+  name: Check for clashes in CHANGELOG vs main.
+  description: If the CHANGELOG has been modified, checks it against the current
+    state of origin/main and reports any inconsistencies that indicate an outdated
+    CHANGELOG.
+  entry: check-changelog-clash
+  language: python
+  always_run: true
+  stages: [push, commit]
+  files: ^CHANGELOG.md

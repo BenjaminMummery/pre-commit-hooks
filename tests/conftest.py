@@ -268,3 +268,27 @@ def mock_parse_sort_file_contents_args(mocker):
 
 
 # endregion
+
+# region: test_check_changelog_clash_fixtures
+
+CHECK_CHANGELOG_CLASH_FIXTURE_LIST = [
+    "mock_check_changelog_clash",
+    "mock_parse_check_changelog_clash_args",
+] + SHARED_FIXTURE_LIST
+
+CHECK_CHANGELOG_CLASH_IMPORT: str = (
+    "src.check_changelog_clash_hook.check_changelog_clash."
+)
+
+
+@pytest.fixture
+def mock_check_changelog_clash(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_check_changelog_clash")
+
+
+@pytest.fixture
+def mock_parse_check_changelog_clash_args(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_parse_args")
+
+
+# endregion

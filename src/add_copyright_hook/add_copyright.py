@@ -566,6 +566,9 @@ def _parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace with the following attributes:
         - files (list of Path): the paths to each changed file relevant to this hook.
+        - name:
+        - format:
+        - config:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
