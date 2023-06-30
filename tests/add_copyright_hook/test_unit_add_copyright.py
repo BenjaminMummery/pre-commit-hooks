@@ -423,17 +423,16 @@ class TestInferStartYear:
         mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
 
     @staticmethod
-    def test_returns_parsed_start_year_if_no_commit_year(mock_get_earliest_commit_year):
+    def test_returns_parsed_start_year_if_no_commit_year(
+        mock_get_earliest_commit_year, mock_ParsedCopyrightString
+    ):
         # GIVEN
         mock_get_earliest_commit_year.side_effect = NoCommitsError()
-        mock_parsed_copyright_string = create_autospec(
-            add_copyright.ParsedCopyrightString
-        )
-        mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+        mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
         # WHEN
         start_year = add_copyright._infer_start_year(
-            "<file sentinel>", mock_parsed_copyright_string, "<passed year sentinel>"
+            "<file sentinel>", mock_ParsedCopyrightString, "<passed year sentinel>"
         )
 
         # THEN
@@ -454,18 +453,17 @@ class TestInferStartYear:
 
     class TestPriority:
         @staticmethod
-        def test_commit_year_first(mock_get_earliest_commit_year):
+        def test_commit_year_first(
+            mock_get_earliest_commit_year, mock_ParsedCopyrightString
+        ):
             # GIVEN
             mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
-            mock_parsed_copyright_string = create_autospec(
-                add_copyright.ParsedCopyrightString
-            )
-            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+            mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
             # WHEN
             start_year = add_copyright._infer_start_year(
                 "<file sentinel>",
-                mock_parsed_copyright_string,
+                mock_ParsedCopyrightString,
                 "<passed year sentinel>",
             )
 
@@ -474,18 +472,17 @@ class TestInferStartYear:
             mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
 
         @staticmethod
-        def test_parsed_year_second(mock_get_earliest_commit_year):
+        def test_parsed_year_second(
+            mock_get_earliest_commit_year, mock_ParsedCopyrightString
+        ):
             # GIVEN
             mock_get_earliest_commit_year.side_effect = NoCommitsError()
-            mock_parsed_copyright_string = create_autospec(
-                add_copyright.ParsedCopyrightString
-            )
-            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+            mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
             # WHEN
             start_year = add_copyright._infer_start_year(
                 "<file sentinel>",
-                mock_parsed_copyright_string,
+                mock_ParsedCopyrightString,
                 "<passed year sentinel>",
             )
 
