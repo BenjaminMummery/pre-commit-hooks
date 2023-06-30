@@ -14,6 +14,8 @@ THIS_YEAR = datetime.date.today().year
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo, cwd):
+        git_repo.run(f"git config user.name '<username sentinel>'")
+        
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
