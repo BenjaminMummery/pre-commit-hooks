@@ -11,7 +11,7 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  unit tests:
+  unit_tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -32,7 +32,7 @@ jobs:
       - name: Test with pytest
         run: |
           pytest tests/*/test_unit_*.py
-  system tests:
+  system_tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
