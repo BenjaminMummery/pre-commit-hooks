@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-versio
+          python-version: ${{ matrix.python-versions }}
       - name: Run Unit Tests
         shell: bash
         run: make test-unit
