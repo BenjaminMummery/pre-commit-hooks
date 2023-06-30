@@ -1,4 +1,5 @@
 freezegun
+pre-commit
 pytest
 pytest-cov
 pytest-git
