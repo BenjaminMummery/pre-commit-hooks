@@ -379,11 +379,12 @@ def _ensure_comment(string: str, file: Path) -> str:
         more complex than that probably needs human oversight.
 
     Args:
-        string (str): _description_
-        file (Path): _description_
+        string (str): The string to be checked.
+        file (Path): The file in which the string is to be placed. Used for checking
+            that the correct formatting for a comment is used.
 
     Returns:
-        str: _description_
+        str: the input string formatted as a comment.
     """
     # Determine comment character(s) from file extension
     comment_line_start, comment_line_end = comment_mapping.get_comment_markers(file)
