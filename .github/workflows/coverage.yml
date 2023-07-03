@@ -1,0 +1,28 @@
+---
+name: Test Coverage
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  TestCoverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -Ur test_requirements.txt
+          pip install -e .
+      - name: Unit test coverage
+        run: |-
+          pytest --cov=src --cov-report=xml --cov-fail-under=100 tests/*/test_unit_*.py --term-missing
