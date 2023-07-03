@@ -25,4 +25,4 @@ jobs:
           pip install -e .
       - name: Unit test coverage
         run: |-
-          pytest --cov=src --cov-report=xml --cov-fail-under=100 tests/*/test_unit_*.py --term-missing
+          pytest --cov=src --cov-report=xml --cov-fail-under=100 tests/*/test_unit_*.py
