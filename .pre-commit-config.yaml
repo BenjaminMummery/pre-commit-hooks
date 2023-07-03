@@ -133,7 +133,6 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        exclude: ^tests/
         additional_dependencies: ["types-all"]
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings

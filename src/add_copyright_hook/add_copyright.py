@@ -19,14 +19,14 @@ import typing as t
 from pathlib import Path
 
 import yaml
-from git import Repo
+from git import Repo  # type: ignore
 from git.exc import GitCommandError
 
-from src._shared import resolvers
+from src._shared import comment_mapping, resolvers
 from src._shared.exceptions import NoCommitsError
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
-DEFAULT_FORMAT: str = "# Copyright (c) {year} {name}"
+DEFAULT_FORMAT: str = "Copyright (c) {year} {name}"
 
 
 class ParsedCopyrightString:
@@ -66,7 +66,7 @@ class ParsedCopyrightString:
                 f"Got {self.end_year} and {self.start_year} respectively."
             )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             self.commentmarker == other.commentmarker
             and self.signifiers == other.signifiers
@@ -76,7 +76,7 @@ class ParsedCopyrightString:
             and self.string == other.string
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "ParsedCopyrightString object with:\n"
             f"- comment marker: {self.commentmarker}\n"
@@ -237,8 +237,7 @@ def _construct_copyright_string(
     else:
         year = f"{start_year} - {end_year}"
     outstr = format.format(year=year, name=name)
-    if format == DEFAULT_FORMAT:  # pragma: no cover
-        assert _parse_copyright_string(outstr)
+
     return outstr
 
 
@@ -257,7 +256,7 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
     Returns:
         str: The modified content, including the copyright string.
     """
-    lines: list = [line for line in content.split("\n")]
+    lines: t.List[str] = [line for line in content.split("\n")]
 
     shebang: t.Optional[str] = None
     if _has_shebang(content):
@@ -319,18 +318,21 @@ def _get_earliest_commit_year(file: Path) -> int:
     repo = Repo(".")
 
     try:
-        timestamps = set(
-            blame[0].committed_date for blame in repo.blame(repo.head, file)
-        )
+        blames = repo.blame(repo.head, str(file))
     except GitCommandError as e:
         raise NoCommitsError from e
 
+    timestamps: t.Set[int] = set(
+        int(blame[0].committed_date) for blame in blames  # type: ignore
+    )
     if len(timestamps) < 1:
         raise NoCommitsError(f"File {file} has no Blame history.")
 
-    earliest_date = datetime.datetime.fromtimestamp(min(timestamps))
+    earliest_date: datetime = datetime.datetime.fromtimestamp(  # type: ignore
+        min(timestamps)
+    )
 
-    return earliest_date.year
+    return int(earliest_date.year)  # type: ignore
 
 
 def _infer_start_year(
@@ -361,6 +363,41 @@ def _infer_start_year(
     if parsed_copyright_string:
         return parsed_copyright_string.start_year
     return end_year
+
+
+def _ensure_comment(string: str, file: Path) -> str:
+    """
+    Ensure that the string is a comment in the format of the specified file.
+
+    This function deals with three cases:
+    1. The string is already formatted as a comment. Returns the string
+        unchanged.
+    2. The string is unformatted. Adds the appropriate character(s) and returns
+        the string.
+    3. The string is formatted as a comment for a different file type. We can
+        handle cases as simple as a single-character substitution, but anything
+        more complex than that probably needs human oversight.
+
+    Args:
+        string (str): The string to be checked.
+        file (Path): The file in which the string is to be placed. Used for checking
+            that the correct formatting for a comment is used.
+
+    Returns:
+        str: the input string formatted as a comment.
+    """
+    # Determine comment character(s) from file extension
+    comment_line_start, comment_line_end = comment_mapping.get_comment_markers(file)
+
+    # Make sure the comment character(s) are at the start of line
+    if not string.startswith(comment_line_start):
+        string = f"{comment_line_start} {string}"
+
+    # If there's an end-line character, make sure it's at the end of the line.
+    if comment_line_end and not string.endswith(comment_line_end):
+        string = f"{string} {comment_line_end}"
+
+    return string
 
 
 def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
@@ -403,6 +440,7 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
 
         print(f"Fixing file `{file}` ", end="")
         if parsed_copyright_string:
+            # There's already a copyright string, we need to update it.
             copyright_string: str = _update_copyright_string(
                 parsed_copyright_string, start_year, end_year
             )
@@ -414,16 +452,40 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
                 f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
             )
         else:
-            copyright_string = _construct_copyright_string(
-                name, start_year, end_year, format
+            # There's no copyright string, we need to add one.
+            copyright_comment = _ensure_comment(
+                _construct_copyright_string(name, start_year, end_year, format), file
             )
-            new_contents = _insert_copyright_string(copyright_string, contents)
-            print(f"- added line(s):\n{copyright_string}\n")
+            new_contents = _insert_copyright_string(copyright_comment, contents)
+            print(f"- added line(s):\n{copyright_comment}\n")
 
         f.seek(0, 0)
         f.truncate()
         f.write(new_contents)
+
+    # Safety checks
+    _confirm_file_updated(file, new_contents)
     return 1
+
+
+def _confirm_file_updated(file: Path, expected_contents: str) -> None:
+    """
+    Confirm that the file contents match what we expect them to be.
+
+    Used to confirm that the file has been overwritten with the new values.
+
+    Args:
+        file (Path): Path to the file to examine
+        expected_contents (str): The contents that are expected to have been
+            written to the file.
+
+    Raises:
+        AssertionError: If the contents do not match.
+    """
+    with open(file, "r") as f:
+        file_contents = f.read()
+        assert file_contents == expected_contents
+        assert _parse_copyright_string(file_contents)
 
 
 def _get_current_year() -> int:
@@ -444,8 +506,8 @@ def _get_git_user_name() -> str:
     """
     repo = Repo(".")
     reader = repo.config_reader()
-    name: str = reader.get_value("user", "name")
-    if len(name) < 1:
+    name = reader.get_value("user", "name")
+    if not isinstance(name, str) or len(name) < 1:
         raise ValueError("The git username is not configured.")
     return name
 
@@ -532,7 +594,7 @@ def _resolve_format(
     return _ensure_valid_format(DEFAULT_FORMAT)
 
 
-def _read_config_file(file_path: str) -> dict:
+def _read_config_file(file_path: str) -> t.Mapping[str, str]:
     """
     Read in the parameters from the specified configuration file.
 
@@ -547,7 +609,7 @@ def _read_config_file(file_path: str) -> dict:
         dict: The key values pairs interpreted from the file's contents.
     """
     _file_path = Path(file_path)
-    data: dict
+    data: t.Mapping[str, str]
     with open(_file_path, "r") as f:
         if _file_path.suffix == ".json":
             data = json.load(f)
