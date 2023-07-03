@@ -319,11 +319,13 @@ def _get_earliest_commit_year(file: Path) -> int:
     repo = Repo(".")
 
     try:
-        blames = repo.blame(repo.head, file)
+        blames = repo.blame(repo.head, str(file))
     except GitCommandError as e:
         raise NoCommitsError from e
 
-    timestamps: t.Set[int] = set(int(blame[0].committed_date) for blame in blames)
+    timestamps: t.Set[int] = set(
+        int(blame[0].committed_date) for blame in blames  # type: ignore
+    )
     if len(timestamps) < 1:
         raise NoCommitsError(f"File {file} has no Blame history.")
 
@@ -445,8 +447,8 @@ def _get_git_user_name() -> str:
     """
     repo = Repo(".")
     reader = repo.config_reader()
-    name: str = reader.get_value("user", "name")
-    if len(name) < 1:
+    name = reader.get_value("user", "name")
+    if not isinstance(name, str) or len(name) < 1:
         raise ValueError("The git username is not configured.")
     return name
 
