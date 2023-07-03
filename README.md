@@ -12,6 +12,7 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
   - [2. Usage in a vanilla hook](#2-usage-in-a-vanilla-hook)
   - [3. The `add-copyright` Hook](#3-the-add-copyright-hook)
     - [3.1 Controlling the name and year](#31-controlling-the-name-and-year)
+    - [3.2 Language Support.](#32-language-support)
   - [4. The `add-msg-issue` Hook](#4-the-add-msg-issue-hook)
     - [4.1 Example 1: Usage when defining the commit msg from command line](#41-example-1-usage-when-defining-the-commit-msg-from-command-line)
     - [4.2 Example 2: Usage when defining the commit msg from editor](#42-example-2-usage-when-defining-the-commit-msg-from-editor)
@@ -75,10 +76,10 @@ Note that this assumes that you've installed add-msg-issue in your global python
 
 Check changed source files for something that looks like a copyright comment. If one is not found, insert one.
 
-By default, the copyright message is constructed in the format
+By default, the copyright message is constructed as a comment in the format
 
 ```
-# Copyright (c) <year> <name>
+Copyright (c) <year> <name>
 ```
 
 where the year is the current year, and the name is sourced from the git `user.name` configuration.
@@ -138,6 +139,19 @@ If command line arguments are not specified, the hook will look for a file named
 name: James T. Kirk
 format: Property of {name} as of {year}
 ```
+
+### 3.2 Language Support.
+
+The add-copyright hook currently runs on changed source files of the following types:
+
+| Language | File Extension | Example |
+|----------|----------------|---------|
+| C++      | `.cpp`         | `// Copyright (c) 1969 Buzz`
+| C#       | `.cs`          | `/* Copyright (c) 1969 Buzz */`
+| Markdown | `.md`          | `<!--- Copyright (c) 1969 Buzz -->`
+| Perl     | `.pl`          | `# Copyright (c) 1969 Buzz`
+| Python   | `.py`          | `# Copyright (c) 1969 Buzz`
+
 
 
 

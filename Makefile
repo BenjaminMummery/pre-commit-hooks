@@ -19,12 +19,12 @@ test: test_venv
 	. test_venv/bin/activate; pytest \
 	--cov=src \
 	-m "not slow" \
-	tests/
+	tests/ -x
 
 test_all: test_venv
 	. test_venv/bin/activate; pytest \
 	--cov=src \
-	tests/
+	tests/ -x
 
 # TESTING BY LEVEL
 test_unit: test_venv
