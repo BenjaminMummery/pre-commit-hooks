@@ -222,3 +222,53 @@ class TestChanges:
                     content
                     == f"// Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
                 )
+
+        @staticmethod
+        def test_perl_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.pl"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"# Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+                )
+
+        @staticmethod
+        def test_c_sharp_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.cs"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"/* Copyright (c) {THIS_YEAR} <username sentinel> */\n\n<file {file} content sentinel>"  # noqa: E501
+                )

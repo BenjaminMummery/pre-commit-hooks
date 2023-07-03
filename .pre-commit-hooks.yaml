@@ -15,7 +15,7 @@
   language: python
   always_run: true
   stages: [commit]
-  types_or: [python, markdown, c++]
+  types_or: [python, markdown, c++, c#, perl]
 - id: sort-file-contents
   name: Sort gitignore sections
   description: Sorts the contents of .gitignore while preserving sections.

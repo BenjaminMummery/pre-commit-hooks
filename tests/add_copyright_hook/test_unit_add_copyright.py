@@ -9,7 +9,6 @@ tests are true unit tests, and means that coverage reports for unit tests are ac
 
 import argparse
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, call, create_autospec
 
 import git
@@ -20,31 +19,6 @@ from src._shared.exceptions import NoCommitsError
 from src.add_copyright_hook import add_copyright
 
 from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
-
-
-@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_get_comment_markers"])
-class TestGetCommentMarkers:
-    @staticmethod
-    @pytest.mark.parametrize(
-        "file_extension, expected_markers",
-        [
-            (".py", ("#", None)),
-            (".cpp", ("//", None)),
-            (".md", ("<!---", "-->")),
-        ],
-    )
-    def test_for_supported_file_types(file_extension, expected_markers, tmp_path: Path):
-        file_path = tmp_path / f"filename{file_extension}"
-        file_path.write_text("")
-
-        start, end = add_copyright._get_comment_markers(file_path)
-
-        assert start == expected_markers[0]
-        assert end == expected_markers[1]
-
-    @staticmethod
-    def test_raises_NotImplementedError_for_unsupported_file_types():
-        pass
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_copyright_string"])
@@ -1116,6 +1090,38 @@ class TestParseArgs:
         assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
         assert args.config == mock_default_config_file
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_confirm_file_updated"])
+class TestConfirmFileUpdated:
+    @staticmethod
+    def test_returns_none_for_matching_file_contents(tmp_path):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        add_copyright._confirm_file_updated(file, contents)
+
+    @staticmethod
+    def test_raises_exception_for_mismatching_contents(tmp_path):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        with pytest.raises(AssertionError):
+            add_copyright._confirm_file_updated(file, contents + "additional")
+
+    @staticmethod
+    def test_checks_for_copyright_string_in_file_contents(
+        tmp_path, mock_parse_copyright_string
+    ):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        add_copyright._confirm_file_updated(file, contents)
+
+        mock_parse_copyright_string.assert_called_once_with(contents)
 
 
 @pytest.mark.usefixtures(*FIXTURES)

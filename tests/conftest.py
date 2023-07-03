@@ -22,7 +22,12 @@ def cwd():
 
 
 # region: Shared fixtures
-SHARED_FIXTURE_LIST = ["mock_resolve_files"]
+SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+
+
+@pytest.fixture
+def mock_get_comment_markers(mocker):
+    return mocker.patch("src._shared.comment_mapping.get_comment_markers")
 
 
 @pytest.fixture
@@ -42,7 +47,6 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_ensure_comment",
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
-    "mock_get_comment_markers",
     "mock_get_current_year",
     "mock_get_earliest_commit_year",
     "mock_get_git_user_name",
@@ -100,11 +104,6 @@ def mock_ensure_copyright_string(mocker):
 @pytest.fixture
 def mock_ensure_valid_format(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._ensure_valid_format")
-
-
-@pytest.fixture
-def mock_get_comment_markers(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._get_comment_markers")
 
 
 @pytest.fixture
