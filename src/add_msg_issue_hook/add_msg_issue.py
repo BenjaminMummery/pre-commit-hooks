@@ -21,6 +21,7 @@ main()
 import argparse
 import re
 import subprocess
+from typing import List
 
 # The default template to use when the commit message has a subject line and body. Can
 # be overridden by the 'format' argument.
@@ -48,7 +49,7 @@ def _get_branch_name() -> str:
     return branch
 
 
-def _get_issue_ids_from_branch_name(branch: str) -> list:
+def _get_issue_ids_from_branch_name(branch: str) -> List[str]:
     """
     Parse the branch name looking for an issue ID.
 
@@ -188,7 +189,7 @@ def main():
     """Identify jira issue ids in the branch name and insert into the commit msg."""
     args = _parse_args()
 
-    issue_ids: str = _get_issue_ids_from_branch_name(_get_branch_name())
+    issue_ids: List[str] = _get_issue_ids_from_branch_name(_get_branch_name())
     if len(issue_ids) < 1:
         return  # If no IDs are found, then there's nothing to do
 

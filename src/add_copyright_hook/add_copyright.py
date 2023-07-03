@@ -532,7 +532,7 @@ def _resolve_format(
     return _ensure_valid_format(DEFAULT_FORMAT)
 
 
-def _read_config_file(file_path: str) -> dict:
+def _read_config_file(file_path: str) -> t.Mapping[str, str]:
     """
     Read in the parameters from the specified configuration file.
 
@@ -547,7 +547,7 @@ def _read_config_file(file_path: str) -> dict:
         dict: The key values pairs interpreted from the file's contents.
     """
     _file_path = Path(file_path)
-    data: dict
+    data: t.Mapping[str, str]
     with open(_file_path, "r") as f:
         if _file_path.suffix == ".json":
             data = json.load(f)
