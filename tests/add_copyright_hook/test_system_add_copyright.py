@@ -14,6 +14,8 @@ THIS_YEAR = datetime.date.today().year
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo, cwd):
+        git_repo.run("git config user.name '<git config username sentinel>'")
+
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
@@ -21,6 +23,7 @@ class TestNoChanges:
 
     @staticmethod
     def test_no_supported_files_changed(git_repo, cwd):
+        git_repo.run("git config user.name '<git config username sentinel>'")
         files = ["hello.txt", ".gitignore", "test.yaml"]
         for file in files:
             f = git_repo.workspace / file
@@ -39,6 +42,7 @@ class TestNoChanges:
     @staticmethod
     def test_all_changed_files_have_copyright(git_repo, cwd):
         # GIVEN
+        git_repo.run("git config user.name '<git config username sentinel>'")
         # create tracked but uncommitted files
         files = ["hello.py", ".hello.py", "_hello.py"]
         for file in files:
@@ -93,6 +97,7 @@ class TestChanges:
     @staticmethod
     def test_autodetect_config(git_repo, cwd):
         # Create changed files
+        git_repo.run("git config user.name '<git config username sentinel>'")
         files = [git_repo.workspace / file for file in ["hello.py"]]
         for file in files:
             f = git_repo.workspace / file
@@ -131,6 +136,7 @@ class TestChanges:
     def test_update_date_ranges(
         git_repo, cwd, existing_copyright_string, expected_copyright_string
     ):
+        git_repo.run("git config user.name '<git config username sentinel>'")
         current_year = datetime.date.today().year
         expected_copyright_string = expected_copyright_string.format(year=current_year)
         file = git_repo.workspace / "file_1.py"

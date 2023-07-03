@@ -21,6 +21,7 @@ main()
 import argparse
 import re
 import subprocess
+from typing import List
 
 # The default template to use when the commit message has a subject line and body. Can
 # be overridden by the 'format' argument.
@@ -48,7 +49,7 @@ def _get_branch_name() -> str:
     return branch
 
 
-def _get_issue_ids_from_branch_name(branch: str) -> list:
+def _get_issue_ids_from_branch_name(branch: str) -> List[str]:
     """
     Parse the branch name looking for an issue ID.
 
@@ -111,7 +112,9 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
         str: the modified message.
     """
     # Separate subject line from message body.
-    content_sections: list = [line.strip() for line in message.split("\n", maxsplit=1)]
+    content_sections: List[str] = [
+        line.strip() for line in message.split("\n", maxsplit=1)
+    ]
     subject: str = content_sections[0]
     body: str = ""
     if len(content_sections) > 1:
@@ -184,23 +187,24 @@ def _parse_args() -> argparse.Namespace:
     return args
 
 
-def main():
+def main() -> int:
     """Identify jira issue ids in the branch name and insert into the commit msg."""
     args = _parse_args()
 
-    issue_ids: str = _get_issue_ids_from_branch_name(_get_branch_name())
+    issue_ids: List[str] = _get_issue_ids_from_branch_name(_get_branch_name())
     if len(issue_ids) < 1:
-        return  # If no IDs are found, then there's nothing to do
+        return 0  # If no IDs are found, then there's nothing to do
 
     with open(args.commit_msg_filepath, "r+") as f:
         message: str = f.read()
 
         if _issue_is_in_message(issue_ids[0], message):
-            return  # If the ID is already in the message, then there's nothing to do
+            return 0  # If the ID is already in the message, then there's nothing to do
 
         f.seek(0, 0)
         f.truncate()
         f.write(_insert_issue_into_message(issue_ids[0], message, args.template))
+    return 0
 
 
 if __name__ == "__main__":

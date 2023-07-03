@@ -2,9 +2,11 @@
 
 import os
 from contextlib import contextmanager
-from unittest.mock import Mock
+from unittest.mock import Mock, create_autospec
 
 import pytest
+
+import src
 
 
 @pytest.fixture(scope="session")
@@ -57,6 +59,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_parse_copyright_string",
     "mock_parse_years",
     "mock_ParsedCopyrightString",
+    "mock_ParsedCopyrightString_constructor",
     "mock_read_config_file",
     "mock_resolve_format",
     "mock_resolve_user_name",
@@ -175,10 +178,12 @@ def mock_update_copyright_string(mocker):
 
 @pytest.fixture
 def mock_ParsedCopyrightString(mocker):
-    return mocker.patch(
-        "src.add_copyright_hook.add_copyright.ParsedCopyrightString",
-        Mock(),
-    )
+    return create_autospec(src.add_copyright_hook.add_copyright.ParsedCopyrightString)
+
+
+@pytest.fixture
+def mock_ParsedCopyrightString_constructor(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright.ParsedCopyrightString")
 
 
 # endregion
