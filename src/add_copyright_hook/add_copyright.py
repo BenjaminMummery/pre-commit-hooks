@@ -21,12 +21,18 @@ from pathlib import Path
 import yaml
 from git import Repo
 from git.exc import GitCommandError
+from identify import identify
 
 from src._shared import resolvers
 from src._shared.exceptions import NoCommitsError
 
 DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
 DEFAULT_FORMAT: str = "Copyright (c) {year} {name}"
+COMMENT_MARKERS: dict = {
+    "python": ("#", None),
+    "markdown": ("<!---", "-->"),
+    "c++": ("//", None),
+}
 
 
 class ParsedCopyrightString:
@@ -86,6 +92,32 @@ class ParsedCopyrightString:
             f"- name: {self.name}\n"
             f"- string: {self.string}"
         )
+
+
+def _get_comment_markers(file: Path) -> t.Tuple[str, t.Optional[str]]:
+    """
+    Get the appropriate comment markers for the type of file.
+
+    Args:
+        file (Path): Path to the file to which we want to add comments.
+
+    Raises:
+        NotImplementedError: When the file is not a format we support.
+
+    Returns:
+        t.Tuple[str, t.Optional[str]]: The leading and trailing comment markers.
+    """
+    # Try to identify the file type from the extension.
+    tags = identify.tags_from_path(file)
+    for tag in tags:
+        try:
+            return COMMENT_MARKERS[tag]
+        except KeyError:
+            continue
+
+    raise NotImplementedError(
+        f"The file extension '{os.path.splitext(file)}' is not currently supported."
+    )
 
 
 def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
@@ -383,22 +415,7 @@ def _ensure_comment(string: str, file: Path) -> str:
         str: _description_
     """
     # Determine comment character(s) from file extension
-    with open(
-        os.path.join(
-            "src", "add_copyright_hook", "mapping_file_extensions_and_comments.json"
-        ),
-        "r",
-    ) as f:
-        comments_by_file_extension = json.load(f)
-    file_extension = os.path.splitext(file)[1]
-    try:
-        comment_line_start, comment_line_end = comments_by_file_extension[
-            file_extension
-        ]
-    except KeyError as e:
-        raise NotImplementedError(
-            f"The file extension '{file_extension}' is not currently supported."
-        ) from e
+    comment_line_start, comment_line_end = _get_comment_markers(file)
 
     # Make sure the comment character(s) are at the start of line
     if not string.startswith(comment_line_start):
@@ -473,7 +490,30 @@ def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
         f.seek(0, 0)
         f.truncate()
         f.write(new_contents)
+
+    # Safety checks
+    _confirm_file_updated(file, new_contents)
     return 1
+
+
+def _confirm_file_updated(file: Path, expected_contents: str) -> None:
+    """
+    Confirm that the file contents match what we expect them to be.
+
+    Used to confirm that the file has been overwritten with the new values.
+
+    Args:
+        file (Path): Path to the file to examine
+        expected_contents (str): The contents that are expected to have been
+            written to the file.
+
+    Raises:
+        AssertionError: If the contents do not match.
+    """
+    with open(file, "r") as f:
+        file_contents = f.read()
+        assert file_contents == expected_contents
+        assert _parse_copyright_string(file_contents)
 
 
 def _get_current_year() -> int:

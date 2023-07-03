@@ -34,6 +34,7 @@ def mock_resolve_files(mocker):
 
 # region: add_copyright fixtures
 ADD_COPYRIGHT_FIXTURE_LIST = [
+    "mock_confirm_file_updated",
     "mock_construct_copyright_string",
     "mock_copyright_is_current",
     "mock_default_config_file",
@@ -41,6 +42,7 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_ensure_comment",
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
+    "mock_get_comment_markers",
     "mock_get_current_year",
     "mock_get_earliest_commit_year",
     "mock_get_git_user_name",
@@ -56,6 +58,11 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_resolve_user_name",
     "mock_update_copyright_string",
 ] + SHARED_FIXTURE_LIST
+
+
+@pytest.fixture
+def mock_confirm_file_updated(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._confirm_file_updated")
 
 
 @pytest.fixture
@@ -93,6 +100,11 @@ def mock_ensure_copyright_string(mocker):
 @pytest.fixture
 def mock_ensure_valid_format(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright._ensure_valid_format")
+
+
+@pytest.fixture
+def mock_get_comment_markers(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._get_comment_markers")
 
 
 @pytest.fixture

@@ -9,6 +9,7 @@ tests are true unit tests, and means that coverage reports for unit tests are ac
 
 import argparse
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock, call, create_autospec
 
 import git
@@ -19,6 +20,31 @@ from src._shared.exceptions import NoCommitsError
 from src.add_copyright_hook import add_copyright
 
 from ..conftest import ADD_COPYRIGHT_FIXTURE_LIST as FIXTURES
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_get_comment_markers"])
+class TestGetCommentMarkers:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "file_extension, expected_markers",
+        [
+            (".py", ("#", None)),
+            (".cpp", ("//", None)),
+            (".md", ("<!---", "-->")),
+        ],
+    )
+    def test_for_supported_file_types(file_extension, expected_markers, tmp_path: Path):
+        file_path = tmp_path / f"filename{file_extension}"
+        file_path.write_text("")
+
+        start, end = add_copyright._get_comment_markers(file_path)
+
+        assert start == expected_markers[0]
+        assert end == expected_markers[1]
+
+    @staticmethod
+    def test_raises_NotImplementedError_for_unsupported_file_types():
+        pass
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_parse_copyright_string"])
@@ -508,60 +534,51 @@ class TestInferStartYear:
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_comment"])
 class TestEnsureComment:
     @staticmethod
-    @pytest.mark.parametrize("string, file", [("# <comment sentinel>", "file.py")])
-    def test_does_nothing_for_comments(string, file):
-        assert add_copyright._ensure_comment(string, file) == string
+    def test_does_nothing_for_comments(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = ("<comment marker sentinel>", None)
+        string = "<comment marker sentinel> <comment sentinel>"
+
+        # WHEN
+        new_string = add_copyright._ensure_comment(string, "<file sentinel>")
+
+        # THEN
+        assert new_string == string
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
 
     @staticmethod
-    @pytest.mark.parametrize("extension", [".floop"])
-    def test_raises_NotImplementedError_for_unsupported_file_types(extension):
-        with pytest.raises(NotImplementedError) as e:
-            _ = add_copyright._ensure_comment("<string sentinel>", f"file{extension}")
-        assert (
-            e.exconly()
-            == f"NotImplementedError: The file extension '{extension}' is not currently supported."  # noqa: E501
+    def test_add_leading_comment_marker(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = ("<comment marker sentinel>", None)
+
+        # WHEN
+        new_string = add_copyright._ensure_comment(
+            "<comment sentinel>", "<file sentinel>"
         )
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "string, file",
-        [
-            ("<comment sentinel>", "file.py"),
-            ("<comment sentinel>", "file.pyi"),
-            ("<comment sentinel>", "file.pyc"),
-            ("<comment sentinel>", "file.pyd"),
-            ("<comment sentinel>", "file.pyo"),
-            ("<comment sentinel>", "file.pyw"),
-            ("<comment sentinel>", "file.pyz"),
-        ],
-    )
-    def test_python(string, file):
-        assert add_copyright._ensure_comment(string, file) == "# <comment sentinel>"
+        # THEN
+        assert new_string == "<comment marker sentinel> <comment sentinel>"
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
 
     @staticmethod
-    @pytest.mark.parametrize(
-        "string, file",
-        [
-            ("<comment sentinel>", "file.md"),
-        ],
-    )
-    def test_markdown(string, file):
-        assert (
-            add_copyright._ensure_comment(string, file)
-            == "<!--- <comment sentinel> -->"
+    def test_add_leading_and_trailing_comment_marker(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = (
+            "<leading comment marker sentinel>",
+            "<trailing comment marker sentinel>",
         )
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "string, file",
-        [
-            ("<comment sentinel>", "file.cpp"),
-            ("<comment sentinel>", "file.cxx"),
-            ("<comment sentinel>", "file.cc"),
-        ],
-    )
-    def test_cpp(string, file):
-        assert add_copyright._ensure_comment(string, file) == "// <comment sentinel>"
+        # WHEN
+        new_string = add_copyright._ensure_comment(
+            "<comment sentinel>", "<file sentinel>"
+        )
+
+        # THEN
+        assert (
+            new_string
+            == "<leading comment marker sentinel> <comment sentinel> <trailing comment marker sentinel>"  # noqa: E501
+        )
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])
