@@ -19,7 +19,7 @@ import typing as t
 from pathlib import Path
 
 import yaml
-from git import Repo
+from git import Repo  # type: ignore
 from git.exc import GitCommandError
 
 from src._shared import resolvers
@@ -66,7 +66,7 @@ class ParsedCopyrightString:
                 f"Got {self.end_year} and {self.start_year} respectively."
             )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             self.commentmarker == other.commentmarker
             and self.signifiers == other.signifiers
@@ -76,7 +76,7 @@ class ParsedCopyrightString:
             and self.string == other.string
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "ParsedCopyrightString object with:\n"
             f"- comment marker: {self.commentmarker}\n"
@@ -257,7 +257,7 @@ def _insert_copyright_string(copyright: str, content: str) -> str:
     Returns:
         str: The modified content, including the copyright string.
     """
-    lines: list = [line for line in content.split("\n")]
+    lines: t.List[str] = [line for line in content.split("\n")]
 
     shebang: t.Optional[str] = None
     if _has_shebang(content):
@@ -319,18 +319,19 @@ def _get_earliest_commit_year(file: Path) -> int:
     repo = Repo(".")
 
     try:
-        timestamps = set(
-            blame[0].committed_date for blame in repo.blame(repo.head, file)
-        )
+        blames = repo.blame(repo.head, file)
     except GitCommandError as e:
         raise NoCommitsError from e
 
+    timestamps: t.Set[int] = set(int(blame[0].committed_date) for blame in blames)
     if len(timestamps) < 1:
         raise NoCommitsError(f"File {file} has no Blame history.")
 
-    earliest_date = datetime.datetime.fromtimestamp(min(timestamps))
+    earliest_date: datetime = datetime.datetime.fromtimestamp(  # type: ignore
+        min(timestamps)
+    )
 
-    return earliest_date.year
+    return int(earliest_date.year)  # type: ignore
 
 
 def _infer_start_year(
