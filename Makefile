@@ -56,3 +56,8 @@ test_add_copyright: test_venv
 test_sort_file_contents: test_venv
 	. test_venv/bin/activate; pytest \
 	tests/sort_file_contents_hook -x
+
+test_check_changelog_clash: test_venv
+	. test_venv/bin/activate; pytest \
+	--cov=src/check_changelog_clash_hook \
+	tests/check_changelog_clash_hook
