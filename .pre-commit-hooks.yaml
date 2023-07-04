@@ -32,5 +32,5 @@
   entry: check-changelog-clash
   language: python
   always_run: true
-  stages: [push, commit]
+  stages: [push]
   files: ^CHANGELOG.md

@@ -162,6 +162,7 @@ repos:
           "--enable=duplicate-code",
           "--output-format=colorized",
         ]
+        exclude: ^tests/
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
