@@ -202,11 +202,11 @@ class TestConstructCopyrightString:
         )
 
     @staticmethod
-    def test_default_format(mock_default_format, mock_parse_copyright_string):
+    def test_default_format(mock_default_format):
         # GIVEN
         mock_default_format.format = Mock(return_value="<formatted string sentinel>")
 
-        # WHEN
+        # WHEN / THEN
         assert (
             add_copyright._construct_copyright_string(
                 "<name_sentinel>",
@@ -216,9 +216,6 @@ class TestConstructCopyrightString:
             )
             == "<formatted string sentinel>"
         )
-
-        # THEN
-        mock_parse_copyright_string.assert_called_once()
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_insert_copyright_string"])
@@ -423,17 +420,16 @@ class TestInferStartYear:
         mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
 
     @staticmethod
-    def test_returns_parsed_start_year_if_no_commit_year(mock_get_earliest_commit_year):
+    def test_returns_parsed_start_year_if_no_commit_year(
+        mock_get_earliest_commit_year, mock_ParsedCopyrightString
+    ):
         # GIVEN
         mock_get_earliest_commit_year.side_effect = NoCommitsError()
-        mock_parsed_copyright_string = create_autospec(
-            add_copyright.ParsedCopyrightString
-        )
-        mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+        mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
         # WHEN
         start_year = add_copyright._infer_start_year(
-            "<file sentinel>", mock_parsed_copyright_string, "<passed year sentinel>"
+            "<file sentinel>", mock_ParsedCopyrightString, "<passed year sentinel>"
         )
 
         # THEN
@@ -454,18 +450,17 @@ class TestInferStartYear:
 
     class TestPriority:
         @staticmethod
-        def test_commit_year_first(mock_get_earliest_commit_year):
+        def test_commit_year_first(
+            mock_get_earliest_commit_year, mock_ParsedCopyrightString
+        ):
             # GIVEN
             mock_get_earliest_commit_year.return_value = "<commit year sentinel>"
-            mock_parsed_copyright_string = create_autospec(
-                add_copyright.ParsedCopyrightString
-            )
-            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+            mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
             # WHEN
             start_year = add_copyright._infer_start_year(
                 "<file sentinel>",
-                mock_parsed_copyright_string,
+                mock_ParsedCopyrightString,
                 "<passed year sentinel>",
             )
 
@@ -474,18 +469,17 @@ class TestInferStartYear:
             mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
 
         @staticmethod
-        def test_parsed_year_second(mock_get_earliest_commit_year):
+        def test_parsed_year_second(
+            mock_get_earliest_commit_year, mock_ParsedCopyrightString
+        ):
             # GIVEN
             mock_get_earliest_commit_year.side_effect = NoCommitsError()
-            mock_parsed_copyright_string = create_autospec(
-                add_copyright.ParsedCopyrightString
-            )
-            mock_parsed_copyright_string.start_year = "<parsed year sentinel>"
+            mock_ParsedCopyrightString.start_year = "<parsed year sentinel>"
 
             # WHEN
             start_year = add_copyright._infer_start_year(
                 "<file sentinel>",
-                mock_parsed_copyright_string,
+                mock_ParsedCopyrightString,
                 "<passed year sentinel>",
             )
 
@@ -506,6 +500,56 @@ class TestInferStartYear:
             # WHEN
             assert start_year == "<passed year sentinel>"
             mock_get_earliest_commit_year.assert_called_once_with("<file sentinel>")
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_comment"])
+class TestEnsureComment:
+    @staticmethod
+    def test_does_nothing_for_comments(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = ("<comment marker sentinel>", None)
+        string = "<comment marker sentinel> <comment sentinel>"
+
+        # WHEN
+        new_string = add_copyright._ensure_comment(string, "<file sentinel>")
+
+        # THEN
+        assert new_string == string
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
+
+    @staticmethod
+    def test_add_leading_comment_marker(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = ("<comment marker sentinel>", None)
+
+        # WHEN
+        new_string = add_copyright._ensure_comment(
+            "<comment sentinel>", "<file sentinel>"
+        )
+
+        # THEN
+        assert new_string == "<comment marker sentinel> <comment sentinel>"
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
+
+    @staticmethod
+    def test_add_leading_and_trailing_comment_marker(mock_get_comment_markers):
+        # GIVEN
+        mock_get_comment_markers.return_value = (
+            "<leading comment marker sentinel>",
+            "<trailing comment marker sentinel>",
+        )
+
+        # WHEN
+        new_string = add_copyright._ensure_comment(
+            "<comment sentinel>", "<file sentinel>"
+        )
+
+        # THEN
+        assert (
+            new_string
+            == "<leading comment marker sentinel> <comment sentinel> <trailing comment marker sentinel>"  # noqa: E501
+        )
+        mock_get_comment_markers.assert_called_once_with("<file sentinel>")
 
 
 @pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_ensure_copyright_string"])
@@ -598,6 +642,7 @@ class TestEnsureCopyrightString:
         mock_parse_copyright_string,
         mock_copyright_is_current,
         mock_construct_copyright_string,
+        mock_ensure_comment,
         mock_insert_copyright_string,
         capsys,
     ):
@@ -612,6 +657,7 @@ class TestEnsureCopyrightString:
         mock_parse_copyright_string.return_value = None
         mock_copyright_is_current.return_value = False
         mock_construct_copyright_string.return_value = "<copyright string sentinel>"
+        mock_ensure_comment.return_value = "<copyright comment sentinel>"
         mock_insert_copyright_string.return_value = "<new file contents sentinel>"
 
         # WHEN
@@ -619,14 +665,15 @@ class TestEnsureCopyrightString:
 
         # THEN
         assert capsys.readouterr().out == (
-            f"Fixing file `{p}` - added line(s):\n<copyright string sentinel>\n\n"
+            f"Fixing file `{p}` - added line(s):\n<copyright comment sentinel>\n\n"
         )
         mock_parse_copyright_string.assert_called_once_with("<file contents sentinel>")
         mock_construct_copyright_string.assert_called_once_with(
             "<name sentinel>", start_year, end_year, None
         )
+        mock_ensure_comment.assert_called_once_with("<copyright string sentinel>", p)
         mock_insert_copyright_string.assert_called_once_with(
-            "<copyright string sentinel>", "<file contents sentinel>"
+            "<copyright comment sentinel>", "<file contents sentinel>"
         )
         with open(p) as f:
             assert f.read() == "<new file contents sentinel>"
@@ -1040,6 +1087,38 @@ class TestParseArgs:
         assert args.format == "<format sentinel>"
         assert args.files == "<file sentinel>"
         assert args.config == mock_default_config_file
+
+
+@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_confirm_file_updated"])
+class TestConfirmFileUpdated:
+    @staticmethod
+    def test_returns_none_for_matching_file_contents(tmp_path):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        add_copyright._confirm_file_updated(file, contents)
+
+    @staticmethod
+    def test_raises_exception_for_mismatching_contents(tmp_path):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        with pytest.raises(AssertionError):
+            add_copyright._confirm_file_updated(file, contents + "additional")
+
+    @staticmethod
+    def test_checks_for_copyright_string_in_file_contents(
+        tmp_path, mock_parse_copyright_string
+    ):
+        file = tmp_path / "test_file"
+        contents = "<file contents>"
+        file.write_text(contents)
+
+        add_copyright._confirm_file_updated(file, contents)
+
+        mock_parse_copyright_string.assert_called_once_with(contents)
 
 
 @pytest.mark.usefixtures(*FIXTURES)

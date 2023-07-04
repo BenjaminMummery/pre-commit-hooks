@@ -144,7 +144,7 @@ def _find_duplicates(lines: t.List[str]) -> t.List[t.Tuple[str, int]]:
     return duplicates
 
 
-def _sort_contents(file: Path, unique: bool = False):
+def _sort_contents(file: Path, unique: bool = False) -> int:
     """Sort the contents of the file."""
     with open(file, "r") as file_obj:
         lines: t.List[str] = [line.strip("\n") for line in list(file_obj)]

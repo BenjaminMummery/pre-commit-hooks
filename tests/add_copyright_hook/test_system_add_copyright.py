@@ -14,6 +14,8 @@ THIS_YEAR = datetime.date.today().year
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo, cwd):
+        git_repo.run("git config user.name '<git config username sentinel>'")
+
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
@@ -21,6 +23,7 @@ class TestNoChanges:
 
     @staticmethod
     def test_no_supported_files_changed(git_repo, cwd):
+        git_repo.run("git config user.name '<git config username sentinel>'")
         files = ["hello.txt", ".gitignore", "test.yaml"]
         for file in files:
             f = git_repo.workspace / file
@@ -39,6 +42,7 @@ class TestNoChanges:
     @staticmethod
     def test_all_changed_files_have_copyright(git_repo, cwd):
         # GIVEN
+        git_repo.run("git config user.name '<git config username sentinel>'")
         # create tracked but uncommitted files
         files = ["hello.py", ".hello.py", "_hello.py"]
         for file in files:
@@ -93,6 +97,7 @@ class TestChanges:
     @staticmethod
     def test_autodetect_config(git_repo, cwd):
         # Create changed files
+        git_repo.run("git config user.name '<git config username sentinel>'")
         files = [git_repo.workspace / file for file in ["hello.py"]]
         for file in files:
             f = git_repo.workspace / file
@@ -131,6 +136,7 @@ class TestChanges:
     def test_update_date_ranges(
         git_repo, cwd, existing_copyright_string, expected_copyright_string
     ):
+        git_repo.run("git config user.name '<git config username sentinel>'")
         current_year = datetime.date.today().year
         expected_copyright_string = expected_copyright_string.format(year=current_year)
         file = git_repo.workspace / "file_1.py"
@@ -146,3 +152,129 @@ class TestChanges:
         assert content.startswith(
             expected_copyright_string
         ), f"did not find\n'{expected_copyright_string}' in \n'{content}'"
+
+    class TestLanguages:
+        @staticmethod
+        def test_python_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.py"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"# Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+                )
+
+        @staticmethod
+        def test_markdown_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.md"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"<!--- Copyright (c) {THIS_YEAR} <username sentinel> -->\n\n<file {file} content sentinel>"  # noqa: E501
+                )
+
+        @staticmethod
+        def test_cpp_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.cpp"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"// Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+                )
+
+        @staticmethod
+        def test_perl_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.pl"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"# Copyright (c) {THIS_YEAR} <username sentinel>\n\n<file {file} content sentinel>"  # noqa: E501
+                )
+
+        @staticmethod
+        def test_c_sharp_support(git_repo, cwd):
+            # Create changed files
+            files = [git_repo.workspace / file for file in ["hello.cs"]]
+            for file in files:
+                f = git_repo.workspace / file
+                f.write_text(f"<file {file} content sentinel>")
+                git_repo.run(f"git add {file}")
+
+            # Set git username
+            username = "<username sentinel>"
+            git_repo.run(f"git config user.name '{username}'")
+
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+            assert process.returncode == 1
+            for file in files:
+                with open(git_repo.workspace / file, "r") as f:
+                    content = f.read()
+                assert (
+                    content
+                    == f"/* Copyright (c) {THIS_YEAR} <username sentinel> */\n\n<file {file} content sentinel>"  # noqa: E501
+                )

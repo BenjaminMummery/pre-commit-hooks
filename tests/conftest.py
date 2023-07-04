@@ -2,9 +2,11 @@
 
 import os
 from contextlib import contextmanager
-from unittest.mock import Mock
+from unittest.mock import Mock, create_autospec
 
 import pytest
+
+import src
 
 
 @pytest.fixture(scope="session")
@@ -22,7 +24,12 @@ def cwd():
 
 
 # region: Shared fixtures
-SHARED_FIXTURE_LIST = ["mock_resolve_files"]
+SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+
+
+@pytest.fixture
+def mock_get_comment_markers(mocker):
+    return mocker.patch("src._shared.comment_mapping.get_comment_markers")
 
 
 @pytest.fixture
@@ -34,10 +41,12 @@ def mock_resolve_files(mocker):
 
 # region: add_copyright fixtures
 ADD_COPYRIGHT_FIXTURE_LIST = [
+    "mock_confirm_file_updated",
     "mock_construct_copyright_string",
     "mock_copyright_is_current",
     "mock_default_config_file",
     "mock_default_format",
+    "mock_ensure_comment",
     "mock_ensure_copyright_string",
     "mock_ensure_valid_format",
     "mock_get_current_year",
@@ -50,11 +59,17 @@ ADD_COPYRIGHT_FIXTURE_LIST = [
     "mock_parse_copyright_string",
     "mock_parse_years",
     "mock_ParsedCopyrightString",
+    "mock_ParsedCopyrightString_constructor",
     "mock_read_config_file",
     "mock_resolve_format",
     "mock_resolve_user_name",
     "mock_update_copyright_string",
 ] + SHARED_FIXTURE_LIST
+
+
+@pytest.fixture
+def mock_confirm_file_updated(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._confirm_file_updated")
 
 
 @pytest.fixture
@@ -77,6 +92,11 @@ def mock_default_config_file(mocker):
 @pytest.fixture
 def mock_default_format(mocker):
     return mocker.patch("src.add_copyright_hook.add_copyright.DEFAULT_FORMAT")
+
+
+@pytest.fixture
+def mock_ensure_comment(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright._ensure_comment")
 
 
 @pytest.fixture
@@ -158,10 +178,12 @@ def mock_update_copyright_string(mocker):
 
 @pytest.fixture
 def mock_ParsedCopyrightString(mocker):
-    return mocker.patch(
-        "src.add_copyright_hook.add_copyright.ParsedCopyrightString",
-        Mock(),
-    )
+    return create_autospec(src.add_copyright_hook.add_copyright.ParsedCopyrightString)
+
+
+@pytest.fixture
+def mock_ParsedCopyrightString_constructor(mocker):
+    return mocker.patch("src.add_copyright_hook.add_copyright.ParsedCopyrightString")
 
 
 # endregion
@@ -273,12 +295,18 @@ def mock_parse_sort_file_contents_args(mocker):
 
 CHECK_CHANGELOG_CLASH_FIXTURE_LIST = [
     "mock_check_changelog_clash",
+    "mock_get_changes",
     "mock_parse_check_changelog_clash_args",
 ] + SHARED_FIXTURE_LIST
 
 CHECK_CHANGELOG_CLASH_IMPORT: str = (
     "src.check_changelog_clash_hook.check_changelog_clash."
 )
+
+
+@pytest.fixture
+def mock_get_changes(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_get_changes")
 
 
 @pytest.fixture

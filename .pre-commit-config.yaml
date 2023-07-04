@@ -133,7 +133,6 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        exclude: ^tests/
         additional_dependencies: ["types-all"]
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings
@@ -163,6 +162,7 @@ repos:
           "--enable=duplicate-code",
           "--output-format=colorized",
         ]
+        exclude: ^tests/
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks

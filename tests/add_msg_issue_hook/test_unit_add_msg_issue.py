@@ -267,7 +267,7 @@ class TestMain:
         mock_get_issue_ids_from_branch_name.return_value = []
 
         # WHEN / THEN
-        assert add_msg_issue.main() is None
+        assert add_msg_issue.main() == 0
 
     @staticmethod
     def test_early_return_for_issue_already_in_message(
@@ -285,7 +285,7 @@ class TestMain:
         mock_parse_add_msg_issue_args.return_value = Mock(commit_msg_filepath=f)
 
         # WHEN
-        assert add_msg_issue.main() is None
+        assert add_msg_issue.main() == 0
 
         # THEN
         mock_get_issue_ids_from_branch_name.assert_called_once()
@@ -316,7 +316,7 @@ class TestMain:
         mock_insert_issue_into_message.return_value = "<new contents sentinel>"
 
         # WHEN
-        assert add_msg_issue.main() is None
+        assert add_msg_issue.main() == 0
 
         # THEN
         mock_get_issue_ids_from_branch_name.assert_called_once()
