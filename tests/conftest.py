@@ -296,7 +296,10 @@ def mock_parse_sort_file_contents_args(mocker):
 CHECK_CHANGELOG_CLASH_FIXTURE_LIST = [
     "mock_check_changelog_clash",
     "mock_get_changes",
+    "mock_get_heading_level",
     "mock_parse_check_changelog_clash_args",
+    "mock_parse_section",
+    "mock_parse_subsections",
 ] + SHARED_FIXTURE_LIST
 
 CHECK_CHANGELOG_CLASH_IMPORT: str = (
@@ -317,6 +320,21 @@ def mock_check_changelog_clash(mocker):
 @pytest.fixture
 def mock_parse_check_changelog_clash_args(mocker):
     return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_parse_args")
+
+
+@pytest.fixture
+def mock_get_heading_level(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_get_heading_level")
+
+
+@pytest.fixture
+def mock_parse_section(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_parse_section")
+
+
+@pytest.fixture
+def mock_parse_subsections(mocker):
+    return mocker.patch(CHECK_CHANGELOG_CLASH_IMPORT + "_parse_subsections")
 
 
 # endregion
