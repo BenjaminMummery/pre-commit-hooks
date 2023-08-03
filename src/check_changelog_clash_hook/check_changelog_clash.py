@@ -170,8 +170,19 @@ def _check_changelog_clash(file: Path) -> int:
     if not file_comparison:
         return 0
 
-    _parse_subsections(file_comparison.local)
-    _parse_subsections(file_comparison.remote)
+    parsed_local: dict = _parse_subsections(file_comparison.local)["changelog"]
+    _parse_subsections(file_comparison.remote)["changelog"]
+
+    if "unreleased" not in [
+        key.strip().lower() for key in parsed_local["changelog"].keys()
+    ]:
+        print(
+            "There are differences between the changelog files, "
+            "but the local file has no 'unreleased' section. "
+            "This could indicate that something has gone wrong. "
+            "Please review the changelog."
+        )
+        return 1
 
     return 1
 
