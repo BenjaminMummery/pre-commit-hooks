@@ -245,7 +245,58 @@ def mock_parse_add_msg_issue_args(mocker):
 
 # endregion
 
-# region: sort_file_contents_fixtures
+# region: format_setup_cfg fixtures
+
+CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS: str = """
+[metadata]
+name = pre_commit_hooks
+version = 1.1.0
+long_description = file: README.md
+long_description_content_type = text/markdown
+url = https://github.com/BenjaminMummery/pre-commit-hooks
+author = Benjamin Mummery
+author_email = benjamin.mummery@zapatacomputing.com
+license = MIT
+license_file = LICENSE
+classifiers =
+    License :: OSI Approved :: MIT License
+    Programming Language :: Python :: 3
+    Programming Language :: Python :: 3 :: Only
+    Programming Language :: Python :: 3.8
+    Programming Language :: Python :: 3.9
+    Programming Language :: Python :: 3.10
+    Programming Language :: Python :: Implementation :: CPython
+    Programming Language :: Python :: Implementation :: PyPy
+
+[options]
+packages = find:
+python_requires = >=3.8
+install_requires =
+    gitpython >= 3.1.31
+    identify >= 2.5.24
+    pyyaml >= 5.4.1
+
+
+[options.entry_points]
+console_scripts =
+    add-copyright = src.add_copyright_hook.add_copyright:main
+    add-msg-issue = src.add_msg_issue_hook.add_msg_issue:main
+    format-setup-cfg = src.format_setup_cfg_hook.format_setup_cfg:main
+    sort-file-contents = src.sort_file_contents_hook.sort_file_contents:main
+
+[options.packages.find]
+exclude =
+    tests*
+    testing*
+
+[bdist_wheel]
+universal = True
+
+"""
+
+# endregion
+
+# region: sort_file_contents fixtures
 
 SORT_FILE_CONTENTS_FEATURE_LIST = [
     "mock_find_duplicates",

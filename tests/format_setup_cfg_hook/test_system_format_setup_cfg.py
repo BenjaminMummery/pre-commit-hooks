@@ -12,6 +12,8 @@ import subprocess
 
 import pytest
 
+from tests.conftest import CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS
+
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "format-setup-cfg"]
 
 
@@ -45,3 +47,20 @@ class TestNoChanges:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
+
+    @staticmethod
+    def test_supported_files_already_formatted(git_repo, cwd):
+        # GIVEN
+        file = git_repo.workspace / "setup.cfg"
+        file.write_text(CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS)
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+        # THEN
+        assert process.returncode == 0
+        with open(git_repo.workspace / file, "r") as f:
+            content = f.read()
+        assert content == CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS
