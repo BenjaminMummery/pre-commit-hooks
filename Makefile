@@ -34,6 +34,7 @@ test_unit: test_venv
 
 test_integration: test_venv
 	. test_venv/bin/activate; pytest \
+	--cov=src \
 	tests/*/test_integration_*.py -x
 
 test_system: test_venv
@@ -52,6 +53,10 @@ test_add_issue: test_venv
 test_add_copyright: test_venv
 	. test_venv/bin/activate; pytest \
 	tests/add_copyright_hook -x
+
+test_format_setup_cfg: test_venv
+	. test_venv/bin/activate; pytest \
+	tests/format_setup_cfg_hook -x
 
 test_sort_file_contents: test_venv
 	. test_venv/bin/activate; pytest \

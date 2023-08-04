@@ -16,6 +16,14 @@
   always_run: true
   stages: [commit]
   types_or: [python, markdown, c++, c#, perl]
+- id: format-setup-cfg
+  name: Format setup.cfg
+  description: Apply consistent formatting rules to setup.cfg files.
+  entry: format-setup-cfg
+  language: python
+  always_run: true
+  stages: [commit]
+  files: ^setup.cfg
 - id: sort-file-contents
   name: Sort gitignore sections
   description: Sorts the contents of .gitignore while preserving sections.
