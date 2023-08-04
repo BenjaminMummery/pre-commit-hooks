@@ -20,3 +20,7 @@ def main() -> int:
         int: 1 if files have been modified, 0 otherwise.
     """
     return 0
+
+
+if __name__ == "__main__":
+    exit(main())
