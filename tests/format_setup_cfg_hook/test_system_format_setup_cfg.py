@@ -12,7 +12,10 @@ import subprocess
 
 import pytest
 
-from tests.conftest import CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS
+from tests.conftest import (
+    CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS,
+    UNSORTED_REQUIRED_SETUP_CFG_CONTENTS,
+)
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "format-setup-cfg"]
 
@@ -64,3 +67,19 @@ class TestNoChanges:
         with open(git_repo.workspace / file, "r") as f:
             content = f.read()
         assert content == CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS
+
+
+class TestSortingDependencies:
+    @staticmethod
+    def test_fails_for_unsorted_files(git_repo, cwd):
+        # GIVEN
+        file = git_repo.workspace / "setup.cfg"
+        file.write_text(UNSORTED_REQUIRED_SETUP_CFG_CONTENTS)
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+        # THEN
+        assert process.returncode == 1
