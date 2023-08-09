@@ -44,17 +44,33 @@ def _ensure_formatted(file: Path) -> int:
     config.read(file)
     ret = 0
 
+    unsorted_msg = f"Unsorted entries in {file}:\n"
+    bad_colour = "\033[91m"
+    good_colour = "\033[92m"
+    end_colour = "\033[0m"
+
     exclude_sections = ["classifiers"]
     for section in config.sections():
         for key in config[section]:
             if key in exclude_sections:
                 continue
-            vals = config[section][key].split("\n")
+
+            vals = config[section][key].strip().split("\n")
             if len(vals) <= 1:
                 continue
+
             if vals != sorted(vals):
+                unsorted_msg += f"\n[{section}]\n{key} =" + bad_colour
+                for val in vals:
+                    unsorted_msg += f"\n    {val}"
+                unsorted_msg += good_colour
+                for val in sorted(vals):
+                    unsorted_msg += f"\n    {val}"
+                unsorted_msg += end_colour + "\n"
                 ret |= 1
 
+    if ret != 0:
+        print(unsorted_msg)
     return ret
 
 
