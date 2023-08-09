@@ -14,6 +14,7 @@ import pytest
 
 from tests.conftest import (
     CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS,
+    EXPECTED_UNSORTED_REPORT,
     UNSORTED_REQUIRED_SETUP_CFG_CONTENTS,
 )
 
@@ -83,3 +84,22 @@ class TestSortingDependencies:
 
         # THEN
         assert process.returncode == 1
+
+    @staticmethod
+    def test_tells_user_what_is_unsorted(git_repo, cwd):
+        # GIVEN
+        file = git_repo.workspace / "setup.cfg"
+        file.write_text(UNSORTED_REQUIRED_SETUP_CFG_CONTENTS)
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True
+            )
+
+        # THEN
+        print(process.stdout.decode())
+        assert (
+            "Unsorted entries in setup.cfg:\n" + EXPECTED_UNSORTED_REPORT
+        ) in process.stdout.decode()

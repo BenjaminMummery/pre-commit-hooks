@@ -319,9 +319,9 @@ classifiers =
 packages = find:
 python_requires = >=3.8
 install_requires =
+    pyyaml >= 5.4.1
     gitpython >= 3.1.31
     identify >= 2.5.24
-    pyyaml >= 5.4.1
 
 
 [options.entry_points]
@@ -338,6 +338,25 @@ exclude =
 
 [bdist_wheel]
 universal = True
+
+"""
+
+EXPECTED_UNSORTED_REPORT: str = """
+[options]
+install_requires =\033[91m
+    pyyaml >= 5.4.1
+    gitpython >= 3.1.31
+    identify >= 2.5.24\033[92m
+    gitpython >= 3.1.31
+    identify >= 2.5.24
+    pyyaml >= 5.4.1\033[0m
+
+[options.packages.find]
+exclude =\033[91m
+    tests*
+    testing*\033[92m
+    testing*
+    tests*\033[0m
 
 """
 
