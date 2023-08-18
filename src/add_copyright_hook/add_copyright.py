@@ -628,6 +628,9 @@ def _parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace with the following attributes:
         - files (list of Path): the paths to each changed file relevant to this hook.
+        - name (str): The name of the copyright holder
+        - format (str): The format with which the copyright string should be
+            constructed.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
