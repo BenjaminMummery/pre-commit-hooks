@@ -247,8 +247,7 @@ def mock_parse_add_msg_issue_args(mocker):
 
 # region: format_setup_cfg fixtures
 
-CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS: str = """
-[metadata]
+CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS: str = """[metadata]
 name = pre_commit_hooks
 version = 1.1.0
 long_description = file: README.md
@@ -276,7 +275,6 @@ install_requires =
     identify >= 2.5.24
     pyyaml >= 5.4.1
 
-
 [options.entry_points]
 console_scripts =
     add-copyright = src.add_copyright_hook.add_copyright:main
@@ -291,11 +289,9 @@ exclude =
 
 [bdist_wheel]
 universal = True
-
 """
 
-UNSORTED_REQUIRED_SETUP_CFG_CONTENTS: str = """
-[metadata]
+UNSORTED_REQUIRED_SETUP_CFG_CONTENTS: str = """[metadata]
 name = pre_commit_hooks
 version = 1.1.0
 long_description = file: README.md
@@ -323,7 +319,6 @@ install_requires =
     gitpython >= 3.1.31
     identify >= 2.5.24
 
-
 [options.entry_points]
 console_scripts =
     add-copyright = src.add_copyright_hook.add_copyright:main
@@ -338,7 +333,6 @@ exclude =
 
 [bdist_wheel]
 universal = True
-
 """
 
 EXPECTED_UNSORTED_REPORT: str = """
