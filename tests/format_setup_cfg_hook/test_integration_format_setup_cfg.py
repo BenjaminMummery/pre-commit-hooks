@@ -12,7 +12,11 @@ import pytest
 from pytest import CaptureFixture
 
 from src.format_setup_cfg_hook import format_setup_cfg
-from tests.examples.setup_cfg_examples import SetupCfgExample, UnsortedEntries
+from tests.examples.setup_cfg_examples import (
+    SetupCfgExample,
+    UnsortedEntries,
+    UnsortedEntriesWithInlineComments,
+)
 
 
 class TestNoChanges:
@@ -28,7 +32,9 @@ class TestNoChanges:
         assert ret == 0
 
     @staticmethod
-    @pytest.mark.parametrize("example", [UnsortedEntries])
+    @pytest.mark.parametrize(
+        "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+    )
     def test_supported_files_already_formatted(
         example: SetupCfgExample, mocker, tmp_path: Path
     ):
@@ -47,17 +53,21 @@ class TestNoChanges:
         assert content == example.correctly_formatted
 
 
+@pytest.mark.parametrize(
+    "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+)
 class TestSortingDependencies:
     @staticmethod
     @pytest.mark.parametrize("in_place_argument", ["-i", "--in-place"])
     def test_overwrites_files_if_flagged(
+        example: SetupCfgExample,
         mocker,
         tmp_path: Path,
         in_place_argument: str,
     ):
         # GIVEN
         file = tmp_path / "setup.cfg"
-        file.write_text(UnsortedEntries.incorrectly_formatted)
+        file.write_text(example.incorrectly_formatted)
         mocker.patch("sys.argv", ["stub_name", str(file), in_place_argument])
 
         # WHEN
@@ -69,16 +79,18 @@ class TestSortingDependencies:
 
         print("DIFF:")
         for line in difflib.ndiff(
-            UnsortedEntries.correctly_formatted.splitlines(), content.splitlines()
+            example.correctly_formatted.splitlines(), content.splitlines()
         ):
             print(line)
-        assert content == UnsortedEntries.correctly_formatted
+        assert content == example.correctly_formatted
 
     @staticmethod
-    def test_does_not_modify_files_without_flag(mocker, tmp_path: Path):
+    def test_does_not_modify_files_without_flag(
+        example: SetupCfgExample, mocker, tmp_path: Path
+    ):
         # GIVEN
         file = tmp_path / "setup.cfg"
-        file.write_text(UnsortedEntries.incorrectly_formatted)
+        file.write_text(example.incorrectly_formatted)
         mocker.patch("sys.argv", ["stub_name", str(file)])
 
         # WHEN
@@ -87,13 +99,15 @@ class TestSortingDependencies:
         # THEN
         with open(file, "r") as f:
             content = f.read()
-        assert content == UnsortedEntries.incorrectly_formatted
+        assert content == example.incorrectly_formatted
 
     @staticmethod
-    def test_returns_1_for_unsorted_files(mocker, tmp_path: Path):
+    def test_returns_1_for_unsorted_files(
+        example: SetupCfgExample, mocker, tmp_path: Path
+    ):
         # GIVEN
         file = tmp_path / "setup.cfg"
-        file.write_text(UnsortedEntries.incorrectly_formatted)
+        file.write_text(example.incorrectly_formatted)
         mocker.patch("sys.argv", ["stub_name", str(file)])
 
         # WHEN
@@ -104,11 +118,11 @@ class TestSortingDependencies:
 
     @staticmethod
     def test_tells_user_what_is_unsorted(
-        mocker, tmp_path: Path, capsys: CaptureFixture
+        example: SetupCfgExample, mocker, tmp_path: Path, capsys: CaptureFixture
     ):
         # GIVEN
         file = tmp_path / "setup.cfg"
-        file.write_text(UnsortedEntries.incorrectly_formatted)
+        file.write_text(example.incorrectly_formatted)
         mocker.patch("sys.argv", ["stub_name", str(file)])
 
         # WHEN
@@ -119,7 +133,5 @@ class TestSortingDependencies:
 
         assert stdout[0].startswith("Unsorted entries in ")
 
-        for actual_line, expected_line in zip(
-            stdout[1:], UnsortedEntries.stdout.splitlines()
-        ):
+        for actual_line, expected_line in zip(stdout[1:], example.stdout.splitlines()):
             assert actual_line == expected_line
