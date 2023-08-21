@@ -12,7 +12,7 @@ consult the README file.
 import argparse
 import copy
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 DUMMY_SECTION_HEADER: str = "DUMMY SECTION"
 DUMMY_SUBSECTION_HEADER: str = "DUMMY SUBSECTION"
@@ -223,9 +223,28 @@ def _sort_sections(sections: ParsedSections, file: str) -> ParsedSections:
             if len(vals) <= 1:
                 continue
 
-            # Sort the values, writing back to the content if the sorted values are
-            # different.
-            sorted_vals = sorted(vals)
+            # Make a record of comment lines and the non-comment that they precede.
+            comments: List[Tuple[str, List[str]]] = []
+            comment_lines: List[str] = []
+            for line, next_line in zip(vals[:-1], vals[1:]):
+                if not line.startswith("#"):
+                    continue
+                comment_lines.append(line)
+                if not next_line.startswith("#"):
+                    comments.append((next_line, comment_lines))
+                    comment_lines = []
+
+            # Sort the values, removing any comment lines.
+            sorted_vals = sorted([line for line in vals if not line.startswith("#")])
+
+            # Add any removed comments back in above the appropriate line
+            for comment in comments:
+                i_insert = sorted_vals.index(comment[0])
+                sorted_vals = (
+                    sorted_vals[:i_insert] + comment[1] + sorted_vals[i_insert:]
+                )
+
+            # If the section ordering has changed, add the changes to the message
             if vals != sorted_vals:
                 changed = True
                 sections[section][key] = sorted_vals
