@@ -36,10 +36,44 @@ def _parse_args() -> argparse.Namespace:
     return args
 
 
-# class UnsortedMessage(str):
-#     def add_line(string: str):
-#         self += string
-#     def add_removed
+class ChangeMessage(str):
+    """
+    Store the messages about changes to be displayed to the user.
+
+    This class encompasses all of the formatting involved in how changes are displayed
+    in stdout.
+    """
+
+    def __init__(self, label: str):
+        self._removed_colour = "\033[91m"
+        self._added_colour = "\033[92m"
+        self._normal_colour = "\033[0m"
+        self._heading: List[str] = label.splitlines()
+        self._changes: List[str] = []
+
+    def add_change(self, section_heading: str, removed: List[str], added: List[str]):
+        """
+        Add a change to the message.
+
+        Args:
+            section_heading (str): The section of the setup.conf file where this change
+                applies.
+            removed (list(str)): The line(s) removed by the change.
+            added (list(str)): The line(s) added by the change.
+        """
+        _removed = ["    " + line for line in removed]
+        _added = ["    " + line for line in added]
+        _removed[0] = self._removed_colour + _removed[0]
+        _removed[-1] += self._normal_colour
+        _added[0] = self._added_colour + _added[0]
+        _added[-1] += self._normal_colour
+        self._changes.append(section_heading)
+        self._changes += _removed
+        self._changes += _added
+        self._changes.append("")
+
+    def __str__(self):
+        return "\n".join(self._heading + self._changes)
 
 
 def _parse_sections(lines: List[str]) -> dict:
@@ -156,10 +190,7 @@ def _ensure_formatted(file: Path, modify_in_place: bool) -> int:
 
     ret = 0
 
-    unsorted_msg = f"Unsorted entries in {file}:\n"
-    bad_colour = "\033[91m"
-    good_colour = "\033[92m"
-    end_colour = "\033[0m"
+    unsorted_msg = ChangeMessage(f"Unsorted entries in {file}:")
 
     exclude_sections = ["classifiers"]
     content: List[str]
@@ -187,13 +218,8 @@ def _ensure_formatted(file: Path, modify_in_place: bool) -> int:
                 sections[section][key] = sorted_vals
 
                 # Add the changes to the information that gets presented to the user.
-                unsorted_msg += f"\n[{section}]\n{key} =" + bad_colour
-                for val in vals:
-                    unsorted_msg += f"\n    {val}"
-                unsorted_msg += good_colour
-                for val in sorted(vals):
-                    unsorted_msg += f"\n    {val}"
-                unsorted_msg += end_colour + "\n"
+                unsorted_msg.add_change(f"[{section}]\n{key} =", vals, sorted_vals)
+
                 ret |= 1
 
     # If there are changes, print the info to the user and, if required, overwrite the

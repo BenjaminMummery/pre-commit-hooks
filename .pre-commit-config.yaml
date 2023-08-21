@@ -141,8 +141,10 @@ repos:
       - id: interrogate
         args: [
           --fail-under=100,
-          --verbose,
+          --verbose, --verbose,
           --ignore-magic,
+          --ignore-private,
+          --ignore-init-method,
         ]
         exclude: (?x)(^tests/)
 

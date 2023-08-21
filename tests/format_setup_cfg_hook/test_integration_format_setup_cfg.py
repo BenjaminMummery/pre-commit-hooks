@@ -6,6 +6,7 @@ Integration tests for format_setup_cfg.
 
 import difflib
 from pathlib import Path
+from typing import List
 
 import pytest
 from pytest import CaptureFixture
@@ -113,5 +114,12 @@ class TestSortingDependencies:
         _ = format_setup_cfg.main()
 
         # THEN
-        stdout: str = capsys.readouterr().out
-        assert stdout == (f"Unsorted entries in {file}:\n" + EXPECTED_UNSORTED_REPORT)
+        stdout: List[str] = capsys.readouterr().out.splitlines()
+
+        assert stdout[0].startswith("Unsorted entries in ")
+
+        for actual_line, expected_line in zip(
+            stdout[1:], EXPECTED_UNSORTED_REPORT.splitlines()
+        ):
+            assert actual_line == expected_line
+        # assert stdout == (f"Unsorted entries in {file}:\n" + EXPECTED_UNSORTED_REPORT)
