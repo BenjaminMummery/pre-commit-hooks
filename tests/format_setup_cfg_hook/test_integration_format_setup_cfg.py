@@ -15,6 +15,7 @@ from src.format_setup_cfg_hook import format_setup_cfg
 from tests.examples.setup_cfg_examples import (
     SetupCfgExample,
     UnsortedEntries,
+    UnsortedEntriesWithCommentLines,
     UnsortedEntriesWithInlineComments,
 )
 
@@ -33,7 +34,12 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+        "example",
+        [
+            UnsortedEntries,
+            UnsortedEntriesWithInlineComments,
+            UnsortedEntriesWithCommentLines,
+        ],
     )
     def test_supported_files_already_formatted(
         example: SetupCfgExample, mocker, tmp_path: Path
@@ -54,7 +60,12 @@ class TestNoChanges:
 
 
 @pytest.mark.parametrize(
-    "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+    "example",
+    [
+        UnsortedEntries,
+        UnsortedEntriesWithInlineComments,
+        UnsortedEntriesWithCommentLines,
+    ],
 )
 class TestSortingDependencies:
     @staticmethod

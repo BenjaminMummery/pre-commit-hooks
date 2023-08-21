@@ -15,6 +15,7 @@ import pytest
 from tests.examples.setup_cfg_examples import (
     SetupCfgExample,
     UnsortedEntries,
+    UnsortedEntriesWithCommentLines,
     UnsortedEntriesWithInlineComments,
 )
 
@@ -54,7 +55,12 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+        "example",
+        [
+            UnsortedEntries,
+            UnsortedEntriesWithInlineComments,
+            UnsortedEntriesWithCommentLines,
+        ],
     )
     def test_supported_files_already_formatted(example: SetupCfgExample, git_repo, cwd):
         # GIVEN
@@ -74,7 +80,12 @@ class TestNoChanges:
 
 
 @pytest.mark.parametrize(
-    "example", [UnsortedEntries, UnsortedEntriesWithInlineComments]
+    "example",
+    [
+        UnsortedEntries,
+        UnsortedEntriesWithInlineComments,
+        UnsortedEntriesWithCommentLines,
+    ],
 )
 class TestSortingDependencies:
     @staticmethod
