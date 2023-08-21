@@ -29,6 +29,10 @@ repos:
       - id: mixed-line-ending
       - id: name-tests-test
         args: [--django]
+        exclude: |
+          (?x)^(
+            tests/examples/.+
+          )$
       - id: no-commit-to-branch
         args: [-b, main, -b, master, -b, dev, -b, develop]
         stages: [commit]

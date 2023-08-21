@@ -12,11 +12,7 @@ import subprocess
 
 import pytest
 
-from tests.conftest import (
-    CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS,
-    EXPECTED_UNSORTED_REPORT,
-    UNSORTED_REQUIRED_SETUP_CFG_CONTENTS,
-)
+from tests.examples.setup_cfg_examples import SetupCfgExample, UnsortedEntries
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "format-setup-cfg"]
 
@@ -53,10 +49,11 @@ class TestNoChanges:
             assert content == f"<file {file} content sentinel>"
 
     @staticmethod
-    def test_supported_files_already_formatted(git_repo, cwd):
+    @pytest.mark.parametrize("example", [UnsortedEntries])
+    def test_supported_files_already_formatted(example: SetupCfgExample, git_repo, cwd):
         # GIVEN
         file = git_repo.workspace / "setup.cfg"
-        file.write_text(CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS)
+        file.write_text(example.correctly_formatted)
         git_repo.run(f"git add {file}")
 
         # WHEN
@@ -67,20 +64,20 @@ class TestNoChanges:
         assert process.returncode == 0
         with open(git_repo.workspace / file, "r") as f:
             content = f.read()
-        assert content == CORRECTLY_FORMATTED_SETUP_CFG_CONTENTS
+        assert content == example.correctly_formatted
 
 
 class TestSortingDependencies:
     @staticmethod
     @pytest.mark.xfail(reason="Passing args to hooks in try-repo is not supported.")
-    def test_overwrites_files_if_interactive(git_repo, cwd):
+    def test_overwrites_files_if_flagged(git_repo, cwd):
         assert False
 
     @staticmethod
     def test_does_not_modify_files_without_flag(git_repo, cwd):
         # GIVEN
         file = git_repo.workspace / "setup.cfg"
-        file.write_text(UNSORTED_REQUIRED_SETUP_CFG_CONTENTS)
+        file.write_text(UnsortedEntries.incorrectly_formatted)
         git_repo.run(f"git add {file}")
 
         # WHEN
@@ -90,13 +87,13 @@ class TestSortingDependencies:
         # THEN
         with open(file, "r") as f:
             content = f.read()
-        assert content == UNSORTED_REQUIRED_SETUP_CFG_CONTENTS
+        assert content == UnsortedEntries.incorrectly_formatted
 
     @staticmethod
     def test_fails_for_unsorted_files(git_repo, cwd):
         # GIVEN
         file = git_repo.workspace / "setup.cfg"
-        file.write_text(UNSORTED_REQUIRED_SETUP_CFG_CONTENTS)
+        file.write_text(UnsortedEntries.incorrectly_formatted)
         git_repo.run(f"git add {file}")
 
         # WHEN
@@ -110,7 +107,7 @@ class TestSortingDependencies:
     def test_tells_user_what_is_unsorted(git_repo, cwd):
         # GIVEN
         file = git_repo.workspace / "setup.cfg"
-        file.write_text(UNSORTED_REQUIRED_SETUP_CFG_CONTENTS)
+        file.write_text(UnsortedEntries.incorrectly_formatted)
         git_repo.run(f"git add {file}")
 
         # WHEN
@@ -122,5 +119,5 @@ class TestSortingDependencies:
         # THEN
         print(process.stdout.decode())
         assert (
-            "Unsorted entries in setup.cfg:\n" + EXPECTED_UNSORTED_REPORT
+            "Unsorted entries in setup.cfg:\n" + UnsortedEntries.stdout
         ) in process.stdout.decode()
