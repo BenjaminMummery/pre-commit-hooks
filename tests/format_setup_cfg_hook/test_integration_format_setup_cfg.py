@@ -12,12 +12,7 @@ import pytest
 from pytest import CaptureFixture
 
 from src.format_setup_cfg_hook import format_setup_cfg
-from tests.examples.setup_cfg_examples import (
-    SetupCfgExample,
-    UnsortedEntries,
-    UnsortedEntriesWithCommentLines,
-    UnsortedEntriesWithInlineComments,
-)
+from tests.examples.setup_cfg_examples import SetupCfgExample, all_examples
 
 
 class TestNoChanges:
@@ -33,14 +28,7 @@ class TestNoChanges:
         assert ret == 0
 
     @staticmethod
-    @pytest.mark.parametrize(
-        "example",
-        [
-            UnsortedEntries,
-            UnsortedEntriesWithInlineComments,
-            UnsortedEntriesWithCommentLines,
-        ],
-    )
+    @pytest.mark.parametrize("example", all_examples)
     def test_supported_files_already_formatted(
         example: SetupCfgExample, mocker, tmp_path: Path
     ):
@@ -59,14 +47,7 @@ class TestNoChanges:
         assert content == example.correctly_formatted
 
 
-@pytest.mark.parametrize(
-    "example",
-    [
-        UnsortedEntries,
-        UnsortedEntriesWithInlineComments,
-        UnsortedEntriesWithCommentLines,
-    ],
-)
+@pytest.mark.parametrize("example", all_examples)
 class TestSortingDependencies:
     @staticmethod
     @pytest.mark.parametrize("in_place_argument", ["-i", "--in-place"])

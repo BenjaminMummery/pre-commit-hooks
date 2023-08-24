@@ -12,12 +12,7 @@ import subprocess
 
 import pytest
 
-from tests.examples.setup_cfg_examples import (
-    SetupCfgExample,
-    UnsortedEntries,
-    UnsortedEntriesWithCommentLines,
-    UnsortedEntriesWithInlineComments,
-)
+from tests.examples.setup_cfg_examples import SetupCfgExample, all_examples
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "format-setup-cfg"]
 
@@ -54,14 +49,7 @@ class TestNoChanges:
             assert content == f"<file {file} content sentinel>"
 
     @staticmethod
-    @pytest.mark.parametrize(
-        "example",
-        [
-            UnsortedEntries,
-            UnsortedEntriesWithInlineComments,
-            UnsortedEntriesWithCommentLines,
-        ],
-    )
+    @pytest.mark.parametrize("example", all_examples)
     def test_supported_files_already_formatted(example: SetupCfgExample, git_repo, cwd):
         # GIVEN
         file = git_repo.workspace / "setup.cfg"
@@ -79,14 +67,7 @@ class TestNoChanges:
         assert content == example.correctly_formatted
 
 
-@pytest.mark.parametrize(
-    "example",
-    [
-        UnsortedEntries,
-        UnsortedEntriesWithInlineComments,
-        UnsortedEntriesWithCommentLines,
-    ],
-)
+@pytest.mark.parametrize("example", all_examples)
 class TestSortingDependencies:
     @staticmethod
     @pytest.mark.xfail(reason="Passing args to hooks in try-repo is not supported.")
