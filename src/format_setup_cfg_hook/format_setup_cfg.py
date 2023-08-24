@@ -10,9 +10,8 @@ consult the README file.
 """
 
 import argparse
-import copy
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 DUMMY_SECTION_HEADER: str = "DUMMY SECTION"
 DUMMY_SUBSECTION_HEADER: str = "DUMMY SUBSECTION"
@@ -20,6 +19,12 @@ DUMMY_SUBSECTION_HEADER: str = "DUMMY SUBSECTION"
 
 class ParsedSections(Dict[str, Dict[str, List[str]]]):
     """A set of parsed config sections."""
+
+    def __init__(
+        self, parsed_sections: Dict[str, Dict[str, List[str]]], source: List[str]
+    ):
+        self.parsed_sections = parsed_sections
+        self.source = source
 
     @classmethod
     def parse_config(cls, lines: List[str]):
@@ -50,35 +55,46 @@ class ParsedSections(Dict[str, Dict[str, List[str]]]):
                 values are the list of strings in that section.
         """
         # Assume
-        current_section: str = DUMMY_SECTION_HEADER
-        current_subsection: str = DUMMY_SUBSECTION_HEADER
-        outdict = ParsedSections()
+        current_section: Optional[str] = None
+        current_subsection: Optional[str] = None
         subsect_dict: Dict[str, List[str]] = {}
+        outdict = ParsedSections({}, lines)
+
         for line in lines:
             # Ignore blank lines
             if line.strip() == "":
                 continue
 
+            # Ignore comments outside the sections
+            if line.startswith("#"):
+                continue
+
             # When we hit a top-level heading, assign the completed subsection dict to
             # the previous section entry, then start a new empty section in the dict.
             if line.startswith("["):
-                assert "=" not in line, f"{line} does not contain '='"
+                assert "=" not in line, f"{line} contains '='"
                 assert line.strip().endswith("]"), f"{line} does not end with ']'"
 
-                # Wrap up previous section
-                outdict[current_section] = subsect_dict
+                # If we were previously building a section, finalise it.
+                if (
+                    current_section is not None
+                    and current_subsection is not None
+                    and len(subsect_dict) > 0
+                ):
+                    outdict.parsed_sections[current_section] = subsect_dict
 
                 # start fresh section
                 subsect_dict = {}
                 current_section = line.strip(" []\n")
+                current_subsection = None
                 continue
 
-            # Lines that aren't indented must be subsections. These can either be single
-            # lines (a = b) or the beginning of a multiple line subsection (a =). We
-            # parse the string into sections before and after "=", using the leading
-            # string as the name of the subsection and the trailing string (if there is
-            # one) as the first value.
-            if not line.startswith(" "):
+            # Lines that aren't indented but aren't section headings must be
+            # subsections. These can either be single lines (a = b) or the beginning of
+            # a multiple line subsection (a =). We parse the string into sections
+            # before and after "=", using the leading string as the name of the
+            # subsection and the trailing string (if there is one) as the first value.
+            if not line.startswith(" ") and not line.strip().startswith("#"):
                 # Parse the Line
                 assert "=" in line, f"{line} does not contain '='"
                 line = line.strip()
@@ -94,11 +110,46 @@ class ParsedSections(Dict[str, Dict[str, List[str]]]):
                 continue
 
             # The line starts with whitespace, it is part of a subsection
-            subsect_dict[current_subsection].append(line.strip())
+            if current_subsection is not None:
+                subsect_dict[current_subsection].append(line.strip())
 
-        outdict[current_section] = subsect_dict
+        if current_section is not None:
+            outdict.parsed_sections[current_section] = subsect_dict
 
         return outdict
+
+    def construct_file_contents(self) -> str:
+        """
+        Take the parsed config and format it as a string that we can write to a file.
+
+        Returns:
+            str: The contents to be written to the file.
+        """
+
+        outlist: List[str] = []
+
+        # Copy over any non-parsed lines from the beginning of the file
+        for line in self.source:
+            # If we hit an actual heading, stop copying.
+            if line.startswith("["):
+                break
+            outlist.append(line)
+
+        for section_header in self.parsed_sections.keys():
+            outlist.append(f"[{section_header}]")
+
+            for subsection_header in self.parsed_sections[section_header].keys():
+                vals: List[str] = self.parsed_sections[section_header][
+                    subsection_header
+                ]
+                if len(vals) == 1:
+                    outlist.append(f"{subsection_header} = {vals[0]}")
+                else:
+                    outlist.append(f"{subsection_header} =")
+                    outlist += [f"    {val}" for val in vals]
+            outlist.append("")
+
+        return "\n".join(outlist)
 
 
 class ChangeMessage(str):
@@ -160,43 +211,7 @@ def _parse_args() -> argparse.Namespace:
     return args
 
 
-def _construct_file_contents(sections: ParsedSections) -> str:
-    """
-    Take the parsed config and format it as a string that we can write to a file.
-
-    Args:
-        sections (dict(dict(list[str]))): A dict whose keys are config section
-            headings. values should be dicts whose keys are subsection headings, and
-            whose values are lists of strings corresponding tot he values of that
-            subsection.
-
-    Returns:
-        str: The contents to be written to the file.
-    """
-    outlist: List[str] = []
-
-    for section_header in sections.keys():
-        # Handle the dummy section - should only contain leading comments AFAIK
-        if section_header == DUMMY_SECTION_HEADER:
-            if len(sections[section_header]) > 0:
-                for value in sections[section_header].values():
-                    outlist += value
-            continue
-
-        outlist.append(f"[{section_header}]")
-        for subsection_header in sections[section_header].keys():
-            vals: List[str] = sections[section_header][subsection_header]
-            if len(vals) == 1:
-                outlist.append(f"{subsection_header} = {vals[0]}")
-            else:
-                outlist.append(f"{subsection_header} =")
-                outlist += [f"    {val}" for val in vals]
-        outlist.append("")
-
-    return "\n".join(outlist)
-
-
-def _sort_sections(sections: ParsedSections, file: str) -> ParsedSections:
+def _sort_sections(config: ParsedSections, file: str) -> ParsedSections:
     """
     Ensure that the lines in each section are sorted.
 
@@ -212,14 +227,14 @@ def _sort_sections(sections: ParsedSections, file: str) -> ParsedSections:
     changed: bool = False
 
     # Iterate through the subsections
-    for section in sections.keys():
-        for key in sections[section].keys():
+    for section in config.parsed_sections.keys():
+        for key in config.parsed_sections[section].keys():
             # Skip sections that we don't want to sort
             if key in exclude_sections:
                 continue
 
             # Skip sections that are empty or only have a single entry
-            vals: List[str] = sections[section][key]
+            vals: List[str] = config.parsed_sections[section][key]
             if len(vals) <= 1:
                 continue
 
@@ -247,7 +262,7 @@ def _sort_sections(sections: ParsedSections, file: str) -> ParsedSections:
             # If the section ordering has changed, add the changes to the message
             if vals != sorted_vals:
                 changed = True
-                sections[section][key] = sorted_vals
+                config.parsed_sections[section][key] = sorted_vals
 
                 # Add the changes to the information that gets presented to the user.
                 unsorted_msg.add_change(f"[{section}]\n{key} =", vals, sorted_vals)
@@ -255,7 +270,7 @@ def _sort_sections(sections: ParsedSections, file: str) -> ParsedSections:
     if changed:
         print(unsorted_msg)
 
-    return sections
+    return config
 
 
 def _ensure_formatted(file: Path, modify_in_place: bool) -> int:
@@ -271,19 +286,21 @@ def _ensure_formatted(file: Path, modify_in_place: bool) -> int:
         int: 0 if the file is already correctly formatted, 1 otherwise.
     """
     # Read the file contents
-    original_sections: ParsedSections
     with open(file, "r") as f:
-        original_sections = ParsedSections.parse_config(f.readlines())
+        original_content: str = f.read()
+
+    # Parse the sections in the config file
+    parsed_sections = ParsedSections.parse_config(original_content.splitlines())
 
     # Create a copy of the sections and apply the various formatting rules.
-    new_sections: ParsedSections = copy.deepcopy(original_sections)
-    new_sections = _sort_sections(new_sections, str(file))
+    parsed_sections = _sort_sections(parsed_sections, str(file))
 
     # If there are changes,
-    if new_sections != original_sections:
+    outstr = parsed_sections.construct_file_contents()
+    if outstr != original_content:
         if modify_in_place:
             with open(file, "w") as f:
-                f.write(_construct_file_contents(new_sections))
+                f.write(outstr)
         return 1
 
     return 0
