@@ -1,3 +1,5 @@
+.PHONY : test_unit test_system test_integration
+
 # SETUP
 test_venv: test_venv/touchfile
 
@@ -15,29 +17,26 @@ clean:
 	find . -name "*__pycache__" -delete
 
 # GENERAL TESTING
-test: test_venv
-	. test_venv/bin/activate; pytest \
-	--cov=src \
-	-m "not slow" \
-	tests/ -x
+test: test_venv test_unit test_integration
 
-test_all: test_venv
-	. test_venv/bin/activate; pytest \
-	--cov=src \
-	tests/ -x
+test_all: test_venv test_unit test_integration test_system
 
 # TESTING BY LEVEL
 test_unit: test_venv
-	. test_venv/bin/activate; pytest \
+	@echo "===== RUNNING UNIT TESTS ====="
+	@. test_venv/bin/activate; pytest \
 	--cov=src \
 	tests/*/test_unit_*.py -x
 
 test_integration: test_venv
-	. test_venv/bin/activate; pytest \
+	@echo "===== RUNNING INTEGRATION TESTS ====="
+	@. test_venv/bin/activate; pytest \
+	--cov=src \
 	tests/*/test_integration_*.py -x
 
 test_system: test_venv
-	. test_venv/bin/activate; pytest \
+	@echo "===== RUNNING SYSTEM TESTS ====="
+	@. test_venv/bin/activate; pytest \
 	tests/*/test_system_*.py -x
 
 # TESTING BY HOOK
