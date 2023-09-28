@@ -81,3 +81,20 @@ class TestNoChanges:
             with open(git_repo.workspace / file, "r") as f:
                 output_content = f.read()
             assert output_content == input_content.format(file=file)
+
+
+@pytest.mark.parametrize("bad_rst", ["Underline too short\n========="])
+class TestBadRST:
+    @staticmethod
+    def test_returns_1_for_single_bad_docstring(git_repo, cwd, bad_rst):
+        # GIVEN
+        file = git_repo.workspace / "test_file.py"
+        file.write_text(f'"""\n{bad_rst}\n"""')
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+
+        # THEN
+        assert process.returncode == 1

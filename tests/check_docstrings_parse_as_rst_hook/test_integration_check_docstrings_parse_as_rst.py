@@ -1,5 +1,9 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+from pathlib import Path
+
+import pytest
+
 from src.check_docstrings_parse_as_rst_hook import check_docstrings_parse_as_rst
 
 
@@ -54,3 +58,19 @@ class TestNoChanges:
             with open(tmp_path / file, "r") as f:
                 output_content = f.read()
         assert output_content == input_content.format(file=file)
+
+
+@pytest.mark.parametrize("bad_rst", ["Underline too short\n========="])
+class TestBadRST:
+    @staticmethod
+    def test_returns_1_for_single_bad_docstring(
+        mocker, cwd, tmp_path: Path, bad_rst: str
+    ):
+        # GIVEN
+        file = tmp_path / "test_file.py"
+        file.write_text(f'"""\n{bad_rst}\n"""')
+        mocker.patch("sys.argv", ["stub_name", "test_file.py"])
+
+        # WHEN
+        with cwd(tmp_path):
+            assert check_docstrings_parse_as_rst.main() == 1
