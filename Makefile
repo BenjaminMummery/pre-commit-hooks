@@ -56,3 +56,7 @@ test_add_copyright: test_venv
 test_sort_file_contents: test_venv
 	. test_venv/bin/activate; pytest \
 	tests/sort_file_contents_hook -x
+
+test_check_docstrings_parse_as_rst: test_venv
+	. test_venv/bin/activate; pytest \
+	tests/check_docstrings_parse_as_rst_hook

@@ -24,3 +24,11 @@
   always_run: true
   stages: [commit]
   files: ^.gitignore
+- id: check-docstrings-parse-as-rst
+  name: Check docstrings parse as RST
+  description: Checks that the contents of docstrings parse as valid RST
+  entry: check-docstrings-parse-as-rst
+  language: python
+  always_run: true
+  stages: [commit]
+  types_or: [python]
