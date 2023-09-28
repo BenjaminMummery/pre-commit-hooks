@@ -10,6 +10,6 @@ consult the README file.
 """
 
 
-def main():
+def main() -> int:
     """Entrypoint for the check_docstrings_parse_as_rst hook."""
-    pass
+    return 0
