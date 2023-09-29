@@ -23,8 +23,8 @@ jobs:
           pip install flake8 pytest
           pip install -Ur test_requirements.txt
           pip install -e .
-      - name: Unit test coverage
+      - name: Integration Test Coverage
         run: |-
-          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src | tee pytest-coverage.txt
+          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
