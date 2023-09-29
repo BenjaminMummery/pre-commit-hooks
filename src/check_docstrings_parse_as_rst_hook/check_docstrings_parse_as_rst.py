@@ -10,7 +10,7 @@ consult the README file.
 """
 
 import argparse
-import re
+import ast
 from pathlib import Path
 from typing import List
 
@@ -19,18 +19,36 @@ from restructuredtext_lint import lint
 from src._shared import resolvers
 
 
-def _extract_docstrings(content: str) -> List[str]:
+def _check_class_recursive(classnode: ast.ClassDef) -> List[str]:
     """
-    Find all the docstrings in the string.
+    Parse all the docstrings of a class.
+
+    This function calls itself to parse the docstrings of subclasses.
 
     Args:
-        content (str): the string to be checked.
+        classnode (ast.ClassDef): The class node to be checked.
 
     Returns:
-        list(str): a list of docstrings found in the content.
-
+        list(str): a list of strings describing any RST errors in the docstrings.
     """
-    return re.findall(r'"""([\s\S]*?)"""', content, re.M)
+    error_strings: List[str] = []
+    if docstring := ast.get_docstring(classnode):
+        for error in lint(docstring):
+            error_strings.append(
+                f"- error in docstring of class '{classnode.name}' "
+                f"(lineno {classnode.lineno}): {error.message}"
+            )
+    for node in classnode.body:
+        if isinstance(node, ast.FunctionDef) and (docstring := ast.get_docstring(node)):
+            for error in lint(docstring):
+                error_strings.append(
+                    f"- error in docstring of method '{node.name}' "
+                    f"of class '{classnode.name}' "
+                    f"(lineno {node.lineno}): {error.message}"
+                )
+        elif isinstance(node, ast.ClassDef):
+            error_strings += _check_class_recursive(node)
+    return error_strings
 
 
 def _check_docstring_rst(file: Path) -> int:
@@ -46,11 +64,35 @@ def _check_docstring_rst(file: Path) -> int:
     with open(file, "r") as f:
         contents: str = f.read()
 
-    for docstring in _extract_docstrings(contents):
-        errors = lint(docstring)
-        if len(errors) > 0:
-            return 1
-    return 0
+    module = ast.parse(contents)
+
+    error_strings: List[str] = []
+
+    # Check module-level docstring
+    if docstring := ast.get_docstring(module):
+        for error in lint(docstring):
+            error_strings.append(f"- error in module docstring: {error.message}")
+
+    for node in module.body:
+        # Check function docstrings.
+        if isinstance(node, ast.FunctionDef):
+            if docstring := ast.get_docstring(node):
+                for error in lint(docstring):
+                    error_strings.append(
+                        f"- error in docstring of function '{node.name}' "
+                        f"(lineno {node.lineno}): {error.message}"
+                    )
+
+        # Check class docstrings.
+        elif isinstance(node, ast.ClassDef):
+            error_strings += _check_class_recursive(node)
+
+    if len(error_strings) == 0:
+        return 0
+
+    print(f"Found errors in {file}:")
+    print("\n".join(error_strings))
+    return 1
 
 
 def _parse_args() -> argparse.Namespace:
