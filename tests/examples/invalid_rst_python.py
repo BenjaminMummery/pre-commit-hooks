@@ -47,3 +47,12 @@ class foo:
             =================
             """
             pass
+
+
+expected_stdout: str = """- error in module docstring: Title underline too short.
+- error in docstring of function 'main' (lineno 15): Title underline too short.
+- error in docstring of class 'foo' (lineno 23): Title underline too short.
+- error in docstring of method 'method' of class 'foo' (lineno 29): Title underline too short.
+- error in docstring of class 'NestedClass' (lineno 36): Title underline too short.
+- error in docstring of method 'nested_method' of class 'NestedClass' (lineno 44): Title underline too short.
+"""  # noqa: E501

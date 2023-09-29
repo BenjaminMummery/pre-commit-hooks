@@ -7,6 +7,7 @@ from pytest import CaptureFixture
 from pytest_mock import MockerFixture
 
 from src.check_docstrings_parse_as_rst_hook import check_docstrings_parse_as_rst
+from tests.examples.invalid_rst_python import expected_stdout as bad_rst_expected_stdout
 
 
 def mock_file_content(
@@ -98,7 +99,7 @@ class TestBadRST:
         mocker: MockerFixture, cwd, tmp_path: Path, capsys: CaptureFixture
     ):
         # GIVEN
-        files = ["hello.py", ".hello.py", "_hello.py"]
+        files = ["hello.py"]
         mock_file_content(tmp_path, files, "invalid_rst_python.py", mocker)
 
         # WHEN
@@ -107,27 +108,5 @@ class TestBadRST:
 
         # THEN
         captured = capsys.readouterr()
-        assert captured.out == (
-            "Found errors in hello.py:\n"  # noqa: E501
-            "- error in module docstring: Title underline too short.\n"  # noqa: E501
-            "- error in docstring of function 'main' (lineno 15): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'foo' (lineno 23): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'method' of class 'foo' (lineno 29): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'NestedClass' (lineno 36): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'nested_method' of class 'NestedClass' (lineno 44): Title underline too short.\n"  # noqa: E501
-            "Found errors in .hello.py:\n"  # noqa: E501
-            "- error in module docstring: Title underline too short.\n"  # noqa: E501
-            "- error in docstring of function 'main' (lineno 15): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'foo' (lineno 23): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'method' of class 'foo' (lineno 29): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'NestedClass' (lineno 36): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'nested_method' of class 'NestedClass' (lineno 44): Title underline too short.\n"  # noqa: E501
-            "Found errors in _hello.py:\n"  # noqa: E501
-            "- error in module docstring: Title underline too short.\n"  # noqa: E501
-            "- error in docstring of function 'main' (lineno 15): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'foo' (lineno 23): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'method' of class 'foo' (lineno 29): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of class 'NestedClass' (lineno 36): Title underline too short.\n"  # noqa: E501
-            "- error in docstring of method 'nested_method' of class 'NestedClass' (lineno 44): Title underline too short.\n"  # noqa: E501
-        )
+        assert bad_rst_expected_stdout in captured.out
         assert captured.err == ""

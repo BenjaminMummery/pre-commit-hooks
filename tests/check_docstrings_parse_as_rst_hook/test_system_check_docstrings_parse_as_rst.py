@@ -2,48 +2,58 @@
 
 import os
 import subprocess
+from typing import List
 
 import pytest
+from pytest_git import GitRepo
+
+from tests.examples.invalid_rst_python import expected_stdout as bad_rst_expected_stdout
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "check-docstrings-parse-as-rst"]
+
+
+def mock_file_content(git_repo: GitRepo, files: List[str], input_content_filename: str):
+    with open(f"tests/examples/{input_content_filename}") as f:
+        input_content = f.read()
+    for file in files:
+        f = git_repo.workspace / file
+        f.write_text(input_content)
+        git_repo.run(f"git add {file}")
+    return input_content
 
 
 @pytest.mark.slow
 class TestNoChanges:
     @staticmethod
-    def test_no_files_changed(git_repo, cwd):
+    def test_no_files_changed(git_repo: GitRepo, cwd):
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
         assert process.returncode == 0
 
     @staticmethod
-    def test_no_supported_files_changed(git_repo, cwd):
+    def test_no_supported_files_changed(git_repo: GitRepo, cwd):
+        # GIVEN
         files = ["hello.txt", ".gitignore", "test.yaml"]
-        for file in files:
-            f = git_repo.workspace / file
-            f.write_text(f"<file {file} content sentinel>")
-            git_repo.run(f"git add {file}")
+        input_content = mock_file_content(git_repo, files, "invalid_rst_python.py")
 
+        # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(COMMAND)
 
+        # THEN
         assert process.returncode == 0
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
-            assert content == f"<file {file} content sentinel>"
+            print(content)
+            assert content == input_content
 
     @staticmethod
-    def test_no_changed_files_have_docstrings(git_repo, cwd):
+    def test_no_changed_files_have_docstrings(git_repo: GitRepo, cwd):
         # GIVEN
-        # create tracked but uncommitted files
         files = ["hello.py", ".hello.py", "_hello.py"]
-        input_content = "# <file {file} content sentinel>\ndef main():\n    pass"
-        for file in files:
-            f = git_repo.workspace / file
-            f.write_text(input_content.format(file=file))
-            git_repo.run(f"git add {file}")
+        input_content = mock_file_content(git_repo, files, "no_docstrings.py")
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -57,19 +67,10 @@ class TestNoChanges:
             assert output_content == input_content.format(file=file)
 
     @staticmethod
-    def test_all_docstrings_are_correct_rst(git_repo, cwd):
+    def test_all_docstrings_are_correct_rst(git_repo: GitRepo, cwd):
         # GIVEN
         files = ["hello.py", ".hello.py", "_hello.py"]
-        input_content = (
-            "# <file {file} content sentinel>\n"
-            "def main():\n"
-            '    """Valid rst."""'
-            "    pass"
-        )
-        for file in files:
-            f = git_repo.workspace / file
-            f.write_text(input_content.format(file=file))
-            git_repo.run(f"git add {file}")
+        input_content = mock_file_content(git_repo, files, "valid_rst_python.py")
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -83,18 +84,20 @@ class TestNoChanges:
             assert output_content == input_content.format(file=file)
 
 
-@pytest.mark.parametrize("bad_rst", ["Underline too short\n========="])
+@pytest.mark.slow
 class TestBadRST:
     @staticmethod
-    def test_returns_1_for_single_bad_docstring(git_repo, cwd, bad_rst):
+    def test_fails_for_bad_docstrings(git_repo: GitRepo, cwd):
         # GIVEN
-        file = git_repo.workspace / "test_file.py"
-        file.write_text(f'"""\n{bad_rst}\n"""')
-        git_repo.run(f"git add {file}")
+        files = ["hello.py"]
+        mock_file_content(git_repo, files, "invalid_rst_python.py")
 
         # WHEN
         with cwd(git_repo.workspace):
-            process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
 
         # THEN
         assert process.returncode == 1
+        assert bad_rst_expected_stdout in process.stdout
