@@ -58,4 +58,4 @@ test_sort_file_contents: test_venv
 
 test_check_docstrings_parse_as_rst: test_venv
 	. test_venv/bin/activate; pytest \
-	tests/check_docstrings_parse_as_rst_hook
+	tests/check_docstrings_parse_as_rst_hook -x
