@@ -216,4 +216,39 @@ class TestDefaultBehaviour:
 
 
 class TestCustomBehaviour:
-    pass
+    @staticmethod
+    def test_custom_argument_overrules_git_username(
+        capsys: CaptureFixture,
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        file = "hello.py"
+        (git_repo.workspace / file).write_text("")
+        mocker.patch("sys.argv", ["stub_name", "-n", "<arg name sentinel>", file])
+        git_repo.run("git config user.name '<git config username sentinel>'")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        # THEN
+        # Construct expected outputs
+        copyright_string = f"# Copyright (c) {THIS_YEAR} <arg name sentinel>"
+        expected_content = f"{copyright_string}\n"
+        expected_stdout = f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, expected_content
+        )
+        assert_matching(
+            "captured stdout", "expected stdout", captured.out, expected_stdout
+        )
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
