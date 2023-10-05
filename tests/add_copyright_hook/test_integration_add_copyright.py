@@ -76,6 +76,7 @@ class TestNoChanges:
         assert captured.err == ""
 
 
+# Check for every language we support
 @pytest.mark.parametrize(
     "extension, comment_format",
     [
@@ -86,6 +87,10 @@ class TestNoChanges:
         (".pl", "# {content}"),
     ],
 )
+# Check multiple usernames to confirm they get read in correctly.
+@pytest.mark.parametrize(
+    "git_username", ["<git config username sentinel>", "Taylor Swift"]
+)
 class TestDefaultBehaviour:
     @staticmethod
     def test_adding_copyright_to_empty_files(
@@ -93,29 +98,29 @@ class TestDefaultBehaviour:
         comment_format: str,
         cwd,
         git_repo: GitRepo,
+        git_username: str,
         extension: str,
         mocker: MockerFixture,
-        tmp_path: Path,
     ):
         # GIVEN
         file = "hello" + extension
-        (tmp_path / file).write_text("")
+        (git_repo.workspace / file).write_text("")
         mocker.patch("sys.argv", ["stub_name", file])
-        git_repo.run("git config user.name '<git config username sentinel>'")
+        git_repo.run(f"git config user.name '{git_username}'")
 
         # WHEN
-        with cwd(tmp_path):
+        with cwd(git_repo.workspace):
             assert add_copyright.main() == 1
 
         # THEN
         copyright_string = comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+            content=f"Copyright (c) {THIS_YEAR} {git_username}"
         )
         expected_content = f"{copyright_string}\n"
         expected_stdout = (
             f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
         )
-        with open(tmp_path / file, "r") as f:
+        with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
 
         assert output_content == expected_content
@@ -129,29 +134,29 @@ class TestDefaultBehaviour:
         comment_format: str,
         cwd,
         git_repo: GitRepo,
+        git_username: str,
         extension: str,
         mocker: MockerFixture,
-        tmp_path: Path,
     ):
         # GIVEN
         file = "hello" + extension
-        (tmp_path / file).write_text(f"<file {file} content sentinel>")
+        (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
         mocker.patch("sys.argv", ["stub_name", file])
-        git_repo.run("git config user.name '<git config username sentinel>'")
+        git_repo.run(f"git config user.name '{git_username}'")
 
         # WHEN
-        with cwd(tmp_path):
+        with cwd(git_repo.workspace):
             assert add_copyright.main() == 1
 
         # THEN
         copyright_string = comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+            content=f"Copyright (c) {THIS_YEAR} {git_username}"
         )
         expected_content = copyright_string + f"\n\n<file {file} content sentinel>\n"
         expected_stdout = (
             f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
         )
-        with open(tmp_path / file, "r") as f:
+        with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
