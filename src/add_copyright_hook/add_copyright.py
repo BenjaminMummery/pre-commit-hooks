@@ -11,6 +11,7 @@ consult the README file.
 
 import argparse
 import datetime
+from pathlib import Path
 from typing import Optional, Tuple
 
 from src._shared.comment_mapping import get_comment_markers
@@ -82,6 +83,39 @@ def _construct_copyright_string(
     return outstr
 
 
+def _ensure_copyright_string(file: Path) -> int:
+    """
+    Ensure that the file has a docstring.
+
+    Args:
+        file (path): the file to be checked.
+
+    Returns:
+        int: 0 if the file already had a docstring, 1 if a docstring had to be added.
+    """
+    with open(file, "r+") as f:
+        content: str = f.read()
+        comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
+        if parse_copyright_string(content, comment_markers):
+            return 0
+
+        print(f"Fixing file `{file}` ", end="")
+
+        new_copyright_string = _construct_copyright_string(
+            "<git config username sentinel>",
+            datetime.date.today().year,
+            datetime.date.today().year,
+            "Copyright (c) {year} {name}",
+            comment_markers,
+        )
+
+        f.seek(0, 0)
+        f.truncate()
+        f.write(_add_copyright_string_to_content(content, new_copyright_string))
+        print(f"- added line(s):\n{new_copyright_string}")
+    return 1
+
+
 def main():
     """
     Entrypoint for the add_copyright hook.
@@ -100,23 +134,7 @@ def main():
     # Add copyright to files that don't already have it.
     retv: int = 0
     for file in args.files:
-        with open(file, "r+") as f:
-            content: str = f.read()
-            comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
-            if parse_copyright_string(content, comment_markers):
-                continue
-
-            new_copyright_string = _construct_copyright_string(
-                "<git config username sentinel>",
-                datetime.date.today().year,
-                datetime.date.today().year,
-                "Copyright (c) {year} {name}",
-                comment_markers,
-            )
-            f.seek(0, 0)
-            f.truncate()
-            f.write(_add_copyright_string_to_content(content, new_copyright_string))
-        retv |= 1
+        retv |= _ensure_copyright_string(Path(file))
     return retv
 
 
