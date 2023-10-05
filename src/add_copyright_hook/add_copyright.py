@@ -29,6 +29,7 @@ def _parse_args() -> argparse.Namespace:
         - files (list of Path): the paths to each changed file relevant to this hook.
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--name", type=str, default=None)
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
 
@@ -132,7 +133,7 @@ def _construct_copyright_string(
     return outstr
 
 
-def _ensure_copyright_string(file: Path) -> int:
+def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
     """
     Ensure that the file has a docstring.
 
@@ -153,7 +154,7 @@ def _ensure_copyright_string(file: Path) -> int:
         print(f"Fixing file `{file}` ", end="")
 
         new_copyright_string = _construct_copyright_string(
-            _get_git_user_name(),
+            name or _get_git_user_name(),
             datetime.date.today().year,
             datetime.date.today().year,
             "Copyright (c) {year} {name}",
@@ -185,7 +186,7 @@ def main():
     # Add copyright to files that don't already have it.
     retv: int = 0
     for file in args.files:
-        retv |= _ensure_copyright_string(Path(file))
+        retv |= _ensure_copyright_string(Path(file), name=args.name)
     return retv
 
 
