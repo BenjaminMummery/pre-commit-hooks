@@ -14,6 +14,8 @@ import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+from git import Repo  # type: ignore
+
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.copyright_parsing import parse_copyright_string
 
@@ -31,6 +33,24 @@ def _parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     return args
+
+
+def _get_git_user_name() -> str:
+    """
+    Get the user name as configured in git.
+
+    Raises:
+        ValueError: when the user name has not been configured.
+
+    Returns:
+        str: the user name
+    """
+    repo = Repo(".")
+    reader = repo.config_reader()
+    name = reader.get_value("user", "name")
+    if not isinstance(name, str) or len(name) < 1:
+        raise ValueError("The git username is not configured.")  # pragma: no cover
+    return name
 
 
 def _add_copyright_string_to_content(content: str, copyright_string: str) -> str:
@@ -87,6 +107,8 @@ def _ensure_copyright_string(file: Path) -> int:
     """
     Ensure that the file has a docstring.
 
+    This function encompasses the heavy lifting for the hook.
+
     Args:
         file (path): the file to be checked.
 
@@ -102,7 +124,7 @@ def _ensure_copyright_string(file: Path) -> int:
         print(f"Fixing file `{file}` ", end="")
 
         new_copyright_string = _construct_copyright_string(
-            "<git config username sentinel>",
+            _get_git_user_name(),
             datetime.date.today().year,
             datetime.date.today().year,
             "Copyright (c) {year} {name}",
