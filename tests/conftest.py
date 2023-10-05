@@ -7,6 +7,23 @@ from unittest.mock import Mock
 import pytest
 
 
+def assert_matching(name1: str, name2: str, value1, value2):
+    """
+    Assert that 2 values are the same, and print an informative output if they are not.
+
+    We compare quite a few longish strings in this repo, this gives a better way to
+    understand where they're clashing.
+    """
+    assert value1 == value2, (
+        f"{name1} did not match {name2}:\n"
+        f"= {name1.upper()} ============\n"
+        f"{value1}\n"
+        f"= {name2.upper()} ==========\n"
+        f"{value2}\n"
+        "============================="
+    )
+
+
 @pytest.fixture(scope="session")
 def cwd():
     @contextmanager
@@ -35,6 +52,21 @@ def mock_resolve_files(mocker):
     return mocker.patch("src._shared.resolvers._resolve_files")
 
 
+# endregion
+
+# region: add_copyright_hook_fixtures
+SUPPORTED_FILES = [
+    (".py", "# {content}"),
+    (".md", "<!--- {content} -->"),
+    (".cpp", "// {content}"),
+    (".cs", "/* {content} */"),
+    (".pl", "# {content}"),
+]
+VALID_COPYRIGHT_STRINGS = [
+    "Copyright 1111 NAME",
+    "Copyright (c) 1111 NAME",
+    "(c) 1111 NAME",
+]
 # endregion
 
 # region: add_msg_issue_fixtures
