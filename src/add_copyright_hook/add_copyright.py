@@ -12,9 +12,9 @@ consult the README file.
 import argparse
 import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
-from git import Repo  # type: ignore
+from git import Repo
 
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.copyright_parsing import parse_copyright_string
@@ -53,9 +53,26 @@ def _get_git_user_name() -> str:
     return name
 
 
+def _has_shebang(input: str) -> bool:
+    """
+    Check whether the input string starts with a shebang.
+
+    Args:
+        input (str): The string to check.
+
+    Returns:
+        bool: True if a shebang is found, false otherwise.
+    """
+    return input.startswith("#!")
+
+
 def _add_copyright_string_to_content(content: str, copyright_string: str) -> str:
     """
     Insert a copyright string into the appropriate place in existing content.
+
+    This method attempts to place the copyright string at the top of the file, unless
+    the file starts with a shebang in which case the copyright string is inserted after
+    the shebang, separated by an empty line.
 
     Args:
         content (str): The content to be updated.
@@ -64,10 +81,22 @@ def _add_copyright_string_to_content(content: str, copyright_string: str) -> str
     Returns:
         str: the new content.
     """
-    new_content = f"{copyright_string}\n"
-    if content.strip() != "":
-        new_content += f"\n{content}\n"
-    return new_content
+    lines: List[str] = content.splitlines()
+    new_lines: List[str] = []
+
+    # If the file starts with a shebang, keep that first in the new content.
+    if _has_shebang(content):
+        new_lines += [lines[0], ""]
+        lines = lines[1:]
+
+    # Remove leading empty lines from the content
+    while len(lines) >= 1 and lines[0] == "":
+        lines = lines[1:]
+
+    new_lines += [copyright_string, ""] + lines
+    if not new_lines[-1] == "":
+        new_lines.append("")
+    return "\n".join(new_lines)
 
 
 def _construct_copyright_string(
