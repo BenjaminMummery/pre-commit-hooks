@@ -108,18 +108,19 @@ class TestDefaultBehaviour:
             assert add_copyright.main() == 1
 
         # THEN
-        expected_content = (
-            comment_format.format(
-                content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
-            )
-            + "\n"
+        copyright_string = comment_format.format(
+            content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+        )
+        expected_content = f"{copyright_string}\n"
+        expected_stdout = (
+            f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
         )
         with open(tmp_path / file, "r") as f:
             output_content = f.read()
 
         assert output_content == expected_content
         captured = capsys.readouterr()
-        assert captured.out == ""
+        assert captured.out == expected_stdout
         assert captured.err == ""
 
     @staticmethod
@@ -143,19 +144,17 @@ class TestDefaultBehaviour:
             assert add_copyright.main() == 1
 
         # THEN
+        copyright_string = comment_format.format(
+            content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+        )
+        expected_content = copyright_string + f"\n\n<file {file} content sentinel>\n"
+        expected_stdout = (
+            f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
+        )
         with open(tmp_path / file, "r") as f:
             output_content = f.read()
         captured = capsys.readouterr()
-        expected_content = (
-            comment_format.format(
-                content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
-            )
-            + f"\n\n<file {file} content sentinel>\n"
-        )
 
-        print(output_content)
-        print("=" * 80)
-        print(expected_content)
         assert output_content == expected_content
-        assert captured.out == ""
+        assert captured.out == expected_stdout
         assert captured.err == ""
