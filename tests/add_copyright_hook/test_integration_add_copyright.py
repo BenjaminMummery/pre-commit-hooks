@@ -87,6 +87,7 @@ class TestNoChanges:
     ],
 )
 class TestDefaultBehaviour:
+    @staticmethod
     def test_adding_copyright_to_empty_files(
         capsys: CaptureFixture,
         comment_format: str,
@@ -98,7 +99,6 @@ class TestDefaultBehaviour:
     ):
         # GIVEN
         file = "hello" + extension
-        file_content = "<file content sentinel>"
         (tmp_path / file).write_text("")
         mocker.patch("sys.argv", ["stub_name", file])
         git_repo.run("git config user.name '<git config username sentinel>'")
@@ -108,12 +108,54 @@ class TestDefaultBehaviour:
             assert add_copyright.main() == 1
 
         # THEN
-        comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+        expected_content = (
+            comment_format.format(
+                content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+            )
+            + "\n"
         )
         with open(tmp_path / file, "r") as f:
             output_content = f.read()
-        assert output_content == file_content
+
+        assert output_content == expected_content
         captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
+
+    @staticmethod
+    def test_adding_copyright_to_files_with_content(
+        capsys: CaptureFixture,
+        comment_format: str,
+        cwd,
+        git_repo: GitRepo,
+        extension: str,
+        mocker: MockerFixture,
+        tmp_path: Path,
+    ):
+        # GIVEN
+        file = "hello" + extension
+        (tmp_path / file).write_text(f"<file {file} content sentinel>")
+        mocker.patch("sys.argv", ["stub_name", file])
+        git_repo.run("git config user.name '<git config username sentinel>'")
+
+        # WHEN
+        with cwd(tmp_path):
+            assert add_copyright.main() == 1
+
+        # THEN
+        with open(tmp_path / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+        expected_content = (
+            comment_format.format(
+                content=f"Copyright (c) {THIS_YEAR} <git config username sentinel>"
+            )
+            + f"\n\n<file {file} content sentinel>\n"
+        )
+
+        print(output_content)
+        print("=" * 80)
+        print(expected_content)
+        assert output_content == expected_content
         assert captured.out == ""
         assert captured.err == ""
