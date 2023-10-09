@@ -1,17 +1,15 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import datetime
 from pathlib import Path
 
 import pytest
+from freezegun import freeze_time
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
 from tests.conftest import SUPPORTED_FILES, VALID_COPYRIGHT_STRINGS, assert_matching
-
-THIS_YEAR = datetime.date.today().year
 
 
 class TestNoChanges:
@@ -77,6 +75,7 @@ class TestNoChanges:
 )
 class TestDefaultBehaviour:
     @staticmethod
+    @freeze_time("1066-01-01")
     def test_adding_copyright_to_empty_files(
         capsys: CaptureFixture,
         comment_format: str,
@@ -99,7 +98,7 @@ class TestDefaultBehaviour:
         # THEN
         # Construct expected outputs
         copyright_string = comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} {git_username}"
+            content=f"Copyright (c) 1066 {git_username}"
         )
         expected_content = f"{copyright_string}\n"
         expected_stdout = (
@@ -121,6 +120,7 @@ class TestDefaultBehaviour:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
+    @freeze_time("1066-01-01")
     def test_adding_copyright_to_files_with_content(
         capsys: CaptureFixture,
         comment_format: str,
@@ -143,7 +143,7 @@ class TestDefaultBehaviour:
         # THEN
         # Construct expected outputs
         copyright_string = comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} {git_username}"
+            content=f"Copyright (c) 1066 {git_username}"
         )
         expected_content = copyright_string + f"\n\n<file {file} content sentinel>\n"
         expected_stdout = (
@@ -165,6 +165,7 @@ class TestDefaultBehaviour:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
+    @freeze_time("1066-01-01")
     def test_handles_shebang(
         capsys: CaptureFixture,
         comment_format: str,
@@ -189,7 +190,7 @@ class TestDefaultBehaviour:
         # THEN
         # Construct expected outputs
         copyright_string = comment_format.format(
-            content=f"Copyright (c) {THIS_YEAR} {git_username}"
+            content=f"Copyright (c) 1066 {git_username}"
         )
         expected_content = (
             "#!/usr/bin/env python3\n"
@@ -217,6 +218,7 @@ class TestDefaultBehaviour:
 
 class TestCustomBehaviour:
     @staticmethod
+    @freeze_time("1066-01-01")
     def test_custom_argument_overrules_git_username(
         capsys: CaptureFixture,
         cwd,
@@ -235,7 +237,7 @@ class TestCustomBehaviour:
 
         # THEN
         # Construct expected outputs
-        copyright_string = f"# Copyright (c) {THIS_YEAR} <arg name sentinel>"
+        copyright_string = "# Copyright (c) 1066 <arg name sentinel>"
         expected_content = f"{copyright_string}\n"
         expected_stdout = f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
 
