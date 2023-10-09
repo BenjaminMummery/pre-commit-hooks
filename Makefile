@@ -3,11 +3,10 @@
 # SETUP
 test_venv: test_venv/touchfile
 
-test_venv/touchfile: test_requirements.txt
+test_venv/touchfile:
 	test -d test_venv || virtualenv test_venv
 	. test_venv/bin/activate; \
-	pip install -Ur test_requirements.txt ; \
-	pip install -e .
+	pip install -e '.[dev]'
 	touch test_venv/touchfile
 
 clean:

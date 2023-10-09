@@ -1,8 +1,0 @@
-freezegun
-identify
-pre-commit
-pytest
-pytest-cov
-pytest-git
-pytest-mock
-restructuredtext_lint

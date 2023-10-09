@@ -34,6 +34,18 @@ add-msg-issue = "src.add_msg_issue_hook.add_msg_issue:main"
 sort-file-contents = "src.sort_file_contents_hook.sort_file_contents:main"
 check-docstrings-parse-as-rst = "src.check_docstrings_parse_as_rst_hook.check_docstrings_parse_as_rst:main"
 
+[project.optional-dependencies]
+dev = [
+    "freezegun",
+    "identify",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-git",
+    "pytest-mock",
+    "restructuredtext_lint",
+]
+
 [tool.setuptools.packages]
 find = {}
 
