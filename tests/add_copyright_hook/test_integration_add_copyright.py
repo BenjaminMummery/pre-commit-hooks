@@ -1,5 +1,6 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+import datetime
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,8 @@ from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
 from tests.conftest import SUPPORTED_FILES, VALID_COPYRIGHT_STRINGS, assert_matching
+
+THIS_YEAR = datetime.date.today().year
 
 
 class TestNoChanges:
@@ -74,146 +77,205 @@ class TestNoChanges:
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
 )
 class TestDefaultBehaviour:
-    @staticmethod
-    @freeze_time("1066-01-01")
-    def test_adding_copyright_to_empty_files(
-        capsys: CaptureFixture,
-        comment_format: str,
-        cwd,
-        git_repo: GitRepo,
-        git_username: str,
-        extension: str,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        file = "hello" + extension
-        (git_repo.workspace / file).write_text("")
-        mocker.patch("sys.argv", ["stub_name", file])
-        git_repo.run(f"git config user.name '{git_username}'")
+    class TestEmptyFiles:
+        @staticmethod
+        @freeze_time("1066-01-01")
+        def test_adding_copyright_to_empty_files(
+            capsys: CaptureFixture,
+            comment_format: str,
+            cwd,
+            git_repo: GitRepo,
+            git_username: str,
+            extension: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello" + extension
+            (git_repo.workspace / file).write_text("")
+            mocker.patch("sys.argv", ["stub_name", file])
+            git_repo.run(f"git config user.name '{git_username}'")
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
 
-        # THEN
-        # Construct expected outputs
-        copyright_string = comment_format.format(
-            content=f"Copyright (c) 1066 {git_username}"
-        )
-        expected_content = f"{copyright_string}\n"
-        expected_stdout = (
-            f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
-        )
+            # THEN
+            # Construct expected outputs
+            copyright_string = comment_format.format(
+                content=f"Copyright (c) 1066 {git_username}"
+            )
+            expected_content = f"{copyright_string}\n"
+            expected_stdout = (
+                f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
+            )
 
-        # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
-            output_content = f.read()
-        captured = capsys.readouterr()
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
 
-        # Compare
-        assert_matching(
-            "output content", "expected content", output_content, expected_content
-        )
-        assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
-        )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
 
-    @staticmethod
-    @freeze_time("1066-01-01")
-    def test_adding_copyright_to_files_with_content(
-        capsys: CaptureFixture,
-        comment_format: str,
-        cwd,
-        git_repo: GitRepo,
-        git_username: str,
-        extension: str,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        file = "hello" + extension
-        (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
-        mocker.patch("sys.argv", ["stub_name", file])
-        git_repo.run(f"git config user.name '{git_username}'")
+    class TestHandlesFileContent:
+        @staticmethod
+        @freeze_time("1066-01-01")
+        def test_adding_copyright_to_files_with_content(
+            capsys: CaptureFixture,
+            comment_format: str,
+            cwd,
+            git_repo: GitRepo,
+            git_username: str,
+            extension: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello" + extension
+            (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
+            mocker.patch("sys.argv", ["stub_name", file])
+            git_repo.run(f"git config user.name '{git_username}'")
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
 
-        # THEN
-        # Construct expected outputs
-        copyright_string = comment_format.format(
-            content=f"Copyright (c) 1066 {git_username}"
-        )
-        expected_content = copyright_string + f"\n\n<file {file} content sentinel>\n"
-        expected_stdout = (
-            f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
-        )
+            # THEN
+            # Construct expected outputs
+            copyright_string = comment_format.format(
+                content=f"Copyright (c) 1066 {git_username}"
+            )
+            expected_content = (
+                copyright_string + f"\n\n<file {file} content sentinel>\n"
+            )
+            expected_stdout = (
+                f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
+            )
 
-        # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
-            output_content = f.read()
-        captured = capsys.readouterr()
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
 
-        # Compare
-        assert_matching(
-            "output content", "expected content", output_content, expected_content
-        )
-        assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
-        )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
 
-    @staticmethod
-    @freeze_time("1066-01-01")
-    def test_handles_shebang(
-        capsys: CaptureFixture,
-        comment_format: str,
-        cwd,
-        git_repo: GitRepo,
-        git_username: str,
-        extension: str,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        file = "hello" + extension
-        (git_repo.workspace / file).write_text(
-            f"#!/usr/bin/env python3\n<file {file} content sentinel>"
-        )
-        mocker.patch("sys.argv", ["stub_name", file])
-        git_repo.run(f"git config user.name '{git_username}'")
+        @staticmethod
+        @freeze_time("1066-01-01")
+        def test_handles_shebang(
+            capsys: CaptureFixture,
+            comment_format: str,
+            cwd,
+            git_repo: GitRepo,
+            git_username: str,
+            extension: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello" + extension
+            (git_repo.workspace / file).write_text(
+                f"#!/usr/bin/env python3\n<file {file} content sentinel>"
+            )
+            mocker.patch("sys.argv", ["stub_name", file])
+            git_repo.run(f"git config user.name '{git_username}'")
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
 
-        # THEN
-        # Construct expected outputs
-        copyright_string = comment_format.format(
-            content=f"Copyright (c) 1066 {git_username}"
-        )
-        expected_content = (
-            "#!/usr/bin/env python3\n"
-            "\n"
-            f"{copyright_string}\n"
-            "\n"
-            f"<file {file} content sentinel>\n"
-        )
-        expected_stdout = f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            # THEN
+            # Construct expected outputs
+            copyright_string = comment_format.format(
+                content=f"Copyright (c) 1066 {git_username}"
+            )
+            expected_content = (
+                "#!/usr/bin/env python3\n"
+                "\n"
+                f"{copyright_string}\n"
+                "\n"
+                f"<file {file} content sentinel>\n"
+            )
+            expected_stdout = (
+                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            )
 
-        # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
-            output_content = f.read()
-        captured = capsys.readouterr()
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
 
-        # Compare
-        assert_matching(
-            "output content", "expected content", output_content, expected_content
-        )
-        assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
-        )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    class TestDateHandling:
+        @staticmethod
+        @freeze_time("9999-01-01")
+        def test_infers_start_date_from_git_history(
+            capsys: CaptureFixture,
+            comment_format: str,
+            cwd,
+            git_repo: GitRepo,
+            git_username: str,
+            extension: str,
+            mocker: MockerFixture,
+        ):
+            """
+            Freezegun doesn't work on the git_repo.run subprocesses, so we use the
+            current year as the year for the initial commit and set the frozen date for
+            running the hook arbitrarily far into the future.
+            """
+            # GIVEN
+            file = "hello" + extension
+            (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
+            mocker.patch("sys.argv", ["stub_name", file])
+            git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run(f"git add {file}", check_rc=True)
+            git_repo.run("git commit -m 'test commit' --no-verify", check_rc=True)
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
+
+            # THEN
+            # Construct expected outputs
+            copyright_string = comment_format.format(
+                content=f"Copyright (c) {THIS_YEAR} - 9999 {git_username}"
+            )
+            expected_content = f"{copyright_string}\n\n<file {file} content sentinel>\n"
+            expected_stdout = (
+                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            )
+
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
+
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
 class TestCustomBehaviour:
