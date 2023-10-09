@@ -173,10 +173,18 @@ class TestDefaultBehaviour:
 
         @staticmethod
         @freeze_time("1066-01-01")
+        @pytest.mark.parametrize(
+            "file_content",
+            [
+                "#!/usr/bin/env python3\n<file content sentinel>",
+                "#!/usr/bin/env python3\n\n<file content sentinel>",
+            ],
+        )
         def test_handles_shebang(
             capsys: CaptureFixture,
             comment_format: str,
             cwd,
+            file_content: str,
             git_repo: GitRepo,
             git_username: str,
             extension: str,
@@ -184,9 +192,7 @@ class TestDefaultBehaviour:
         ):
             # GIVEN
             file = "hello" + extension
-            (git_repo.workspace / file).write_text(
-                f"#!/usr/bin/env python3\n<file {file} content sentinel>"
-            )
+            (git_repo.workspace / file).write_text(file_content)
             mocker.patch("sys.argv", ["stub_name", file])
             git_repo.run(f"git config user.name '{git_username}'")
 
@@ -204,7 +210,7 @@ class TestDefaultBehaviour:
                 "\n"
                 f"{copyright_string}\n"
                 "\n"
-                f"<file {file} content sentinel>\n"
+                f"<file content sentinel>\n"
             )
             expected_stdout = (
                 f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
