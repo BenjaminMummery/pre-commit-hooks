@@ -12,12 +12,46 @@ consult the README file.
 import argparse
 import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Set, Tuple
 
-from git import Repo
+from git import GitCommandError, Repo
 
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.copyright_parsing import parse_copyright_string
+from src._shared.exceptions import NoCommitsError
+
+
+def _get_earliest_commit_year(file: Path) -> int:
+    """
+    Get the years of the earliest and latest commits made to the specified file.
+
+    Args:
+        file (Path): The path to the file to be checked
+
+    Raises:
+        NoCommitsError: when the file has no commits for us to examine the blame.
+
+    Returns:
+        int: The year of the earliest commit on the file.
+
+    """
+
+    repo = Repo(".")
+
+    try:
+        blames = repo.blame(repo.head, str(file))
+    except GitCommandError as e:
+        raise NoCommitsError from e
+
+    timestamps: Set[int] = set(
+        int(blame[0].committed_date) for blame in blames  # type: ignore
+    )
+
+    earliest_date: datetime = datetime.datetime.fromtimestamp(  # type: ignore
+        min(timestamps)
+    )
+
+    return int(earliest_date.year)  # type: ignore
 
 
 def _parse_args() -> argparse.Namespace:
@@ -153,10 +187,17 @@ def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
 
         print(f"Fixing file `{file}` ", end="")
 
+        copyright_end_year: int = datetime.date.today().year
+        copyright_start_year: int
+        try:
+            copyright_start_year = _get_earliest_commit_year(file)
+        except NoCommitsError:
+            copyright_start_year = copyright_end_year
+
         new_copyright_string = _construct_copyright_string(
             name or _get_git_user_name(),
-            datetime.date.today().year,
-            datetime.date.today().year,
+            copyright_start_year,
+            copyright_end_year,
             "Copyright (c) {year} {name}",
             comment_markers,
         )
