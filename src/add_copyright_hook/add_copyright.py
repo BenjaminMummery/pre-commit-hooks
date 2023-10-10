@@ -174,6 +174,17 @@ def _construct_copyright_string(
 def _ensure_comment(
     copyright_string: str, comment_markers: Tuple[str, Optional[str]]
 ) -> str:
+    """
+    Ensure that the string passed in is properly comment escaped.
+
+    Args:
+        copyright_string (str): The string to be checked
+        comment_markers: (tuple(str, str|None)): The comment markers to be inserted
+            before and, optionally, after the copyright string.
+
+    Returns:
+        str: the properly escaped string.
+    """
     outlines = copyright_string.splitlines()
     for i, line in enumerate(outlines):
         newline = line

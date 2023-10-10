@@ -66,3 +66,10 @@ addopts = "--strict-markers"
 markers = [
     "slow: marks tests as slow (deselect with `-m 'not slow'`)"
 ]
+
+[tool.interrogate]
+ignore-init-method = true
+fail-under = 100
+verbose = 2
+ignore_magic = true
+exclude = ["tests"]

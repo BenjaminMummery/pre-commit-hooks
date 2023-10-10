@@ -139,7 +139,6 @@ repos:
     rev: 1.5.0
     hooks:
       - id: interrogate
-        exclude: (?x)(^tests/)
 
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
