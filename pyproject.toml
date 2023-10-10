@@ -51,3 +51,18 @@ find = {}
 
 [tool.distutils.bdist_wheel]
 universal = true
+
+[tool.mypy]
+exclude = "tests/"
+warn_unused_configs = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module="tests.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with `-m 'not slow'`)"
+]
