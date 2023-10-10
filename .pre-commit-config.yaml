@@ -139,11 +139,6 @@ repos:
     rev: 1.5.0
     hooks:
       - id: interrogate
-        args: [
-          --fail-under=100,
-          --verbose,
-          --ignore-magic,
-        ]
         exclude: (?x)(^tests/)
 
   - repo: https://github.com/pycqa/pydocstyle

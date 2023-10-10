@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
 from git import GitCommandError, Repo
+from identify import identify
 
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.config_parsing import read_pyproject_toml
@@ -23,6 +24,7 @@ from src._shared.copyright_parsing import parse_copyright_string
 from src._shared.exceptions import NoCommitsError
 
 TOOL_NAME = "add_copyright"
+LANGUAGE_TAGS = ["python"]
 
 
 def _get_earliest_commit_year(file: Path) -> int:
@@ -164,11 +166,29 @@ def _construct_copyright_string(
         year = f"{start_year}"
     else:
         year = f"{start_year} - {end_year}"
-    outstr = f"{comment_markers[0]} {format.format(year=year, name=name)}"
-    if comment_markers[1]:
-        outstr += f" {comment_markers[1]}"
+    commentstr = f"{format.format(year=year, name=name)}"
+    x = _ensure_comment(commentstr, comment_markers)
+    return x
 
-    return outstr
+
+def _ensure_comment(
+    copyright_string: str, comment_markers: Tuple[str, Optional[str]]
+) -> str:
+    outlines = copyright_string.splitlines()
+    for i, line in enumerate(outlines):
+        newline = line
+        if not line.startswith(comment_markers[0]):
+            newline = f"{comment_markers[0]} {line}"
+        if comment_markers[1] and not line.endswith(comment_markers[1]):
+            newline = f"{newline} {comment_markers[1]}"
+        outlines[i] = newline
+    assert (
+        len(outlines) > 0
+    ), "Unknown error in `_ensure_comment()`: generated no lines."
+    if len(outlines) == 1:
+        return outlines[0]
+    else:
+        return "\n".join(outlines)
 
 
 def _read_default_configuration() -> dict:
@@ -191,7 +211,8 @@ def _read_default_configuration() -> dict:
             {"name" : "my name"}
             ```
     """
-    supported_keys = ["name"]
+    supported_langauge_subkeys = ["format"]
+    supported_keys = ["name"] + LANGUAGE_TAGS
     retv = dict([(key, None) for key in supported_keys])
 
     # find config file
@@ -207,14 +228,50 @@ def _read_default_configuration() -> dict:
     for key in data:
         if key not in supported_keys:
             raise ValueError(
-                f"Unsupported option in config file {filepath}: {key}. "
+                f"Unsupported option in config file {filepath}: '{key}'. "
                 f"Supported options are: {supported_keys}."
             )
+        if key in LANGUAGE_TAGS:
+            for subkey in data[key]:
+                if subkey not in supported_langauge_subkeys:
+                    raise ValueError(
+                        f"Unsupported option in config file {filepath}: "
+                        f"'{key}.{subkey}'. "
+                        f"Supported options for '{key}' are: "
+                        f"{supported_langauge_subkeys}."
+                    )
         retv[key] = data[key]
     return retv
 
 
-def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
+def _ensure_valid_format(format: str):
+    """
+    Ensure that the provided format string contains the required keys.
+
+    Args:
+        format (str): The string to be checked.
+
+    Raises:
+        KeyError: when one or more keys is missing.
+
+    Returns:
+        str: the checked format string.
+    """
+    keys = ["name", "year"]
+    missing_keys = []
+    for key in keys:
+        if "{" + key + "}" not in format:
+            missing_keys.append(key)
+    if len(missing_keys) > 0:
+        raise KeyError(
+            f"The format string '{format}' is missing the following required keys: "
+            f"{missing_keys}"
+        )
+
+
+def _ensure_copyright_string(
+    file: Path, name: Optional[str], format: str = "Copyright (c) {year} {name}"
+) -> int:
     """
     Ensure that the file has a docstring.
 
@@ -226,6 +283,8 @@ def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
     Returns:
         int: 0 if the file already had a docstring, 1 if a docstring had to be added.
     """
+    _ensure_valid_format(format)
+
     with open(file, "r+") as f:
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
@@ -245,7 +304,7 @@ def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
             name or _get_git_user_name(),
             copyright_start_year,
             copyright_end_year,
-            "Copyright (c) {year} {name}",
+            format,
             comment_markers,
         )
 
@@ -279,7 +338,15 @@ def main():
     # Add copyright to files that don't already have it.
     retv: int = 0
     for file in configuration["files"]:
-        retv |= _ensure_copyright_string(Path(file), name=configuration["name"])
+        # Extract the language-specific config options for this file.
+        kwargs = {}
+        for tag in identify.tags_from_path(file):
+            if (tag in LANGUAGE_TAGS) and (configuration[tag] is not None):
+                kwargs = configuration[tag]
+                break
+        retv |= _ensure_copyright_string(
+            Path(file), name=configuration["name"], **kwargs
+        )
     return retv
 
 
