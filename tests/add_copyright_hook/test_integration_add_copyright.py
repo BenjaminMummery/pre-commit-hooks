@@ -379,7 +379,7 @@ class TestCustomBehaviour:
     class TestConfigFiles:
         @staticmethod
         @freeze_time("1066-01-01")
-        def test_custom_option_overrules_git_username(
+        def test_custom_name_option_overrules_git_username(
             capsys: CaptureFixture,
             cwd,
             git_repo: GitRepo,
@@ -448,5 +448,63 @@ class TestCustomBehaviour:
                 "Output error string",
                 "Expected error string",
                 e.exconly(),
-                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: unsupported_option. Supported options are: ['name'].",  # noqa: E501
+                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python'].",  # noqa: E501
             )
+
+        @staticmethod
+        @pytest.mark.parametrize(
+            "language, lang_ext, config_format",
+            [
+                (
+                    "python",
+                    ".py",
+                    "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
+                )
+            ],
+        )
+        @freeze_time("1066-01-01")
+        def test_custom_formatting(
+            config_format: str,
+            cwd,
+            git_repo: GitRepo,
+            language: str,
+            lang_ext: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            files = [f"hello{ext}" for ext, _ in SUPPORTED_FILES]
+            for file in files:
+                (git_repo.workspace / file).write_text("")
+            git_repo.run("git config user.name '<git config username sentinel>'")
+            mocker.patch("sys.argv", ["stub_name"] + files)
+
+            config_file = "pyproject.toml"
+            (git_repo.workspace / config_file).write_text(
+                f'[tool.add_copyright.{language}]\nformat="""{config_format}"""\n'
+            )
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
+
+            # THEN
+            for ext, content in SUPPORTED_FILES:
+                if ext == lang_ext:
+                    copyright_string = config_format.format(
+                        name="<git config username sentinel>", year="1066"
+                    )
+                else:
+                    copyright_string = content.format(
+                        content="Copyright (c) {year} {name}".format(
+                            name="<git config username sentinel>", year="1066"
+                        )
+                    )
+
+                with open(git_repo.workspace / f"hello{ext}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    f"{copyright_string}\n",
+                )
