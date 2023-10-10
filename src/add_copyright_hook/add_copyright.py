@@ -205,6 +205,11 @@ def _read_default_configuration() -> dict:
     # read data from config file
     data = read_pyproject_toml(Path(filepath), TOOL_NAME)
     for key in data:
+        if key not in supported_keys:
+            raise ValueError(
+                f"Unsupported option in config file {filepath}: {key}. "
+                f"Supported options are: {supported_keys}."
+            )
         retv[key] = data[key]
     return retv
 
