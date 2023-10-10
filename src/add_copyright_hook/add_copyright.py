@@ -11,14 +11,18 @@ consult the README file.
 
 import argparse
 import datetime
+import os
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
 from git import GitCommandError, Repo
 
 from src._shared.comment_mapping import get_comment_markers
+from src._shared.config_parsing import read_pyproject_toml
 from src._shared.copyright_parsing import parse_copyright_string
 from src._shared.exceptions import NoCommitsError
+
+TOOL_NAME = "add_copyright"
 
 
 def _get_earliest_commit_year(file: Path) -> int:
@@ -54,7 +58,7 @@ def _get_earliest_commit_year(file: Path) -> int:
     return int(earliest_date.year)  # type: ignore
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args() -> dict:
     """
     Parse the CLI arguments.
 
@@ -67,7 +71,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
 
-    return args
+    return args.__dict__
 
 
 def _get_git_user_name() -> str:
@@ -167,6 +171,44 @@ def _construct_copyright_string(
     return outstr
 
 
+def _read_default_configuration() -> dict:
+    """
+    Read in the default configuration from a config file.
+
+    Returns:
+        dict: a mapping of key value pairs where the key is the configuration option
+            and the value is its value. For example, the `pyproject.toml`
+            entry
+
+            ```toml
+            [tool.add_copyright]
+            name = "my name"
+            ```
+
+            will be returned as the following dict:
+
+            ```python
+            {"name" : "my name"}
+            ```
+    """
+    supported_keys = ["name"]
+    retv = dict([(key, None) for key in supported_keys])
+
+    # find config file
+    filename = "pyproject.toml"
+    for root, _, files in os.walk(os.getcwd()):
+        if filename in files:
+            filepath = os.path.join(root, filename)
+            break
+        return retv
+
+    # read data from config file
+    data = read_pyproject_toml(Path(filepath), TOOL_NAME)
+    for key in data:
+        retv[key] = data[key]
+    return retv
+
+
 def _ensure_copyright_string(file: Path, name: Optional[str]) -> int:
     """
     Ensure that the file has a docstring.
@@ -218,16 +260,21 @@ def main():
     Returns:
         int: 1 if files have been modified, 0 otherwise.
     """
+    # Build the configuration from config files and CLI args.
+    configuration = _read_default_configuration()
     args = _parse_args()
+    for key in args:
+        if args[key] is not None:
+            configuration[key] = args[key]
 
     # Early exit if no files provided
-    if len(args.files) < 1:
+    if len(configuration["files"]) < 1:
         return 0
 
     # Add copyright to files that don't already have it.
     retv: int = 0
-    for file in args.files:
-        retv |= _ensure_copyright_string(Path(file), name=args.name)
+    for file in configuration["files"]:
+        retv |= _ensure_copyright_string(Path(file), name=configuration["name"])
     return retv
 
 
