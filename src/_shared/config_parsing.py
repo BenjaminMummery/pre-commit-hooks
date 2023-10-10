@@ -30,6 +30,6 @@ def read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
 
     # early return for no matching section in config file
     if not (tool_config := config.get("tool", {}).get(tool_name)):
-        raise Exception
+        return {}
 
     return tool_config
