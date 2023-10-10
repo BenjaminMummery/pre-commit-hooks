@@ -7,7 +7,7 @@ import typing as t
 from pathlib import Path
 
 
-def _resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
+def resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     """
     Convert the list of files into a list of paths.
 

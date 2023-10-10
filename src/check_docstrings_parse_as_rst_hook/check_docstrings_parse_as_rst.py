@@ -106,7 +106,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
-    args.files = resolvers._resolve_files(args.files)
+    args.files = resolvers.resolve_files(args.files)
     return args
 
 

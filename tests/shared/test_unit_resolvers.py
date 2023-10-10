@@ -10,7 +10,7 @@ from src._shared import resolvers
 class TestResolveFiles:
     @staticmethod
     def test_returns_empty_list_for_empty_input():
-        files = resolvers._resolve_files([])
+        files = resolvers.resolve_files([])
 
         assert files == []
 
@@ -20,7 +20,7 @@ class TestResolveFiles:
         p.write_text("")
 
         with cwd(tmp_path):
-            files = resolvers._resolve_files("hello.txt")
+            files = resolvers.resolve_files("hello.txt")
 
         assert files == [Path("hello.txt")]
 
@@ -32,7 +32,7 @@ class TestResolveFiles:
             file.write_text("")
 
         with cwd(tmp_path):
-            files = resolvers._resolve_files(["hello.txt", "goodbye.py"])
+            files = resolvers.resolve_files(["hello.txt", "goodbye.py"])
 
         assert files == [Path("hello.txt"), Path("goodbye.py")]
 
@@ -43,4 +43,4 @@ class TestResolveFiles:
 
         with cwd(tmp_path):
             with pytest.raises(FileNotFoundError):
-                resolvers._resolve_files(["hello.txt", "goodbye.py"])
+                resolvers.resolve_files(["hello.txt", "goodbye.py"])

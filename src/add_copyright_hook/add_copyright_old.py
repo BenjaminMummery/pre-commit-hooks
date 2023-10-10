@@ -646,7 +646,7 @@ def _parse_args() -> argparse.Namespace:
 
     args.name = _resolve_user_name(args.name, args.config)
     args.format = _resolve_format(args.format, args.config)
-    args.files = resolvers._resolve_files(args.files)
+    args.files = resolvers.resolve_files(args.files)
 
     return args
 

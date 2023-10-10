@@ -49,7 +49,7 @@ def mock_get_comment_markers(mocker):
 
 @pytest.fixture
 def mock_resolve_files(mocker):
-    return mocker.patch("src._shared.resolvers._resolve_files")
+    return mocker.patch("src._shared.resolvers.resolve_files")
 
 
 # endregion
