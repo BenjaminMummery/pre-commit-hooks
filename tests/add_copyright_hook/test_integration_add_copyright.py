@@ -376,3 +376,32 @@ class TestCustomBehaviour:
                 "captured stdout", "expected stdout", captured.out, expected_stdout
             )
             assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+        @staticmethod
+        def test_raises_valueerror_for_unsupported_config_options(
+            cwd,
+            tmp_path: Path,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello.py"
+            (tmp_path / file).write_text("")
+            mocker.patch("sys.argv", ["stub_name", file])
+
+            config_file = "pyproject.toml"
+            (tmp_path / config_file).write_text(
+                '[tool.add_copyright]\nunsupported_option="should not matter"\n'
+            )
+
+            # WHEN
+            with cwd(tmp_path):
+                with pytest.raises(ValueError) as e:
+                    add_copyright.main()
+
+            # THEN
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: unsupported_option. Supported options are: ['name'].",  # noqa: E501
+            )
