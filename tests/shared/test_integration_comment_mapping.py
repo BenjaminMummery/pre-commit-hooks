@@ -6,10 +6,7 @@ import pytest
 
 from src._shared import comment_mapping
 
-from ..conftest import SHARED_FIXTURE_LIST as FIXTURES
 
-
-@pytest.mark.usefixtures(*[f for f in FIXTURES if f != "mock_get_comment_markers"])
 class TestGetCommentMarkers:
     @staticmethod
     @pytest.mark.parametrize(
