@@ -285,40 +285,94 @@ class TestDefaultBehaviour:
 
 
 class TestCustomBehaviour:
-    @staticmethod
-    @freeze_time("1066-01-01")
-    def test_custom_argument_overrules_git_username(
-        capsys: CaptureFixture,
-        cwd,
-        git_repo: GitRepo,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        file = "hello.py"
-        (git_repo.workspace / file).write_text("")
-        mocker.patch("sys.argv", ["stub_name", "-n", "<arg name sentinel>", file])
-        git_repo.run("git config user.name '<git config username sentinel>'")
+    class TestCLIArgs:
+        """
+        Test the args that can be passed to the hook via the "args" section of the
+        .pre-commit-config.yaml entry.
+        """
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            assert add_copyright.main() == 1
+        @staticmethod
+        @freeze_time("1066-01-01")
+        def test_custom_argument_overrules_git_username(
+            capsys: CaptureFixture,
+            cwd,
+            git_repo: GitRepo,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello.py"
+            (git_repo.workspace / file).write_text("")
+            mocker.patch("sys.argv", ["stub_name", "-n", "<arg name sentinel>", file])
+            git_repo.run("git config user.name '<git config username sentinel>'")
 
-        # THEN
-        # Construct expected outputs
-        copyright_string = "# Copyright (c) 1066 <arg name sentinel>"
-        expected_content = f"{copyright_string}\n"
-        expected_stdout = f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
 
-        # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
-            output_content = f.read()
-        captured = capsys.readouterr()
+            # THEN
+            # Construct expected outputs
+            copyright_string = "# Copyright (c) 1066 <arg name sentinel>"
+            expected_content = f"{copyright_string}\n"
+            expected_stdout = (
+                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            )
 
-        # Compare
-        assert_matching(
-            "output content", "expected content", output_content, expected_content
-        )
-        assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
-        )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
+
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    class TestConfigFiles:
+        @staticmethod
+        @freeze_time("1066-01-01")
+        def test_custom_option_overrules_git_username(
+            capsys: CaptureFixture,
+            cwd,
+            git_repo: GitRepo,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            file = "hello.py"
+            (git_repo.workspace / file).write_text("")
+            git_repo.run("git config user.name '<git config username sentinel>'")
+            mocker.patch("sys.argv", ["stub_name", file])
+
+            config_file = "pyproject.toml"
+            (git_repo.workspace / config_file).write_text(
+                '[tool.add_copyright]\nname="<config file username sentinel>"\n'
+            )
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
+
+            # THEN
+            # Construct expected outputs
+            copyright_string = "# Copyright (c) 1066 <config file username sentinel>"
+            expected_content = f"{copyright_string}\n"
+            expected_stdout = (
+                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            )
+
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
+
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
