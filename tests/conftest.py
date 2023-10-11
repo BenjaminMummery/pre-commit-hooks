@@ -54,13 +54,27 @@ def mock_resolve_files(mocker):
 
 # endregion
 
+
 # region: add_copyright_hook_fixtures
-SUPPORTED_FILES = [
-    (".py", "# {content}"),
-    (".md", "<!--- {content} -->"),
-    (".cpp", "// {content}"),
-    (".cs", "/* {content} */"),
-    (".pl", "# {content}"),
+class SupportedLanguage(object):
+    """
+    Encompass everything we need to run tests by iterating programmatically over
+    supported languages.
+    """
+
+    def __init__(self, tag: str, extension: str, comment_format: str):
+        self.tag: str = tag
+        self.extension: str = extension
+        self.comment_format: str = comment_format
+        # self.example_custom_copyright_format: str =
+
+
+SUPPORTED_LANGUAGES = [
+    SupportedLanguage("python", ".py", "# {content}"),
+    SupportedLanguage("markdown", ".md", "<!--- {content} -->"),
+    SupportedLanguage("c++", ".cpp", "// {content}"),
+    SupportedLanguage("c#", ".cs", "/* {content} */"),
+    SupportedLanguage("perl", ".pl", "# {content}"),
 ]
 VALID_COPYRIGHT_STRINGS = [
     "Copyright 1111 NAME",

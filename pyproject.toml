@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml >= 5.4.1",
     "identify >= 2.5.24",
     "restructuredtext_lint >= 1.4.0",
+    "tomli"
 ]
 
 [project.scripts]
@@ -72,4 +73,3 @@ ignore-init-method = true
 fail-under = 100
 verbose = 2
 ignore_magic = true
-exclude = ["tests"]

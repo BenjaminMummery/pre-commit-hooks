@@ -10,7 +10,12 @@ from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
-from tests.conftest import SUPPORTED_FILES, VALID_COPYRIGHT_STRINGS, assert_matching
+from tests.conftest import (
+    SUPPORTED_LANGUAGES,
+    VALID_COPYRIGHT_STRINGS,
+    SupportedLanguage,
+    assert_matching,
+)
 
 THIS_YEAR = datetime.date.today().year
 
@@ -29,24 +34,20 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
-    @pytest.mark.parametrize("extension, comment_format", SUPPORTED_FILES)
-    @pytest.mark.parametrize(
-        "copyright_string",
-        VALID_COPYRIGHT_STRINGS,
-    )
+    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("copyright_string", VALID_COPYRIGHT_STRINGS)
     def test_all_changed_files_have_copyright(
         capsys: CaptureFixture,
-        comment_format: str,
         copyright_string: str,
         cwd,
-        extension: str,
+        language: SupportedLanguage,
         mocker: MockerFixture,
         tmp_path: Path,
     ):
         # GIVEN
-        file = "hello" + extension
+        file = "hello" + language.extension
         file_content = (
-            comment_format.format(content=copyright_string)
+            language.comment_format.format(content=copyright_string)
             + "\n\n<file content sentinel>"
         )
         (tmp_path / file).write_text(file_content)
@@ -71,7 +72,7 @@ class TestNoChanges:
 
 
 # Check for every language we support
-@pytest.mark.parametrize("extension, comment_format", SUPPORTED_FILES)
+@pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
 # Check multiple usernames to confirm they get read in correctly.
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
@@ -82,15 +83,14 @@ class TestDefaultBehaviour:
         @freeze_time("1066-01-01")
         def test_adding_copyright_to_empty_files(
             capsys: CaptureFixture,
-            comment_format: str,
             cwd,
             git_repo: GitRepo,
             git_username: str,
-            extension: str,
+            language: SupportedLanguage,
             mocker: MockerFixture,
         ):
             # GIVEN
-            file = "hello" + extension
+            file = "hello" + language.extension
             (git_repo.workspace / file).write_text("")
             mocker.patch("sys.argv", ["stub_name", file])
             git_repo.run(f"git config user.name '{git_username}'")
@@ -101,13 +101,11 @@ class TestDefaultBehaviour:
 
             # THEN
             # Construct expected outputs
-            copyright_string = comment_format.format(
+            copyright_string = language.comment_format.format(
                 content=f"Copyright (c) 1066 {git_username}"
             )
             expected_content = f"{copyright_string}\n"
-            expected_stdout = (
-                f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
-            )
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
 
             # Gather actual outputs
             with open(git_repo.workspace / file, "r") as f:
@@ -123,20 +121,19 @@ class TestDefaultBehaviour:
             )
             assert_matching("captured stderr", "expected stderr", captured.err, "")
 
-    class TestHandlesFileContent:
+    class TestFileContentHandling:
         @staticmethod
         @freeze_time("1066-01-01")
         def test_adding_copyright_to_files_with_content(
             capsys: CaptureFixture,
-            comment_format: str,
             cwd,
             git_repo: GitRepo,
             git_username: str,
-            extension: str,
+            language: SupportedLanguage,
             mocker: MockerFixture,
         ):
             # GIVEN
-            file = "hello" + extension
+            file = "hello" + language.extension
             (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
             mocker.patch("sys.argv", ["stub_name", file])
             git_repo.run(f"git config user.name '{git_username}'")
@@ -147,15 +144,13 @@ class TestDefaultBehaviour:
 
             # THEN
             # Construct expected outputs
-            copyright_string = comment_format.format(
+            copyright_string = language.comment_format.format(
                 content=f"Copyright (c) 1066 {git_username}"
             )
             expected_content = (
                 copyright_string + f"\n\n<file {file} content sentinel>\n"
             )
-            expected_stdout = (
-                f"Fixing file `hello{extension}` - added line(s):\n{copyright_string}\n"
-            )
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
 
             # Gather actual outputs
             with open(git_repo.workspace / file, "r") as f:
@@ -182,16 +177,15 @@ class TestDefaultBehaviour:
         )
         def test_handles_shebang(
             capsys: CaptureFixture,
-            comment_format: str,
             cwd,
             file_content: str,
             git_repo: GitRepo,
             git_username: str,
-            extension: str,
+            language: SupportedLanguage,
             mocker: MockerFixture,
         ):
             # GIVEN
-            file = "hello" + extension
+            file = "hello" + language.extension
             (git_repo.workspace / file).write_text(file_content)
             mocker.patch("sys.argv", ["stub_name", file])
             git_repo.run(f"git config user.name '{git_username}'")
@@ -202,7 +196,7 @@ class TestDefaultBehaviour:
 
             # THEN
             # Construct expected outputs
-            copyright_string = comment_format.format(
+            copyright_string = language.comment_format.format(
                 content=f"Copyright (c) 1066 {git_username}"
             )
             expected_content = (
@@ -235,11 +229,10 @@ class TestDefaultBehaviour:
         @freeze_time("9999-01-01")
         def test_infers_start_date_from_git_history(
             capsys: CaptureFixture,
-            comment_format: str,
             cwd,
             git_repo: GitRepo,
             git_username: str,
-            extension: str,
+            language: SupportedLanguage,
             mocker: MockerFixture,
         ):
             """
@@ -248,7 +241,7 @@ class TestDefaultBehaviour:
             running the hook arbitrarily far into the future.
             """
             # GIVEN
-            file = "hello" + extension
+            file = "hello" + language.extension
             (git_repo.workspace / file).write_text(f"<file {file} content sentinel>")
             mocker.patch("sys.argv", ["stub_name", file])
             git_repo.run(f"git config user.name '{git_username}'")
@@ -261,7 +254,7 @@ class TestDefaultBehaviour:
 
             # THEN
             # Construct expected outputs
-            copyright_string = comment_format.format(
+            copyright_string = language.comment_format.format(
                 content=f"Copyright (c) {THIS_YEAR} - 9999 {git_username}"
             )
             expected_content = f"{copyright_string}\n\n<file {file} content sentinel>\n"
@@ -379,9 +372,20 @@ class TestCustomBehaviour:
     class TestConfigFiles:
         @staticmethod
         @freeze_time("1066-01-01")
+        @pytest.mark.parametrize(
+            "config_file, config_file_content",
+            [
+                (
+                    "pyproject.toml",
+                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                )
+            ],
+        )
         def test_custom_name_option_overrules_git_username(
             capsys: CaptureFixture,
             cwd,
+            config_file: str,
+            config_file_content: str,
             git_repo: GitRepo,
             mocker: MockerFixture,
         ):
@@ -391,10 +395,7 @@ class TestCustomBehaviour:
             git_repo.run("git config user.name '<git config username sentinel>'")
             mocker.patch("sys.argv", ["stub_name", file])
 
-            config_file = "pyproject.toml"
-            (git_repo.workspace / config_file).write_text(
-                '[tool.add_copyright]\nname="<config file username sentinel>"\n'
-            )
+            (git_repo.workspace / config_file).write_text(config_file_content)
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -459,7 +460,7 @@ class TestCustomBehaviour:
                     "python",
                     ".py",
                     "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
-                )
+                ),
             ],
         )
         @freeze_time("1066-01-01")
@@ -472,7 +473,7 @@ class TestCustomBehaviour:
             mocker: MockerFixture,
         ):
             # GIVEN
-            files = [f"hello{ext}" for ext, _ in SUPPORTED_FILES]
+            files = [f"hello{lang.extension}" for lang in SUPPORTED_LANGUAGES]
             for file in files:
                 (git_repo.workspace / file).write_text("")
             git_repo.run("git config user.name '<git config username sentinel>'")
@@ -488,19 +489,19 @@ class TestCustomBehaviour:
                 assert add_copyright.main() == 1
 
             # THEN
-            for ext, content in SUPPORTED_FILES:
-                if ext == lang_ext:
+            for lang in SUPPORTED_LANGUAGES:
+                if lang.extension == lang_ext:
                     copyright_string = config_format.format(
                         name="<git config username sentinel>", year="1066"
                     )
                 else:
-                    copyright_string = content.format(
+                    copyright_string = lang.comment_format.format(
                         content="Copyright (c) {year} {name}".format(
                             name="<git config username sentinel>", year="1066"
                         )
                     )
 
-                with open(git_repo.workspace / f"hello{ext}", "r") as f:
+                with open(git_repo.workspace / f"hello{lang.extension}", "r") as f:
                     output_content = f.read()
                 assert_matching(
                     "output content",
