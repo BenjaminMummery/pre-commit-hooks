@@ -16,10 +16,10 @@ def read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
         tool_name (str): The name of the tool whose options we want to read.
 
     Returns:
-        dict: A mapping of key-value pairs where the key is the cnfig option
+        dict: A mapping of key-value pairs where the key is the config option
             name, and the value is its value.
     """
-    if sys.version_info >= (3, 11):
+    if sys.version_info >= (3, 11):  # pragma: no cover
         import tomllib
     else:
         import tomli as tomllib

@@ -424,35 +424,6 @@ class TestCustomBehaviour:
             assert_matching("captured stderr", "expected stderr", captured.err, "")
 
         @staticmethod
-        def test_raises_valueerror_for_unsupported_config_options(
-            cwd,
-            tmp_path: Path,
-            mocker: MockerFixture,
-        ):
-            # GIVEN
-            file = "hello.py"
-            (tmp_path / file).write_text("")
-            mocker.patch("sys.argv", ["stub_name", file])
-
-            config_file = "pyproject.toml"
-            (tmp_path / config_file).write_text(
-                '[tool.add_copyright]\nunsupported_option="should not matter"\n'
-            )
-
-            # WHEN
-            with cwd(tmp_path):
-                with pytest.raises(ValueError) as e:
-                    add_copyright.main()
-
-            # THEN
-            assert_matching(
-                "Output error string",
-                "Expected error string",
-                e.exconly(),
-                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].",  # noqa: E501
-            )
-
-        @staticmethod
         @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
         @freeze_time("1066-01-01")
         def test_custom_formatting_commented(
@@ -560,3 +531,119 @@ class TestCustomBehaviour:
                     output_content,
                     f"{copyright_string}\n",
                 )
+
+
+class TestFailureStates:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "config_file_content",
+        [
+            '[tool.add_copyright]\nunsupported_option="should not matter"\n',
+            '[tool.add_copyright.unsupported_option]\nname="foo"\n',
+        ],
+    )
+    def test_raises_valueerror_for_unsupported_config_options(
+        cwd,
+        config_file_content: str,
+        tmp_path: Path,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        file = "hello.py"
+        (tmp_path / file).write_text("")
+        mocker.patch("sys.argv", ["stub_name", file])
+
+        config_file = "pyproject.toml"
+        (tmp_path / config_file).write_text(config_file_content)
+
+        # WHEN
+        with cwd(tmp_path):
+            with pytest.raises(ValueError) as e:
+                add_copyright.main()
+
+        # THEN
+        assert_matching(
+            "Output error string",
+            "Expected error string",
+            e.exconly(),
+            f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].",  # noqa: E501
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "config_file_content",
+        [
+            '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
+        ],
+    )
+    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    def test_raises_valueerror_for_unsupported_language_config_options(
+        cwd,
+        config_file_content: str,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+        tmp_path: Path,
+    ):
+        # GIVEN
+        file = "hello.py"
+        (tmp_path / file).write_text("")
+        mocker.patch("sys.argv", ["stub_name", file])
+
+        config_file = "pyproject.toml"
+        (tmp_path / config_file).write_text(
+            config_file_content.format(language=language.toml_key)
+        )
+
+        # WHEN
+        with cwd(tmp_path):
+            with pytest.raises(ValueError) as e:
+                add_copyright.main()
+
+        # THEN
+        assert_matching(
+            "Output error string",
+            "Expected error string",
+            e.exconly(),
+            f"ValueError: Unsupported option in config file {tmp_path/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: ['format'].",  # noqa: E501
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_format, missing_keys",
+        [
+            ("copyright 1996 {name}", "year"),
+            ("copyright {year} Harold Hadrada", "name"),
+        ],
+    )
+    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    def test_raises_KeyError_for_missing_custom_format_keys(
+        cwd,
+        input_format: str,
+        language: SupportedLanguage,
+        missing_keys: str,
+        mocker: MockerFixture,
+        tmp_path: Path,
+    ):
+        # GIVEN
+        file = f"hello{language.extension}"
+        (tmp_path / file).write_text("")
+        mocker.patch("sys.argv", ["stub_name", file])
+
+        config_file = "pyproject.toml"
+        (tmp_path / config_file).write_text(
+            f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n'
+        )
+        print(f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n')
+
+        # WHEN
+        with cwd(tmp_path):
+            with pytest.raises(KeyError) as e:
+                add_copyright.main()
+
+        # THEN
+        assert_matching(
+            "Output error string",
+            "Expected error string",
+            e.exconly(),
+            f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
+        )
