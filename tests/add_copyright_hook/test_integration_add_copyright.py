@@ -449,27 +449,16 @@ class TestCustomBehaviour:
                 "Output error string",
                 "Expected error string",
                 e.exconly(),
-                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python'].",  # noqa: E501
+                f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].",  # noqa: E501
             )
 
         @staticmethod
-        @pytest.mark.parametrize(
-            "language, lang_ext, config_format",
-            [
-                (
-                    "python",
-                    ".py",
-                    "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
-                ),
-            ],
-        )
+        @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
         @freeze_time("1066-01-01")
-        def test_custom_formatting(
-            config_format: str,
+        def test_custom_formatting_commented(
             cwd,
             git_repo: GitRepo,
-            language: str,
-            lang_ext: str,
+            language: SupportedLanguage,
             mocker: MockerFixture,
         ):
             # GIVEN
@@ -480,9 +469,11 @@ class TestCustomBehaviour:
             mocker.patch("sys.argv", ["stub_name"] + files)
 
             config_file = "pyproject.toml"
-            (git_repo.workspace / config_file).write_text(
-                f'[tool.add_copyright.{language}]\nformat="""{config_format}"""\n'
+            tomli_text = (
+                f"[tool.add_copyright.{language.toml_key}]\n"
+                f'format="""{language.custom_copyright_format_commented}"""\n'
             )
+            (git_repo.workspace / config_file).write_text(tomli_text)
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -490,11 +481,71 @@ class TestCustomBehaviour:
 
             # THEN
             for lang in SUPPORTED_LANGUAGES:
-                if lang.extension == lang_ext:
-                    copyright_string = config_format.format(
-                        name="<git config username sentinel>", year="1066"
+                if lang.extension == language.extension:
+                    # If we're looking at the language we've set up a custom format
+                    # for, then we should see a copyright with that formatting.
+                    copyright_string = (
+                        language.custom_copyright_format_commented.format(
+                            name="<git config username sentinel>", year="1066"
+                        )
                     )
                 else:
+                    # Otherwise we expect the default copyright format.
+                    copyright_string = lang.comment_format.format(
+                        content="Copyright (c) {year} {name}".format(
+                            name="<git config username sentinel>", year="1066"
+                        )
+                    )
+
+                print(f"hello{lang.extension}")
+                with open(git_repo.workspace / f"hello{lang.extension}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    f"{copyright_string}\n",
+                )
+
+        @staticmethod
+        @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+        @freeze_time("1066-01-01")
+        def test_custom_formatting_uncommented(
+            cwd,
+            git_repo: GitRepo,
+            language: SupportedLanguage,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            files = [f"hello{lang.extension}" for lang in SUPPORTED_LANGUAGES]
+            for file in files:
+                (git_repo.workspace / file).write_text("")
+            git_repo.run("git config user.name '<git config username sentinel>'")
+            mocker.patch("sys.argv", ["stub_name"] + files)
+
+            config_file = "pyproject.toml"
+            tomli_text = (
+                f"[tool.add_copyright.{language.toml_key}]\n"
+                f'format="""{language.custom_copyright_format_uncommented}"""\n'
+            )
+            (git_repo.workspace / config_file).write_text(tomli_text)
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
+
+            # THEN
+            for lang in SUPPORTED_LANGUAGES:
+                if lang.extension == language.extension:
+                    # If we're looking at the language we've set up a custom format
+                    # for, then we should see a copyright with that formatting.
+                    copyright_string = language.comment_format.format(
+                        content=language.custom_copyright_format_uncommented.format(
+                            name="<git config username sentinel>", year="1066"
+                        )
+                    )
+                else:
+                    # Otherwise we expect the default copyright format.
                     copyright_string = lang.comment_format.format(
                         content="Copyright (c) {year} {name}".format(
                             name="<git config username sentinel>", year="1066"

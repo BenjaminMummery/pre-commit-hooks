@@ -62,19 +62,66 @@ class SupportedLanguage(object):
     supported languages.
     """
 
-    def __init__(self, tag: str, extension: str, comment_format: str):
+    def __init__(
+        self,
+        tag: str,
+        toml_key: str,
+        extension: str,
+        comment_format: str,
+        custom_copyright_format_commented: str,
+        custom_copyright_format_uncommented: str,
+    ):
         self.tag: str = tag
+        self.toml_key: str = toml_key
         self.extension: str = extension
         self.comment_format: str = comment_format
-        # self.example_custom_copyright_format: str =
+        self.custom_copyright_format_commented: str = custom_copyright_format_commented
+        self.custom_copyright_format_uncommented: str = (
+            custom_copyright_format_uncommented
+        )
 
 
 SUPPORTED_LANGUAGES = [
-    SupportedLanguage("python", ".py", "# {content}"),
-    SupportedLanguage("markdown", ".md", "<!--- {content} -->"),
-    SupportedLanguage("c++", ".cpp", "// {content}"),
-    SupportedLanguage("c#", ".cs", "/* {content} */"),
-    SupportedLanguage("perl", ".pl", "# {content}"),
+    SupportedLanguage(
+        "python",
+        "python",
+        ".py",
+        "# {content}",
+        "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
+        "Copyright {name} as of {year}",
+    ),
+    SupportedLanguage(
+        "markdown",
+        "markdown",
+        ".md",
+        "<!--- {content} -->",
+        "<!--- Copyright {name} as of {year}. -->",
+        "Copyright {name} as of {year}",
+    ),
+    SupportedLanguage(
+        "c++",
+        "cpp",
+        ".cpp",
+        "// {content}",
+        "// Copyright {name} as of {year}.",
+        "Copyright {name} as of {year}",
+    ),
+    SupportedLanguage(
+        "c#",
+        "c-sharp",
+        ".cs",
+        "/* {content} */",
+        "/* Copyright {name} as of {year}.*/",
+        "Copyright {name} as of {year}",
+    ),
+    SupportedLanguage(
+        "perl",
+        "perl",
+        ".pl",
+        "# {content}",
+        "# Copyright {name} as of {year}.",
+        "Copyright {name} as of {year}",
+    ),
 ]
 VALID_COPYRIGHT_STRINGS = [
     "Copyright 1111 NAME",
