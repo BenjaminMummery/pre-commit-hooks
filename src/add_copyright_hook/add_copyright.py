@@ -24,7 +24,16 @@ from src._shared.copyright_parsing import parse_copyright_string
 from src._shared.exceptions import NoCommitsError
 
 TOOL_NAME = "add_copyright"
-LANGUAGE_TAGS = ["python"]
+
+# Mapping between the language tags as determined by identify, and how they are
+# represented in toml.
+LANGUAGE_TAGS_TOMLKEYS: dict = {
+    "python": "python",
+    "markdown": "markdown",
+    "c++": "cpp",
+    "c#": "c-sharp",
+    "perl": "perl",
+}
 
 
 def _get_earliest_commit_year(file: Path) -> int:
@@ -223,8 +232,9 @@ def _read_default_configuration() -> dict:
             ```
     """
     supported_langauge_subkeys = ["format"]
-    supported_keys = ["name"] + LANGUAGE_TAGS
-    retv = dict([(key, None) for key in supported_keys])
+    supported_toml_keys = ["name"] + [v for v in LANGUAGE_TAGS_TOMLKEYS.values()]
+
+    retv = dict([(key, None) for key in supported_toml_keys])
 
     # find config file
     filename = "pyproject.toml"
@@ -237,12 +247,15 @@ def _read_default_configuration() -> dict:
     # read data from config file
     data = read_pyproject_toml(Path(filepath), TOOL_NAME)
     for key in data:
-        if key not in supported_keys:
+        # Check that the keys are things we support, and raise an error if not.
+        if key not in supported_toml_keys:
             raise ValueError(
                 f"Unsupported option in config file {filepath}: '{key}'. "
-                f"Supported options are: {supported_keys}."
+                f"Supported options are: {supported_toml_keys}."
             )
-        if key in LANGUAGE_TAGS:
+
+        # If the key is a supported language, check that the subkeys are supported.
+        if key in LANGUAGE_TAGS_TOMLKEYS.values():
             for subkey in data[key]:
                 if subkey not in supported_langauge_subkeys:
                     raise ValueError(
@@ -251,7 +264,9 @@ def _read_default_configuration() -> dict:
                         f"Supported options for '{key}' are: "
                         f"{supported_langauge_subkeys}."
                     )
+
         retv[key] = data[key]
+
     return retv
 
 
@@ -352,8 +367,10 @@ def main():
         # Extract the language-specific config options for this file.
         kwargs = {}
         for tag in identify.tags_from_path(file):
-            if (tag in LANGUAGE_TAGS) and (configuration[tag] is not None):
-                kwargs = configuration[tag]
+            if (tag in LANGUAGE_TAGS_TOMLKEYS.keys()) and (
+                configuration[LANGUAGE_TAGS_TOMLKEYS[tag]] is not None
+            ):
+                kwargs = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]]
                 break
         retv |= _ensure_copyright_string(
             Path(file), name=configuration["name"], **kwargs
