@@ -38,7 +38,7 @@ repos:
       - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: 3.10.0
+    rev: 3.11.0
     hooks:
       - id: commitizen
 
@@ -93,7 +93,7 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.2.2
+    rev: v2.3.0
     hooks:
       - id: pycln
         exclude: __init__.py
@@ -115,7 +115,7 @@ repos:
       - id: black
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.292'
+    rev: 'v0.1.0'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -154,7 +154,6 @@ repos:
     hooks:
       - id: pylint
         args: [
-          "--disable=all",
           "--enable=duplicate-code",
           "--output-format=colorized",
         ]
