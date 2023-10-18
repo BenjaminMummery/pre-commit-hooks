@@ -38,7 +38,6 @@ check-docstrings-parse-as-rst = "src.check_docstrings_parse_as_rst_hook.check_do
 [project.optional-dependencies]
 dev = [
     "freezegun",
-    "identify",
     "pre-commit",
     "pytest",
     "pytest-cov",
@@ -73,3 +72,20 @@ ignore-init-method = true
 fail-under = 100
 verbose = 2
 ignore_magic = true
+
+[tool.ruff]
+select = [
+  "E",   # pycodestyle
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "D",   # pydocstyle
+]
+
+[tool.ruff.pydocstyle]
+convention="google"
+
+[tool.flake8]
+style="google"
+max-line-length = 88
+count = true
+arg-type-hints-in-docstring = true

@@ -33,51 +33,52 @@ clean:
 
 # GENERAL TESTING
 test: test_venv test_unit test_integration
-	@python -c "$$PRETTYPRINT_PYSCRIPT"
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT"
 
 test_all: test_venv test_unit test_integration test_system
-	@python -c "$$PRETTYPRINT_PYSCRIPT"
+	@. test_venv/bin/activate; \
+	@python3 -c "$$PRETTYPRINT_PYSCRIPT"
 
 # TESTING BY LEVEL
-test_unit: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS
-	@pytest \
-	--cov=src \
-	tests/*/test_unit_*.py -x
+test_unit: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
+	pytest --cov=src tests/*/test_unit_*.py -x
 
-test_integration: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS
-	@pytest \
-	--cov=src \
-	tests/*/test_integration_*.py -x
+test_integration: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
+	pytest --cov=src tests/*/test_integration_*.py -x
 
-test_system: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS
-	@pytest \
-	tests/*/test_system_*.py -x
+test_system: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
+	pytest --cov=src tests/*/test_system_*.py -x
+
 
 # TESTING BY HOOK
-test_shared: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SHARED' TESTS
-	pytest \
-	tests/shared -x
+test_shared: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SHARED' TESTS; \
+	pytest tests/shared -x
 
-test_add_issue: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_ISSUE' TESTS
-	pytest \
-	tests/add_msg_issue_hook -x
+test_add_issue: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_ISSUE' TESTS; \
+	pytest tests/add_msg_issue_hook -x
 
-test_add_copyright: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_COPYRIGHT' TESTS
-	pytest \
-	tests/add_copyright_hook -x
+test_add_copyright: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_COPYRIGHT' TESTS; \
+	pytest tests/add_copyright_hook -x
 
-test_sort_file_contents: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS
-	pytest \
-	tests/sort_file_contents_hook -x
+test_sort_file_contents: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS; \
+	pytest tests/sort_file_contents_hook -x
 
-test_check_docstrings_parse_as_rst: test_venv test_venv/bin/activate
-	@python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'CHECK_DOCSTRINGS_PARSE_AS_AST' TESTS
-	pytest \
-	tests/check_docstrings_parse_as_rst_hook -x
+test_check_docstrings_parse_as_rst: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'CHECK_DOCSTRINGS_PARSE_AS_AST' TESTS; \
+	pytest tests/check_docstrings_parse_as_rst_hook -x
