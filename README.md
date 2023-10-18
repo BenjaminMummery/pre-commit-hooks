@@ -1,3 +1,5 @@
+<!--- Copyright (c) 2022 - 2023 Benjamin Mummery -->
+
 # pre-commit-hooks
 
 A selection of quality-of-life tools for use with [pre-commit](https://github.com/pre-commit/pre-commit).
@@ -90,8 +92,8 @@ where the year is the current year, and the name is sourced from the git `user.n
 The hook looks for copyright information in the following hierarchy:
 
 1. Command-line arguments.
-   Either specifying the name and year directly, or providing a configuration file that specifies them.
-2. A `.add-copyright-hook-config.yaml` in the root directory of the repo.
+   Either specifying the name and format directly, or providing a configuration file that specifies them.
+2. A `pyproject.toml` in the root directory of the repo.
 3. The current year and git user.name
 
 #### 2.1.2 Command line arguments
@@ -102,9 +104,6 @@ The `add-copyright` hook accepts the following command line arguments to control
 |------|-------------|
 | `-n` / `--name` | Set a custom name to be used rather than git's `user.name` |
 | `-f` / `--format` | Set a custom f-string for the copyright to be inserted. Must contain `{name}` and `{year}`. |
-| `-c` / `--config` | Specify a configuration file that contains the name and year to be used. |
-
-The name and/or year arguments cannot be used at the same time as the config argument.
 
 If you're using a `.pre-commit-config.yaml`, these can be configured as follows:
 
@@ -120,20 +119,16 @@ repos:
 
 Alternatively, a local configuration file can be specified:
 
-```yaml
-repos:
--   repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.0
-    hooks:
-    -   id: add-copyright
-        args: ["-c", "copyright-config.json"]
-    -   id: add-msg-issue
+##### `pyproject.toml`
+
+```toml
+[tool.add_copyright]
+name = "James T. Kirk"
+format = "Property of {name} as of {year}"
 ```
 
-The config file can contain name and year, and format.
+The config file can contain name and format.
 Any properties that are not set by the config file will be inferred from the current year / git user name.
-Currently supported config formats are: JSON and YAML.
-
 
 #### 2.1.3 `.add-copyright-hook-config.yaml` file.
 
