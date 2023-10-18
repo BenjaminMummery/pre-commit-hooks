@@ -127,6 +127,8 @@ VALID_COPYRIGHT_STRINGS = [
     "Copyright 1111 NAME",
     "Copyright (c) 1111 NAME",
     "(c) 1111 NAME",
+    "Copyright 1026-1458 Aristotle",
+    "Copyright 1026 - 1458 Aristotle",
 ]
 # endregion
 
