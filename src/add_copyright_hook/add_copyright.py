@@ -50,7 +50,6 @@ def _get_earliest_commit_year(file: Path) -> int:
         int: The year of the earliest commit on the file.
 
     """
-
     repo = Repo(".")
 
     try:
@@ -215,6 +214,9 @@ def _read_default_configuration() -> dict:
     """
     Read in the default configuration from a config file.
 
+    Raises:
+        KeyError: when the configuration contains unsupported options.
+
     Returns:
         dict: a mapping of key value pairs where the key is the configuration option
             and the value is its value. For example, the `pyproject.toml`
@@ -249,7 +251,7 @@ def _read_default_configuration() -> dict:
     for key in data:
         # Check that the keys are things we support, and raise an error if not.
         if key not in supported_toml_keys:
-            raise ValueError(
+            raise KeyError(
                 f"Unsupported option in config file {filepath}: '{key}'. "
                 f"Supported options are: {supported_toml_keys}."
             )
@@ -258,7 +260,7 @@ def _read_default_configuration() -> dict:
         if key in LANGUAGE_TAGS_TOMLKEYS.values():
             for subkey in data[key]:
                 if subkey not in supported_langauge_subkeys:
-                    raise ValueError(
+                    raise KeyError(
                         f"Unsupported option in config file {filepath}: "
                         f"'{key}.{subkey}'. "
                         f"Supported options for '{key}' are: "
@@ -306,10 +308,18 @@ def _ensure_copyright_string(
     Args:
         file (path): the file to be checked.
 
+    Raises:
+        KeyError: when the format for the copyright string lacks required keys.
+        ValueError: when the git username is not configured.
+
+
     Returns:
         int: 0 if the file already had a docstring, 1 if a docstring had to be added.
     """
-    _ensure_valid_format(format)
+    try:
+        _ensure_valid_format(format)
+    except KeyError:
+        raise
 
     with open(file, "r+") as f:
         content: str = f.read()
@@ -326,13 +336,16 @@ def _ensure_copyright_string(
         except NoCommitsError:
             copyright_start_year = copyright_end_year
 
-        new_copyright_string = _construct_copyright_string(
-            name or _get_git_user_name(),
-            copyright_start_year,
-            copyright_end_year,
-            format,
-            comment_markers,
-        )
+        try:
+            new_copyright_string = _construct_copyright_string(
+                name or _get_git_user_name(),
+                copyright_start_year,
+                copyright_end_year,
+                format,
+                comment_markers,
+            )
+        except ValueError:
+            raise
 
         f.seek(0, 0)
         f.truncate()
@@ -351,7 +364,10 @@ def main():
         int: 1 if files have been modified, 0 otherwise.
     """
     # Build the configuration from config files and CLI args.
-    configuration = _read_default_configuration()
+    try:
+        configuration = _read_default_configuration()
+    except KeyError:
+        raise
     args = _parse_args()
     for key in args:
         if args[key] is not None:
@@ -372,9 +388,12 @@ def main():
             ):
                 kwargs = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]]
                 break
-        retv |= _ensure_copyright_string(
-            Path(file), name=configuration["name"], **kwargs
-        )
+        try:
+            retv |= _ensure_copyright_string(
+                Path(file), name=configuration["name"], **kwargs
+            )
+        except (KeyError, ValueError):
+            raise
     return retv
 
 

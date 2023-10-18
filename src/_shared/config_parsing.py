@@ -6,6 +6,8 @@
 import sys
 from pathlib import Path
 
+from tomli import TOMLDecodeError
+
 
 def read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
     """
@@ -26,7 +28,10 @@ def read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
 
     # Load in the config file
     with open(pyproject_toml, "rb") as f:
-        config = tomllib.load(f)
+        try:
+            config = tomllib.load(f)
+        except TOMLDecodeError:
+            raise
 
     # early return for no matching section in config file
     if not (tool_config := config.get("tool", {}).get(tool_name)):
