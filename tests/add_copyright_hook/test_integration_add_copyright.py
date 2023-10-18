@@ -235,8 +235,7 @@ class TestDefaultBehaviour:
             language: SupportedLanguage,
             mocker: MockerFixture,
         ):
-            """
-            Freezegun doesn't work on the git_repo.run subprocesses, so we use the
+            """Freezegun doesn't work on the git_repo.run subprocesses, so we use the
             current year as the year for the initial commit and set the frozen date for
             running the hook arbitrarily far into the future.
             """
@@ -279,8 +278,7 @@ class TestDefaultBehaviour:
 
 class TestCustomBehaviour:
     class TestCLIArgs:
-        """
-        Test the args that can be passed to the hook via the "args" section of the
+        """Test the args that can be passed to the hook via the "args" section of the
         .pre-commit-config.yaml entry.
         """
 
@@ -542,7 +540,7 @@ class TestFailureStates:
             '[tool.add_copyright.unsupported_option]\nname="foo"\n',
         ],
     )
-    def test_raises_valueerror_for_unsupported_config_options(
+    def test_raises_KeyError_for_unsupported_config_options(
         cwd,
         config_file_content: str,
         tmp_path: Path,
@@ -558,7 +556,7 @@ class TestFailureStates:
 
         # WHEN
         with cwd(tmp_path):
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(KeyError) as e:
                 add_copyright.main()
 
         # THEN
@@ -566,7 +564,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"ValueError: Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {tmp_path/ config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].\"",  # noqa: E501
         )
 
     @staticmethod
@@ -577,7 +575,7 @@ class TestFailureStates:
         ],
     )
     @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
-    def test_raises_valueerror_for_unsupported_language_config_options(
+    def test_raises_KeyError_for_unsupported_language_config_options(
         cwd,
         config_file_content: str,
         language: SupportedLanguage,
@@ -596,7 +594,7 @@ class TestFailureStates:
 
         # WHEN
         with cwd(tmp_path):
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(KeyError) as e:
                 add_copyright.main()
 
         # THEN
@@ -604,7 +602,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"ValueError: Unsupported option in config file {tmp_path/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: ['format'].",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {tmp_path/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: ['format'].\"",  # noqa: E501
         )
 
     @staticmethod
@@ -633,7 +631,6 @@ class TestFailureStates:
         (tmp_path / config_file).write_text(
             f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n'
         )
-        print(f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n')
 
         # WHEN
         with cwd(tmp_path):

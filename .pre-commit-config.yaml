@@ -124,6 +124,8 @@ repos:
     rev: 6.1.0
     hooks:
       - id: flake8
+        entry: pflake8
+        additional_dependencies: [pyproject-flake8]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.0
@@ -144,15 +146,6 @@ repos:
     - id: pydocstyle
       args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
       exclude: ^tests/
-
-  - repo: https://github.com/PyCQA/pylint
-    rev: 'v3.0.1'
-    hooks:
-      - id: pylint
-        args: [
-          "--enable=duplicate-code",
-          "--output-format=colorized",
-        ]
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
