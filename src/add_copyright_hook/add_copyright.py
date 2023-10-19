@@ -78,6 +78,7 @@ def _parse_args() -> dict:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--name", type=str, default=None)
+    parser.add_argument("-f", "--format", type=str, default=None)
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
 
@@ -234,7 +235,9 @@ def _read_default_configuration() -> dict:
             ```
     """
     supported_langauge_subkeys = ["format"]
-    supported_toml_keys = ["name"] + [v for v in LANGUAGE_TAGS_TOMLKEYS.values()]
+    supported_toml_keys = ["name", "format"] + [
+        v for v in LANGUAGE_TAGS_TOMLKEYS.values()
+    ]
 
     retv = dict([(key, None) for key in supported_toml_keys])
 
@@ -297,9 +300,7 @@ def _ensure_valid_format(format: str):
         )
 
 
-def _ensure_copyright_string(
-    file: Path, name: Optional[str], format: str = "Copyright (c) {year} {name}"
-) -> int:
+def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> int:
     """
     Ensure that the file has a docstring.
 
@@ -344,7 +345,7 @@ def _ensure_copyright_string(
                 format,
                 comment_markers,
             )
-        except ValueError:
+        except ValueError:  # pragma: no cover
             raise
 
         f.seek(0, 0)
@@ -380,14 +381,22 @@ def main():
     # Add copyright to files that don't already have it.
     retv: int = 0
     for file in configuration["files"]:
-        # Extract the language-specific config options for this file.
-        kwargs = {}
+        # Global configurations inherited by this file.
+        kwargs: dict = {
+            "format": configuration["format"] or "Copyright (c) {year} {name}"
+        }
+
+        # Extract the language-specific config options for this file. Override global
+        # options where required.
         for tag in identify.tags_from_path(file):
             if (tag in LANGUAGE_TAGS_TOMLKEYS.keys()) and (
                 configuration[LANGUAGE_TAGS_TOMLKEYS[tag]] is not None
             ):
-                kwargs = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]]
+                for key in configuration[LANGUAGE_TAGS_TOMLKEYS[tag]].keys():
+                    kwargs[key] = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]][key]
                 break
+
+        # Ensure that the file has copyright.
         try:
             retv |= _ensure_copyright_string(
                 Path(file), name=configuration["name"], **kwargs
