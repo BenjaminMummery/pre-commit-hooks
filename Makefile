@@ -73,6 +73,11 @@ test_add_copyright: test_venv
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_COPYRIGHT' TESTS; \
 	pytest tests/add_copyright_hook -x
 
+test_update_copyright: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'UPDATE_COPYRIGHT' TESTS; \
+	pytest tests/update_copyright_hook -x
+
 test_sort_file_contents: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS; \
