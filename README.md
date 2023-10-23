@@ -81,20 +81,48 @@ Check changed source files for something that looks like a copyright comment. If
 
 By default, the copyright message is constructed as a comment in the format
 
-```
+```text
 Copyright (c) <year> <name>
 ```
 
 where the year is the current year, and the name is sourced from the git `user.name` configuration.
 
-#### 2.1.1 Controlling the name and year
+#### 2.1.1 Configuration
 
-The hook looks for copyright information in the following hierarchy:
+If required, the default behaviour can be overruled either by command line arguments or configuration files.
 
-1. Command-line arguments.
-   Either specifying the name and format directly, or providing a configuration file that specifies them.
-2. A `pyproject.toml` in the root directory of the repo.
-3. The current year and git user.name
+##### CLI Arguments
+
+```term
+add-copyright [-n NAME] [-f FORMAT] [FILES]
+```
+
+##### `.pre-commit-config.yaml` Configuration
+
+```yaml
+- repo: https://github.com/BenjaminMummery/pre-commit-hooks
+  rev: v1.5.0
+  hooks:
+    - id: add-copyright
+      args: ["-n NAME", "-f FORMAT"]
+```
+
+##### `pyproject.toml` configuration
+
+```toml
+[tool.add_copyright]
+name = "NAME"
+format = "FORMAT"
+```
+
+Behaviour for individual languages can also be configured:
+
+```toml
+[tool.add_copyright.python]
+format = "FORMAT"
+```
+
+where there is a conflict between individual language settings and the global tool settings, the language settings are given authority.
 
 #### 2.1.2 Command line arguments
 
