@@ -8,7 +8,7 @@ import pytest
 from pytest_git import GitRepo
 
 from tests.conftest import (
-    AddCopyrightGlobals,
+    CopyrightGlobals,
     SupportedLanguage,
     add_changed_files,
     assert_matching,
@@ -59,9 +59,13 @@ class TestNoChanges:
         assert "Passed" in process.stdout
 
     @staticmethod
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
-        "copyright_string", AddCopyrightGlobals.VALID_COPYRIGHT_STRINGS
+        "copyright_string",
+        [
+            s.format(end_year=THIS_YEAR)
+            for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS
+        ],
     )
     def test_all_changed_files_have_copyright(
         git_repo: GitRepo,
@@ -69,7 +73,7 @@ class TestNoChanges:
         language: SupportedLanguage,
         copyright_string: str,
     ):
-        """Files have been changed, but all have up-to-date copyright strings."""
+        """Files have been changed, but all have valid copyright strings."""
         # GIVEN
         file = "hello" + language.extension
         file_content = (
@@ -117,7 +121,7 @@ class TestDefaultBehaviour:
             add_changed_files(
                 [
                     f"hello{lang.extension}"
-                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 "",
                 git_repo,
@@ -132,7 +136,7 @@ class TestDefaultBehaviour:
             # THEN
             assert process.returncode == 1
 
-            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+            for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -164,11 +168,11 @@ class TestDefaultBehaviour:
             add_changed_files(
                 [
                     f"hello{lang.extension}"
-                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 [
                     f"<file hello{lang.extension} content sentinel>"
-                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 git_repo,
             )
@@ -181,7 +185,7 @@ class TestDefaultBehaviour:
 
             # THEN
             assert process.returncode == 1
-            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+            for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -214,11 +218,11 @@ class TestDefaultBehaviour:
             add_changed_files(
                 [
                     f"hello{lang.extension}"
-                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 [
                     f"#!/usr/bin/env python3\n<file hello{lang.extension} content sentinel>"  # noqa: E501
-                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 git_repo,
             )
@@ -231,7 +235,7 @@ class TestDefaultBehaviour:
 
             # THEN
             assert process.returncode == 1
-            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+            for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -277,7 +281,7 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
@@ -292,7 +296,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 assert process.returncode == 1
-                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
                         content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>"  # noqa: E501
@@ -332,7 +336,7 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
@@ -347,7 +351,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 assert process.returncode == 1
-                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
                         content=expected_copyright_string.format(year=THIS_YEAR)
@@ -375,7 +379,7 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
@@ -384,7 +388,7 @@ class TestCustomBehaviour:
                 toml_text = "\n".join(
                     [
                         f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'  # noqa: E501
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ]
                 )
                 write_config_file(git_repo.workspace, toml_text)
@@ -397,7 +401,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 assert process.returncode == 1
-                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = (
                         language.custom_copyright_format_commented.format(
@@ -425,13 +429,13 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
                 )
                 toml_text = ""
-                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     toml_text += (
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
@@ -446,7 +450,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 assert process.returncode == 1
-                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
                         content=language.custom_copyright_format_uncommented.format(
@@ -493,7 +497,7 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{config_file}: 'unsupported_option'. Supported options are: {AddCopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\""  # noqa: E501
+        expected_stdout = f"KeyError: \"Unsupported option in config file /private{config_file}: 'unsupported_option'. Supported options are: {CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\""  # noqa: E501
         assert expected_stdout in process.stdout
 
     @staticmethod
@@ -503,7 +507,7 @@ class TestFailureStates:
             '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
         ],
     )
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_unsupported_language_config_options(
         cwd,
         config_file_content: str,
@@ -529,7 +533,7 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {AddCopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\""  # noqa: E501
+        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\""  # noqa: E501
         assert expected_stdout in process.stdout
 
     @staticmethod
@@ -540,7 +544,7 @@ class TestFailureStates:
             ("copyright {year} Harold Hadrada", "name"),
         ],
     )
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_missing_custom_format_keys(
         cwd,
         git_repo: GitRepo,

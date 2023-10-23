@@ -126,7 +126,7 @@ class SupportedLanguage(object):
 
 
 @dataclass
-class AddCopyrightGlobals:
+class CopyrightGlobals:
     SUPPORTED_LANGUAGES = [
         SupportedLanguage(
             "python",
@@ -170,11 +170,11 @@ class AddCopyrightGlobals:
         ),
     ]
     VALID_COPYRIGHT_STRINGS = [
-        "Copyright 1111 NAME",
-        "Copyright (c) 1111 NAME",
-        "(c) 1111 NAME",
-        "Copyright 1026-1458 Aristotle",
-        "Copyright 1026 - 1458 Aristotle",
+        "Copyright {end_year} NAME",
+        "Copyright (c) {end_year} NAME",
+        "(c) {end_year} NAME",
+        "Copyright 1026-{end_year} Aristotle",
+        "Copyright 1026 - {end_year} Aristotle",
     ]
     SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
         "name",

@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
 from tests.conftest import (
-    AddCopyrightGlobals,
+    CopyrightGlobals,
     Globals,
     SupportedLanguage,
     add_changed_files,
@@ -38,12 +38,13 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
-        "copyright_string", AddCopyrightGlobals.VALID_COPYRIGHT_STRINGS
+        "copyright_string",
+        [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
     )
     def test_all_changed_files_have_copyright(
-        # capsys: CaptureFixture,
+        capsys: CaptureFixture,
         copyright_string: str,
         cwd,
         git_repo: GitRepo,
@@ -69,18 +70,18 @@ class TestNoChanges:
         # Gather actual outputs
         with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
-        # captured = capsys.readouterr()
+        captured = capsys.readouterr()
 
         # Compare
         assert_matching(
             "output content", "expected content", output_content, file_content
         )
-        # assert_matching("captured stdout", "expected stdout", captured.out, "")
-        # assert_matching("captured stderr", "expected stderr", captured.err, "")
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
 # Check for every language we support
-@pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+@pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
 # Check multiple usernames to confirm they get read in correctly.
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
@@ -582,7 +583,7 @@ class TestCustomBehaviour:
                 )
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
-        @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
         class TestPerLanguageConfigs:
             @staticmethod
             @freeze_time("1312-01-01")
@@ -596,7 +597,7 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
@@ -615,7 +616,7 @@ class TestCustomBehaviour:
                     assert add_copyright.main() == 1
 
                 # THEN
-                for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for lang in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     if lang.extension == language.extension:
                         # If we're looking at the language we've set up a custom format
                         # for, then we should see a copyright with that formatting.
@@ -653,7 +654,7 @@ class TestCustomBehaviour:
                 add_changed_files(
                     [
                         f"hello{lang.extension}"
-                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                     "",
                     git_repo,
@@ -672,7 +673,7 @@ class TestCustomBehaviour:
                     assert add_copyright.main() == 1
 
                 # THEN
-                for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                for lang in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     if lang.extension == language.extension:
                         # If we're looking at the language we've set up a custom format
                         # for, then we should see a copyright with that formatting.
@@ -728,7 +729,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: 'unsupported_option'. Supported options are: {AddCopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\"",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: 'unsupported_option'. Supported options are: {CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\"",  # noqa: E501
         )
 
     @staticmethod
@@ -738,7 +739,7 @@ class TestFailureStates:
             '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
         ],
     )
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_raises_KeyError_for_unsupported_language_config_options(
         cwd,
         config_file_content: str,
@@ -762,7 +763,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {AddCopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\"",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\"",  # noqa: E501
         )
 
     @staticmethod
@@ -773,7 +774,7 @@ class TestFailureStates:
             ("copyright {year} Harold Hadrada", "name"),
         ],
     )
-    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_raises_KeyError_for_missing_custom_format_keys(
         cwd,
         git_repo: GitRepo,
