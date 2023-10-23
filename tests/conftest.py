@@ -1,12 +1,19 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+import datetime
 import os
 from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+from pytest_git import GitRepo
+from pytest_mock import MockerFixture
 
 
+# region: shared utilities
 def assert_matching(name1: str, name2: str, value1, value2):
     """
     Assert that 2 values are the same, and print an informative output if they are not.
@@ -24,6 +31,38 @@ def assert_matching(name1: str, name2: str, value1, value2):
     )
 
 
+class Globals:
+    THIS_YEAR = datetime.date.today().year
+
+
+def add_changed_files(
+    filenames: Union[str, List[str]],
+    contents: Union[str, List[str]],
+    git_repo: GitRepo,
+    mocker: Optional[MockerFixture] = None,
+):
+    if not isinstance(filenames, list):
+        filenames = [filenames]
+    if not isinstance(contents, list):
+        contents = [contents for _ in filenames]
+    for filename, content in zip(filenames, contents):
+        (git_repo.workspace / filename).write_text(content)
+        git_repo.run(f"git add {filename}")
+    if mocker:
+        return mocker.patch("sys.argv", ["stub_name"] + filenames)
+
+
+def write_config_file(path: Path, content: str) -> Path:
+    config_file = path / "pyproject.toml"
+    (config_file).write_text(content)
+    return config_file
+
+
+SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+# endregion
+
+
+# region: Shared fixtures
 @pytest.fixture(scope="session")
 def cwd():
     @contextmanager
@@ -38,8 +77,10 @@ def cwd():
     return cwd
 
 
-# region: Shared fixtures
-SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+@pytest.fixture()
+def git_repo(git_repo: GitRepo) -> GitRepo:
+    git_repo.run("git config user.name '<git config username sentinel>'")
+    return git_repo
 
 
 @pytest.fixture
@@ -80,56 +121,73 @@ class SupportedLanguage(object):
             custom_copyright_format_uncommented
         )
 
+    def __str__(self):
+        return self.tag
 
-SUPPORTED_LANGUAGES = [
-    SupportedLanguage(
+
+@dataclass
+class AddCopyrightGlobals:
+    SUPPORTED_LANGUAGES = [
+        SupportedLanguage(
+            "python",
+            "python",
+            ".py",
+            "# {content}",
+            "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "markdown",
+            "markdown",
+            ".md",
+            "<!--- {content} -->",
+            "<!--- Copyright {name} as of {year}. -->",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "c++",
+            "cpp",
+            ".cpp",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "c#",
+            "c-sharp",
+            ".cs",
+            "/* {content} */",
+            "/* Copyright {name} as of {year}.*/",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "perl",
+            "perl",
+            ".pl",
+            "# {content}",
+            "# Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+    ]
+    VALID_COPYRIGHT_STRINGS = [
+        "Copyright 1111 NAME",
+        "Copyright (c) 1111 NAME",
+        "(c) 1111 NAME",
+        "Copyright 1026-1458 Aristotle",
+        "Copyright 1026 - 1458 Aristotle",
+    ]
+    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
+        "name",
+        "format",
         "python",
-        "python",
-        ".py",
-        "# {content}",
-        "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
-        "Copyright {name} as of {year}",
-    ),
-    SupportedLanguage(
         "markdown",
-        "markdown",
-        ".md",
-        "<!--- {content} -->",
-        "<!--- Copyright {name} as of {year}. -->",
-        "Copyright {name} as of {year}",
-    ),
-    SupportedLanguage(
-        "c++",
         "cpp",
-        ".cpp",
-        "// {content}",
-        "// Copyright {name} as of {year}.",
-        "Copyright {name} as of {year}",
-    ),
-    SupportedLanguage(
-        "c#",
         "c-sharp",
-        ".cs",
-        "/* {content} */",
-        "/* Copyright {name} as of {year}.*/",
-        "Copyright {name} as of {year}",
-    ),
-    SupportedLanguage(
         "perl",
-        "perl",
-        ".pl",
-        "# {content}",
-        "# Copyright {name} as of {year}.",
-        "Copyright {name} as of {year}",
-    ),
-]
-VALID_COPYRIGHT_STRINGS = [
-    "Copyright 1111 NAME",
-    "Copyright (c) 1111 NAME",
-    "(c) 1111 NAME",
-    "Copyright 1026-1458 Aristotle",
-    "Copyright 1026 - 1458 Aristotle",
-]
+    ]
+    SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
+
+
 # endregion
 
 # region: add_msg_issue_fixtures

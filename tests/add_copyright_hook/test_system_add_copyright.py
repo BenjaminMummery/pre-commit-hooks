@@ -8,10 +8,11 @@ import pytest
 from pytest_git import GitRepo
 
 from tests.conftest import (
-    SUPPORTED_LANGUAGES,
-    VALID_COPYRIGHT_STRINGS,
+    AddCopyrightGlobals,
     SupportedLanguage,
+    add_changed_files,
     assert_matching,
+    write_config_file,
 )
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
@@ -58,8 +59,10 @@ class TestNoChanges:
         assert "Passed" in process.stdout
 
     @staticmethod
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
-    @pytest.mark.parametrize("copyright_string", VALID_COPYRIGHT_STRINGS)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string", AddCopyrightGlobals.VALID_COPYRIGHT_STRINGS
+    )
     def test_all_changed_files_have_copyright(
         git_repo: GitRepo,
         cwd,
@@ -111,10 +114,14 @@ class TestDefaultBehaviour:
             """
             # GIVEN
             git_repo.run(f"git config user.name '{git_username}'")
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text("")
-                git_repo.run(f"git add {file}")
+            add_changed_files(
+                [
+                    f"hello{lang.extension}"
+                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                ],
+                "",
+                git_repo,
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -125,7 +132,7 @@ class TestDefaultBehaviour:
             # THEN
             assert process.returncode == 1
 
-            for language in SUPPORTED_LANGUAGES:
+            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -154,12 +161,17 @@ class TestDefaultBehaviour:
         ):
             # GIVEN
             git_repo.run(f"git config user.name '{git_username}'")
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text(
-                    f"<file {file} content sentinel>"
-                )
-                git_repo.run(f"git add {file}")
+            add_changed_files(
+                [
+                    f"hello{lang.extension}"
+                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                ],
+                [
+                    f"<file hello{lang.extension} content sentinel>"
+                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                ],
+                git_repo,
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -169,7 +181,7 @@ class TestDefaultBehaviour:
 
             # THEN
             assert process.returncode == 1
-            for language in SUPPORTED_LANGUAGES:
+            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -199,12 +211,17 @@ class TestDefaultBehaviour:
         ):
             # GIVEN
             git_repo.run(f"git config user.name '{git_username}'")
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text(
-                    f"#!/usr/bin/env python3\n<file {file} content sentinel>"
-                )
-                git_repo.run(f"git add {file}")
+            add_changed_files(
+                [
+                    f"hello{lang.extension}"
+                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                ],
+                [
+                    f"#!/usr/bin/env python3\n<file hello{lang.extension} content sentinel>"  # noqa: E501
+                    for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                ],
+                git_repo,
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -214,7 +231,7 @@ class TestDefaultBehaviour:
 
             # THEN
             assert process.returncode == 1
-            for language in SUPPORTED_LANGUAGES:
+            for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
                     content=f"Copyright (c) {THIS_YEAR} {git_username}"
@@ -243,146 +260,213 @@ class TestDefaultBehaviour:
 
 class TestCustomBehaviour:
     class TestConfigFiles:
-        @staticmethod
-        @pytest.mark.parametrize(
-            "config_file, config_file_content",
-            [
-                (
-                    "pyproject.toml",
+        class TestGlobalConfigs:
+            @staticmethod
+            @pytest.mark.parametrize(
+                "config_file_content",
+                [
                     '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                ],
+            )
+            def test_custom_name_option_overrules_git_username(
+                cwd,
+                config_file_content: str,
+                git_repo: GitRepo,
+            ):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
                 )
-            ],
-        )
-        def test_custom_name_option_overrules_git_username(
-            cwd,
-            config_file: str,
-            config_file_content: str,
-            git_repo: GitRepo,
-        ):
-            # GIVEN
-            git_repo.run("git config user.name '<git config username sentinel>'")
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text("")
-                git_repo.run(f"git add {file}")
+                write_config_file(git_repo.workspace, config_file_content)
 
-            (git_repo.workspace / config_file).write_text(config_file_content)
-
-            # WHEN
-            with cwd(git_repo.workspace):
-                process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
-                )
-
-            # THEN
-            assert process.returncode == 1
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                copyright_string = language.comment_format.format(
-                    content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>"
-                )
-                expected_content = f"{copyright_string}\n"
-                expected_stdout = (
-                    f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
-                )
-                with open(git_repo.workspace / file, "r") as f:
-                    output_content = f.read()
-
-                assert_matching(
-                    "output content",
-                    "expected content",
-                    output_content,
-                    expected_content,
-                )
-                assert expected_stdout in process.stdout
-
-        @staticmethod
-        def test_custom_formatting_commented(cwd, git_repo: GitRepo):
-            # GIVEN
-            git_repo.run("git config user.name '<git config username sentinel>'")
-            toml_text = ""
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text("")
-                git_repo.run(f"git add {file}")
-                toml_text += (
-                    f"[tool.add_copyright.{language.toml_key}]\n"
-                    f'format="""{language.custom_copyright_format_commented}"""\n\n'
-                )
-            (git_repo.workspace / "pyproject.toml").write_text(toml_text)
-
-            # WHEN
-            with cwd(git_repo.workspace):
-                process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
-                )
-
-            # THEN
-            assert process.returncode == 1
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                copyright_string = language.custom_copyright_format_commented.format(
-                    name="<git config username sentinel>", year=THIS_YEAR
-                )
-                expected_content = f"{copyright_string}\n"
-                expected_stdout = (
-                    f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
-                )
-                with open(git_repo.workspace / file, "r") as f:
-                    output_content = f.read()
-
-                assert_matching(
-                    "output content",
-                    "expected content",
-                    output_content,
-                    expected_content,
-                )
-                assert expected_stdout in process.stdout
-
-        @staticmethod
-        def test_custom_formatting_uncommented(cwd, git_repo: GitRepo):
-            # GIVEN
-            git_repo.run("git config user.name '<git config username sentinel>'")
-            toml_text = ""
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                (git_repo.workspace / file).write_text("")
-                git_repo.run(f"git add {file}")
-                toml_text += (
-                    f"[tool.add_copyright.{language.toml_key}]\n"
-                    f'format="""{language.custom_copyright_format_uncommented}"""\n\n'
-                )
-            (git_repo.workspace / "pyproject.toml").write_text(toml_text)
-
-            # WHEN
-            with cwd(git_repo.workspace):
-                process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
-                )
-
-            # THEN
-            assert process.returncode == 1
-            for language in SUPPORTED_LANGUAGES:
-                file = "hello" + language.extension
-                copyright_string = language.comment_format.format(
-                    content=language.custom_copyright_format_uncommented.format(
-                        name="<git config username sentinel>", year=THIS_YEAR
+                # WHEN
+                with cwd(git_repo.workspace):
+                    process: subprocess.CompletedProcess = subprocess.run(
+                        COMMAND, capture_output=True, text=True
                     )
-                )
-                expected_content = f"{copyright_string}\n"
-                expected_stdout = (
-                    f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
-                )
-                with open(git_repo.workspace / file, "r") as f:
-                    output_content = f.read()
 
-                assert_matching(
-                    "output content",
-                    "expected content",
-                    output_content,
-                    expected_content,
+                # THEN
+                assert process.returncode == 1
+                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                    file = "hello" + language.extension
+                    copyright_string = language.comment_format.format(
+                        content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>"  # noqa: E501
+                    )
+                    expected_content = f"{copyright_string}\n"
+                    expected_stdout = (
+                        f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                    )
+                    with open(git_repo.workspace / file, "r") as f:
+                        output_content = f.read()
+
+                    assert_matching(
+                        "output content",
+                        "expected content",
+                        output_content,
+                        expected_content,
+                    )
+                    assert expected_stdout in process.stdout
+
+            @staticmethod
+            @pytest.mark.parametrize(
+                "config_file_content, expected_copyright_string",
+                [
+                    (
+                        '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
+                        "(C) <git config username sentinel> {year}",
+                    )
+                ],
+            )
+            def test_custom_format_option_overrules_default_format(
+                cwd,
+                config_file_content: str,
+                expected_copyright_string: str,
+                git_repo: GitRepo,
+            ):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
                 )
-                assert expected_stdout in process.stdout
+                write_config_file(git_repo.workspace, config_file_content)
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    process: subprocess.CompletedProcess = subprocess.run(
+                        COMMAND, capture_output=True, text=True
+                    )
+
+                # THEN
+                assert process.returncode == 1
+                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                    file = "hello" + language.extension
+                    copyright_string = language.comment_format.format(
+                        content=expected_copyright_string.format(year=THIS_YEAR)
+                    )
+                    expected_content = f"{copyright_string}\n"
+                    expected_stdout = (
+                        f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                    )
+
+                    with open(git_repo.workspace / file, "r") as f:
+                        output_content = f.read()
+
+                    assert_matching(
+                        "output content",
+                        "expected content",
+                        output_content,
+                        expected_content,
+                    )
+                    assert expected_stdout in process.stdout
+
+        class TestPerLanguageConfigs:
+            @staticmethod
+            def test_custom_formatting_commented(cwd, git_repo: GitRepo):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
+                )
+
+                toml_text = "\n".join(
+                    [
+                        f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'  # noqa: E501
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ]
+                )
+                write_config_file(git_repo.workspace, toml_text)
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    process: subprocess.CompletedProcess = subprocess.run(
+                        COMMAND, capture_output=True, text=True
+                    )
+
+                # THEN
+                assert process.returncode == 1
+                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                    file = "hello" + language.extension
+                    copyright_string = (
+                        language.custom_copyright_format_commented.format(
+                            name="<git config username sentinel>", year=THIS_YEAR
+                        )
+                    )
+                    expected_content = f"{copyright_string}\n"
+                    expected_stdout = (
+                        f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                    )
+                    with open(git_repo.workspace / file, "r") as f:
+                        output_content = f.read()
+
+                    assert_matching(
+                        "output content",
+                        "expected content",
+                        output_content,
+                        expected_content,
+                    )
+                    assert expected_stdout in process.stdout
+
+            @staticmethod
+            def test_custom_formatting_uncommented(cwd, git_repo: GitRepo):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
+                )
+                toml_text = ""
+                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                    toml_text += (
+                        f"[tool.add_copyright.{language.toml_key}]\n"
+                        f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
+                    )
+                write_config_file(git_repo.workspace, toml_text)
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    process: subprocess.CompletedProcess = subprocess.run(
+                        COMMAND, capture_output=True, text=True
+                    )
+
+                # THEN
+                assert process.returncode == 1
+                for language in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
+                    file = "hello" + language.extension
+                    copyright_string = language.comment_format.format(
+                        content=language.custom_copyright_format_uncommented.format(
+                            name="<git config username sentinel>", year=THIS_YEAR
+                        )
+                    )
+                    expected_content = f"{copyright_string}\n"
+                    expected_stdout = (
+                        f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                    )
+                    with open(git_repo.workspace / file, "r") as f:
+                        output_content = f.read()
+
+                    assert_matching(
+                        "output content",
+                        "expected content",
+                        output_content,
+                        expected_content,
+                    )
+                    assert expected_stdout in process.stdout
 
 
 class TestFailureStates:
@@ -398,12 +482,8 @@ class TestFailureStates:
         cwd, config_file_content: str, git_repo: GitRepo
     ):
         # GIVEN
-        file = "hello.py"
-        (git_repo.workspace / file).write_text("")
-        git_repo.run(f"git add {file}")
-
-        config_file = "pyproject.toml"
-        (git_repo.workspace / config_file).write_text(config_file_content)
+        add_changed_files("hello.py", "", git_repo)
+        config_file = write_config_file(git_repo.workspace, config_file_content)
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -413,7 +493,7 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / config_file}: 'unsupported_option'. Supported options are: ['name', 'python', 'markdown', 'cpp', 'c-sharp', 'perl'].\""  # noqa: E501
+        expected_stdout = f"KeyError: \"Unsupported option in config file /private{config_file}: 'unsupported_option'. Supported options are: {AddCopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\""  # noqa: E501
         assert expected_stdout in process.stdout
 
     @staticmethod
@@ -423,7 +503,7 @@ class TestFailureStates:
             '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
         ],
     )
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_unsupported_language_config_options(
         cwd,
         config_file_content: str,
@@ -431,12 +511,9 @@ class TestFailureStates:
         language: SupportedLanguage,
     ):
         # GIVEN
-        git_repo.run("git config user.name '<git config username sentinel>'")
-        file = "hello" + language.extension
-        (git_repo.workspace / file).write_text("")
-        git_repo.run(f"git add {file}")
-        (git_repo.workspace / "pyproject.toml").write_text(
-            config_file_content.format(language=language.toml_key)
+        add_changed_files("hello.py", "", git_repo)
+        write_config_file(
+            git_repo.workspace, config_file_content.format(language=language.toml_key)
         )
 
         # GIVEN
@@ -452,7 +529,7 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: ['format'].\""  # noqa: E501
+        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {AddCopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\""  # noqa: E501
         assert expected_stdout in process.stdout
 
     @staticmethod
@@ -463,7 +540,7 @@ class TestFailureStates:
             ("copyright {year} Harold Hadrada", "name"),
         ],
     )
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_missing_custom_format_keys(
         cwd,
         git_repo: GitRepo,
@@ -472,12 +549,10 @@ class TestFailureStates:
         missing_keys: str,
     ):
         # GIVEN
-        git_repo.run("git config user.name '<git config username sentinel>'")
-        file = f"hello{language.extension}"
-        (git_repo.workspace / file).write_text("")
-        git_repo.run(f"git add {file}")
-        (git_repo.workspace / "pyproject.toml").write_text(
-            f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n'
+        add_changed_files(f"hello{language.extension}", "", git_repo)
+        write_config_file(
+            git_repo.workspace,
+            f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
         )
 
         # WHEN
@@ -489,4 +564,6 @@ class TestFailureStates:
         # THEN
         assert process.returncode == 1
         expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""  # noqa: E501
+        print("E:", expected_stdout)
+        print("R:", process.stdout)
         assert expected_stdout in process.stdout

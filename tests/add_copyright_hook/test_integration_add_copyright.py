@@ -1,8 +1,6 @@
 # Copyright (c) 2023 Benjamin Mummery
 
-import datetime
 from pathlib import Path
-from typing import List, Union
 
 import pytest
 from freezegun import freeze_time
@@ -12,50 +10,13 @@ from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
 from tests.conftest import (
-    SUPPORTED_LANGUAGES,
-    VALID_COPYRIGHT_STRINGS,
+    AddCopyrightGlobals,
+    Globals,
     SupportedLanguage,
+    add_changed_files,
     assert_matching,
+    write_config_file,
 )
-
-THIS_YEAR = datetime.date.today().year
-SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
-    "name",
-    "format",
-    "python",
-    "markdown",
-    "cpp",
-    "c-sharp",
-    "perl",
-]
-SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
-
-
-def add_changed_files(
-    filenames: Union[str, List[str]],
-    contents: Union[str, List[str]],
-    git_repo: GitRepo,
-    mocker: MockerFixture,
-):
-    if not isinstance(filenames, list):
-        filenames = [filenames]
-    if not isinstance(contents, list):
-        contents = [contents for _ in filenames]
-    for filename, content in zip(filenames, contents):
-        (git_repo.workspace / filename).write_text(content)
-    return mocker.patch("sys.argv", ["stub_name"] + filenames)
-
-
-def write_config_file(path: Path, content: str) -> Path:
-    config_file = path / "pyproject.toml"
-    (config_file).write_text(content)
-    return config_file
-
-
-@pytest.fixture()
-def git_repo(git_repo: GitRepo) -> GitRepo:
-    git_repo.run("git config user.name '<git config username sentinel>'")
-    return git_repo
 
 
 @pytest.mark.usefixtures("git_repo")
@@ -77,8 +38,10 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
-    @pytest.mark.parametrize("copyright_string", VALID_COPYRIGHT_STRINGS)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string", AddCopyrightGlobals.VALID_COPYRIGHT_STRINGS
+    )
     def test_all_changed_files_have_copyright(
         # capsys: CaptureFixture,
         copyright_string: str,
@@ -117,7 +80,7 @@ class TestNoChanges:
 
 
 # Check for every language we support
-@pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+@pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
 # Check multiple usernames to confirm they get read in correctly.
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
@@ -125,7 +88,7 @@ class TestNoChanges:
 class TestDefaultBehaviour:
     class TestEmptyFiles:
         @staticmethod
-        @freeze_time("1066-01-01")
+        @freeze_time("1312-01-01")
         def test_adding_copyright_to_empty_files(
             capsys: CaptureFixture,
             cwd,
@@ -147,7 +110,7 @@ class TestDefaultBehaviour:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1066 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}"
             )
             expected_content = f"{copyright_string}\n"
             expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
@@ -168,7 +131,7 @@ class TestDefaultBehaviour:
 
     class TestFileContentHandling:
         @staticmethod
-        @freeze_time("1066-01-01")
+        @freeze_time("1312-01-01")
         def test_adding_copyright_to_files_with_content(
             capsys: CaptureFixture,
             cwd,
@@ -193,7 +156,7 @@ class TestDefaultBehaviour:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1066 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}"
             )
             expected_content = (
                 copyright_string + f"\n\n<file {file} content sentinel>\n"
@@ -215,7 +178,7 @@ class TestDefaultBehaviour:
             assert_matching("captured stderr", "expected stderr", captured.err, "")
 
         @staticmethod
-        @freeze_time("1066-01-01")
+        @freeze_time("1312-01-01")
         @pytest.mark.parametrize(
             "file_content",
             [
@@ -245,7 +208,7 @@ class TestDefaultBehaviour:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1066 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}"
             )
             expected_content = (
                 "#!/usr/bin/env python3\n"
@@ -305,7 +268,7 @@ class TestDefaultBehaviour:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) {THIS_YEAR} - 9999 {git_username}"
+                content=f"Copyright (c) {Globals.THIS_YEAR} - 9999 {git_username}"
             )
             expected_content = f"{copyright_string}\n\n<file {file} content sentinel>\n"
             expected_stdout = (
@@ -335,7 +298,7 @@ class TestCustomBehaviour:
 
         class TestName:
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_name_argument_overrules_git_username(
                 capsys: CaptureFixture,
                 cwd,
@@ -354,7 +317,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 # Construct expected outputs
-                copyright_string = "# Copyright (c) 1066 <arg name sentinel>"
+                copyright_string = "# Copyright (c) 1312 <arg name sentinel>"
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
@@ -378,7 +341,7 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_name_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
@@ -401,7 +364,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 # Construct expected outputs
-                copyright_string = "# Copyright (c) 1066 <arg name sentinel>"
+                copyright_string = "# Copyright (c) 1312 <arg name sentinel>"
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
@@ -426,7 +389,7 @@ class TestCustomBehaviour:
 
         class TestFormat:
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_format_argument_overrules_default(
                 capsys: CaptureFixture,
                 cwd,
@@ -447,7 +410,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 # Construct expected outputs
-                copyright_string = "# (C) <git config username sentinel> 1066"
+                copyright_string = "# (C) <git config username sentinel> 1312"
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
@@ -471,7 +434,7 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_format_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
@@ -492,7 +455,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 # Construct expected outputs
-                copyright_string = "# (C) <git config username sentinel> 1066"
+                copyright_string = "# (C) <git config username sentinel> 1312"
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
@@ -518,7 +481,7 @@ class TestCustomBehaviour:
     class TestConfigFiles:
         class TestGlobalConfigs:
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
                 "config_file_content",
                 [
@@ -543,7 +506,7 @@ class TestCustomBehaviour:
                 # THEN
                 # Construct expected outputs
                 copyright_string = (
-                    "# Copyright (c) 1066 <config file username sentinel>"
+                    "# Copyright (c) 1312 <config file username sentinel>"
                 )
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
@@ -568,13 +531,61 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
             @staticmethod
-            def test_custom_format_option_overrules_default_format():
-                pass
+            @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "config_file_content, expected_copyright_string",
+                [
+                    (
+                        '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
+                        "(C) <git config username sentinel> 1312",
+                    )
+                ],
+            )
+            def test_custom_format_option_overrules_default_format(
+                capsys: CaptureFixture,
+                cwd,
+                config_file_content: str,
+                expected_copyright_string: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files(file := "hello.py", "", git_repo, mocker)
+                write_config_file(git_repo.workspace, config_file_content)
 
-        @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                # Construct expected outputs
+                copyright_string = f"# {expected_copyright_string}"
+                expected_content = f"{copyright_string}\n"
+                expected_stdout = (
+                    f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                )
+
+                # Gather actual outputs
+                with open(git_repo.workspace / file, "r") as f:
+                    output_content = f.read()
+                captured = capsys.readouterr()
+
+                # Compare
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    expected_content,
+                )
+                assert_matching(
+                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                )
+                assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+        @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
         class TestPerLanguageConfigs:
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_formatting_commented_overrules_default_format(
                 cwd,
                 git_repo: GitRepo,
@@ -582,13 +593,14 @@ class TestCustomBehaviour:
                 mocker: MockerFixture,
             ):
                 # GIVEN
-                print(
-                    add_changed_files(
-                        [f"hello{lang.extension}" for lang in SUPPORTED_LANGUAGES],
-                        "",
-                        git_repo,
-                        mocker,
-                    )
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
+                    mocker,
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -603,20 +615,20 @@ class TestCustomBehaviour:
                     assert add_copyright.main() == 1
 
                 # THEN
-                for lang in SUPPORTED_LANGUAGES:
+                for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
                     if lang.extension == language.extension:
                         # If we're looking at the language we've set up a custom format
                         # for, then we should see a copyright with that formatting.
                         copyright_string = (
                             language.custom_copyright_format_commented.format(
-                                name="<git config username sentinel>", year="1066"
+                                name="<git config username sentinel>", year="1312"
                             )
                         )
                     else:
                         # Otherwise we expect the default copyright format.
                         copyright_string = lang.comment_format.format(
                             content="Copyright (c) {year} {name}".format(
-                                name="<git config username sentinel>", year="1066"
+                                name="<git config username sentinel>", year="1312"
                             )
                         )
 
@@ -630,7 +642,7 @@ class TestCustomBehaviour:
                     )
 
             @staticmethod
-            @freeze_time("1066-01-01")
+            @freeze_time("1312-01-01")
             def test_custom_formatting_uncommented_overrules_default_format(
                 cwd,
                 git_repo: GitRepo,
@@ -639,7 +651,10 @@ class TestCustomBehaviour:
             ):
                 # GIVEN
                 add_changed_files(
-                    [f"hello{lang.extension}" for lang in SUPPORTED_LANGUAGES],
+                    [
+                        f"hello{lang.extension}"
+                        for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
                     "",
                     git_repo,
                     mocker,
@@ -657,20 +672,20 @@ class TestCustomBehaviour:
                     assert add_copyright.main() == 1
 
                 # THEN
-                for lang in SUPPORTED_LANGUAGES:
+                for lang in AddCopyrightGlobals.SUPPORTED_LANGUAGES:
                     if lang.extension == language.extension:
                         # If we're looking at the language we've set up a custom format
                         # for, then we should see a copyright with that formatting.
                         copyright_string = language.comment_format.format(
                             content=language.custom_copyright_format_uncommented.format(
-                                name="<git config username sentinel>", year="1066"
+                                name="<git config username sentinel>", year="1312"
                             )
                         )
                     else:
                         # Otherwise we expect the default copyright format.
                         copyright_string = lang.comment_format.format(
                             content="Copyright (c) {year} {name}".format(
-                                name="<git config username sentinel>", year="1066"
+                                name="<git config username sentinel>", year="1312"
                             )
                         )
 
@@ -713,7 +728,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: 'unsupported_option'. Supported options are: {SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\"",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: 'unsupported_option'. Supported options are: {AddCopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\"",  # noqa: E501
         )
 
     @staticmethod
@@ -723,7 +738,7 @@ class TestFailureStates:
             '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
         ],
     )
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_raises_KeyError_for_unsupported_language_config_options(
         cwd,
         config_file_content: str,
@@ -747,7 +762,7 @@ class TestFailureStates:
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\"",  # noqa: E501
+            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {AddCopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\"",  # noqa: E501
         )
 
     @staticmethod
@@ -758,7 +773,7 @@ class TestFailureStates:
             ("copyright {year} Harold Hadrada", "name"),
         ],
     )
-    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize("language", AddCopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_raises_KeyError_for_missing_custom_format_keys(
         cwd,
         git_repo: GitRepo,
