@@ -7,7 +7,12 @@ import subprocess
 import pytest
 from pytest_git import GitRepo
 
-from tests.conftest import CopyrightGlobals, SupportedLanguage, assert_matching
+from tests.conftest import (
+    CopyrightGlobals,
+    SupportedLanguage,
+    add_changed_files,
+    assert_matching,
+)
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "update-copyright"]
 THIS_YEAR = datetime.date.today().year
@@ -96,3 +101,62 @@ class TestNoChanges:
         )
         assert "Update dates on copyright strings in source files" in process.stdout
         assert "Passed" in process.stdout
+
+
+@pytest.mark.slow
+class TestChanges:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_copyright_string, expected_copyright_string",
+        [
+            ("Copyright 1066 NAME", "Copyright 1066 - 1312 NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - 1312 NAME"),
+            ("(c) 1066 NAME", "(c) 1066 - 1312 NAME"),
+        ],
+    )
+    def test_updates_single_date_copyrights(
+        cwd,
+        expected_copyright_string: str,
+        git_repo: GitRepo,
+        input_copyright_string: str,
+    ):
+        # GIVEN
+        add_changed_files(
+            [f"hello{lang.extension}" for lang in CopyrightGlobals.SUPPORTED_LANGUAGES],
+            [
+                lang.comment_format.format(content=input_copyright_string)
+                + "\n\n<file content sentinel>"
+                for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+            ],
+            git_repo,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 1
+        for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
+            file = "hello" + language.extension
+            copyright_string = language.comment_format.format(
+                content=expected_copyright_string
+            )
+            expected_content = (
+                copyright_string + f"\n\n<file {file} content sentinel>\n"
+            )
+            expected_stdout = (
+                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+            )
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+
+            assert_matching(
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
+            )
+            assert expected_stdout in process.stdout
