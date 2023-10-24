@@ -73,8 +73,10 @@ def _parse_args() -> dict:
     Parse the CLI arguments.
 
     Returns:
-        argparse.Namespace with the following attributes:
+        dict with the following keys:
         - files (list of Path): the paths to each changed file relevant to this hook.
+        - name (str, None): the configured name to add to the copyright
+        - format (str, None): the format that the copyright string should follow.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--name", type=str, default=None)
