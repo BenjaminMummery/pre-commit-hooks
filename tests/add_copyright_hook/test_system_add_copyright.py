@@ -541,7 +541,7 @@ class TestFailureStates:
         # THEN
         assert process.returncode == 1
         expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\""  # noqa: E501
-        assert expected_stdout in process.stdout
+        assert expected_stdout in process.stdout, process.stdout
 
     @staticmethod
     @pytest.mark.parametrize(
