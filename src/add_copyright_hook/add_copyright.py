@@ -317,7 +317,8 @@ def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> in
 
 
     Returns:
-        int: 0 if the file already had a docstring, 1 if a docstring had to be added.
+        int: 0 if the file already had a copyright string, 1 if a copyright string had
+            to be added.
     """
     try:
         _ensure_valid_format(format)
