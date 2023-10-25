@@ -76,6 +76,41 @@ class TestNoChanges:
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
+    @staticmethod
+    @freeze_time("1312-01-01")
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    def test_no_changed_files_have_copyright(
+        capsys: CaptureFixture,
+        cwd,
+        git_repo: GitRepo,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "hello" + language.extension,
+            file_content := "<file content sentinel>\n",
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 0
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
 
 @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
 class TestChanges:

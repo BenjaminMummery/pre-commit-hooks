@@ -102,6 +102,36 @@ class TestNoChanges:
         assert "Update dates on copyright strings in source files" in process.stdout
         assert "Passed" in process.stdout
 
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    def test_no_changed_files_have_copyright(
+        git_repo: GitRepo,
+        cwd,
+        language: SupportedLanguage,
+    ):
+        """Files have been changed, but all have up-to-date copyright strings."""
+        # GIVEN
+        file = "hello" + language.extension
+        file_content = "<file content sentinel>\n"
+        (git_repo.workspace / file).write_text(file_content)
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 0
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert "Update dates on copyright strings in source files" in process.stdout
+        assert "Passed" in process.stdout
+
 
 @pytest.mark.slow
 class TestChanges:
