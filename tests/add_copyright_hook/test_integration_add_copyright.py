@@ -725,11 +725,19 @@ class TestFailureStates:
                 add_copyright.main()
 
         # THEN
+        expected_error_string: str = (
+            'KeyError: "Unsupported option in config file '
+            + (str(Path("/private")) if "/private" in e.exconly() else "")
+            + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+            "Supported options are: "
+            f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+        )
+
         assert_matching(
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: 'unsupported_option'. Supported options are: {CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\"",  # noqa: E501
+            expected_error_string,
         )
 
     @staticmethod
@@ -759,11 +767,19 @@ class TestFailureStates:
                 add_copyright.main()
 
         # THEN
+        expected_error_string: str = (
+            'KeyError: "Unsupported option in config file '
+            + (str(Path("/private")) if "/private" in e.exconly() else "")
+            + f"{git_repo.workspace/ config_file}: "
+            f"'{language.toml_key}.unsupported_option'. "
+            f"Supported options for '{language.toml_key}' are: "
+            f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+        )
         assert_matching(
             "Output error string",
             "Expected error string",
             e.exconly(),
-            f"KeyError: \"Unsupported option in config file {Path('/private')}{git_repo.workspace/ config_file}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\"",  # noqa: E501
+            expected_error_string,
         )
 
     @staticmethod

@@ -3,6 +3,7 @@
 import datetime
 import os
 import subprocess
+from pathlib import Path
 
 import pytest
 from pytest_git import GitRepo
@@ -497,7 +498,13 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{config_file}: 'unsupported_option'. Supported options are: {CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}.\""  # noqa: E501
+        expected_stdout = (
+            'KeyError: "Unsupported option in config file '
+            + (str(Path("/private")) if "/private" in process.stdout else "")
+            + f"{config_file}: 'unsupported_option'. "
+            "Supported options are: "
+            f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+        )
         assert expected_stdout in process.stdout
 
     @staticmethod
