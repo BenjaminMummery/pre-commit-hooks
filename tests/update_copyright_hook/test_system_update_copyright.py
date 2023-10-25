@@ -109,9 +109,9 @@ class TestChanges:
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
-            ("Copyright 1066 NAME", "Copyright 1066 - 1312 NAME"),
-            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - 1312 NAME"),
-            ("(c) 1066 NAME", "(c) 1066 - 1312 NAME"),
+            ("Copyright 1066 NAME", "Copyright 1066 - {year} NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - {year} NAME"),
+            ("(c) 1066 NAME", "(c) 1066 - {year} NAME"),
         ],
     )
     def test_updates_single_date_copyrights(
@@ -125,7 +125,7 @@ class TestChanges:
             [f"hello{lang.extension}" for lang in CopyrightGlobals.SUPPORTED_LANGUAGES],
             [
                 lang.comment_format.format(content=input_copyright_string)
-                + "\n\n<file content sentinel>"
+                + "\n\n<file content sentinel>\n"
                 for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
             ],
             git_repo,
@@ -142,13 +142,13 @@ class TestChanges:
         for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
             file = "hello" + language.extension
             copyright_string = language.comment_format.format(
-                content=expected_copyright_string
+                content=expected_copyright_string.format(year=THIS_YEAR)
             )
-            expected_content = (
-                copyright_string + f"\n\n<file {file} content sentinel>\n"
-            )
+            expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
-                f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
+                f"Fixing file `{file}`:\n"
+                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[92m  + {copyright_string}\033[0m\n"
             )
             with open(git_repo.workspace / file, "r") as f:
                 output_content = f.read()

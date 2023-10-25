@@ -118,7 +118,9 @@ class TestChanges:
         )
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
-            f"Fixing file `{file}` - added line(s):\n{new_copyright_string}\n"
+            f"Fixing file `{file}`:\n"
+            f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
+            f"\033[92m  + {new_copyright_string}\033[0m\n"
         )
 
         # Gather actual outputs
