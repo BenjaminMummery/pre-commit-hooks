@@ -578,3 +578,35 @@ class TestFailureStates:
         print("E:", expected_stdout)
         print("R:", process.stdout)
         assert expected_stdout in process.stdout
+
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
+    )
+    def test_raises_error_for_invalid_copyright_string(
+        cwd,
+        git_repo: GitRepo,
+        copyright_string: str,
+        error_message: str,
+        language: SupportedLanguage,
+    ):
+        # GIVEN
+        add_changed_files(
+            "hello" + language.extension,
+            (
+                language.comment_format.format(content=copyright_string)
+                + "\n\n<file content sentinel>"
+            ),
+            git_repo,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 1
+        assert error_message in process.stdout

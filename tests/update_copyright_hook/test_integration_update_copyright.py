@@ -228,3 +228,39 @@ class TestChanges:
             "captured stdout", "expected stdout", captured.out, expected_stdout
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+class TestFailureStates:
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
+    )
+    def test_raises_error_for_invalid_copyright_string(
+        cwd,
+        git_repo: GitRepo,
+        copyright_string: str,
+        error_message: str,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(
+            "hello" + language.extension,
+            (
+                language.comment_format.format(content=copyright_string)
+                + "\n\n<file content sentinel>"
+            ),
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(ValueError) as e:
+                update_copyright.main()
+
+        # THEN
+        assert_matching(
+            "Output error string", "Expected error string", e.exconly(), error_message
+        )

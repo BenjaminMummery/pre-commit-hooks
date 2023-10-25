@@ -176,6 +176,12 @@ class CopyrightGlobals:
         "Copyright 1026-{end_year} Aristotle",
         "Copyright 1026 - {end_year} Aristotle",
     ]
+    INVALID_COPYRIGHT_STRINGS = [
+        (
+            "Copyright 2012 - 1312 NAME",
+            "ValueError: Copyright end year cannot be before the start year. Got 1312 and 2012 respectively.",  # noqa: E501
+        )
+    ]
     SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
         "name",
         "format",

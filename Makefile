@@ -54,7 +54,7 @@ test_integration: test_venv
 test_system: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
-	pytest --cov=src tests/*/test_system_*.py -x
+	pytest tests/*/test_system_*.py -x
 
 
 # TESTING BY HOOK
