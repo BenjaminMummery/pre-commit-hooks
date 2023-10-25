@@ -136,3 +136,60 @@ class TestChanges:
             "captured stdout", "expected stdout", captured.out, expected_stdout
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_copyright_string, expected_copyright_string",
+        [
+            ("Copyright 1066 - 1088 NAME", "Copyright 1066 - 1312 NAME"),
+            ("Copyright (c) 1066-1088 NAME", "Copyright (c) 1066-1312 NAME"),
+        ],
+    )
+    @freeze_time("1312-01-01")
+    def test_updates_multiple_date_copyrights(
+        capsys: CaptureFixture,
+        cwd,
+        expected_copyright_string: str,
+        git_repo: GitRepo,
+        input_copyright_string: str,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "hello" + language.extension,
+            language.comment_format.format(content=input_copyright_string)
+            + "\n\n<file content sentinel>",
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 1
+
+        # THEN
+        # Construct expected outputs
+        new_copyright_string = language.comment_format.format(
+            content=expected_copyright_string
+        )
+        expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
+        expected_stdout = (
+            f"Fixing file `{file}`:\n"
+            f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
+            f"\033[92m  + {new_copyright_string}\033[0m\n"
+        )
+
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, expected_content
+        )
+        assert_matching(
+            "captured stdout", "expected stdout", captured.out, expected_stdout
+        )
+        assert_matching("captured stderr", "expected stderr", captured.err, "")

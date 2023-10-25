@@ -160,3 +160,58 @@ class TestChanges:
                 expected_content,
             )
             assert expected_stdout in process.stdout
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "input_copyright_string, expected_copyright_string",
+        [
+            ("Copyright 1066 - 1088 NAME", "Copyright 1066 - {year} NAME"),
+            ("Copyright (c) 1066-1088 NAME", "Copyright (c) 1066-{year} NAME"),
+        ],
+    )
+    def test_updates_multiple_date_copyrights(
+        cwd,
+        expected_copyright_string: str,
+        git_repo: GitRepo,
+        input_copyright_string: str,
+    ):
+        # GIVEN
+        add_changed_files(
+            [f"hello{lang.extension}" for lang in CopyrightGlobals.SUPPORTED_LANGUAGES],
+            [
+                lang.comment_format.format(content=input_copyright_string)
+                + "\n\n<file content sentinel>\n"
+                for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+            ],
+            git_repo,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 1
+        for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
+            file = "hello" + language.extension
+            copyright_string = language.comment_format.format(
+                content=expected_copyright_string.format(year=THIS_YEAR)
+            )
+            expected_content = copyright_string + "\n\n<file content sentinel>\n"
+            expected_stdout = (
+                f"Fixing file `{file}`:\n"
+                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[92m  + {copyright_string}\033[0m\n"
+            )
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+
+            assert_matching(
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
+            )
+            assert expected_stdout in process.stdout
