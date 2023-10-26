@@ -75,6 +75,7 @@ verbose = 2
 ignore_magic = true
 
 [tool.flake8]
+ignore = ["E203", "W503"]
 max-line-length = 88
 style="google"
 count = true

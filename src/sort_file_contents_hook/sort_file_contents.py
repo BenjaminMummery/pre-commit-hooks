@@ -18,6 +18,12 @@ from pathlib import Path
 from src._shared import resolvers
 
 
+class UnsortableError(BaseException):
+    """Raised when a file cannot be sorted."""
+
+    pass
+
+
 def _sort_lines(lines: t.List[str], unique: bool = False) -> t.List[str]:
     """
     Sorts the lines.
@@ -133,6 +139,21 @@ def _find_duplicates(lines: t.List[str]) -> t.List[t.Tuple[str, int]]:
     return duplicates
 
 
+def _find_comment_clashes(lines: t.List[str]) -> t.List[str]:
+    """
+    Identify duplicate entries in the list where one of the entries is commented out.
+
+    Args:
+        lines: the list of strings to check for duplicates.
+
+    Returns:
+        list(str): a list of duplicated strings.
+    """
+    lines = [line.strip(" #") for line in lines]
+    duplicates = _find_duplicates(lines)
+    return [dupl[0] for dupl in duplicates]
+
+
 def _sort_contents(file: Path, unique: bool = False) -> int:
     """Sort the contents of the file."""
     with open(file, "r") as file_obj:
@@ -165,7 +186,7 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
 
     # Check for uniqueness
     if unique:
-        duplicates = _find_duplicates(
+        duplicates: t.List[t.Tuple[str, int]] = _find_duplicates(
             list(
                 itertools.chain.from_iterable(
                     [contents for contents in section_contents if contents is not None]
@@ -173,13 +194,29 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
             )
         )
         if len(duplicates) > 0:
-            print(
+            err_msg = (
                 f"Could not sort '{file}'. "
                 "The following entries appear in multiple sections:"
             )
             for item, count in duplicates:
-                print(f"- '{item}' appears in {count} sections.")
-            return 1
+                err_msg += f"\n- '{item}' appears in {count} sections."
+            raise UnsortableError(err_msg)
+
+        comment_clashes: t.List[str] = _find_comment_clashes(
+            list(
+                itertools.chain.from_iterable(
+                    [contents for contents in section_contents if contents is not None]
+                )
+            )
+        )
+        if len(comment_clashes) > 0:
+            err_msg = (
+                f"Could not sort '{file}'. "
+                "The following entries exists in both commented and uncommented forms:"
+            )
+            for item in comment_clashes:
+                err_msg += f"\n- '{item}'."
+            raise UnsortableError(err_msg)
 
     # Early return if nothing has changed
     if not sections_changed:
