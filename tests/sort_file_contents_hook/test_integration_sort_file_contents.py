@@ -32,7 +32,12 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "file_contents", ["Alpha\nBeta\nGamma", "A\nC\nE\n\nB\nD\nF"]
+        "file_contents",
+        [
+            "Alpha\nBeta\nGamma",
+            "A\nC\nE\n\nB\nD\nF",
+            "# leading comment with clashing entry\n# beta\nbeta\ndelta\nzulu\n",
+        ],
     )
     def test_all_changed_files_are_sorted(
         capsys: CaptureFixture,
@@ -247,3 +252,82 @@ class TestSorting:
             f"Sorting file '{filename}'\n",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+class TestFailureStates:
+    @staticmethod
+    @pytest.mark.parametrize("unique_flag", ["-u", "--unique"])
+    @pytest.mark.parametrize("unsorted", ["beta\ndelta\n\ngamma\nalpha\ndelta\n"])
+    def test_duplicates_between_sections_with_unique_flag(
+        cwd,
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        unsorted: str,
+        unique_flag: str,
+    ):
+        # GIVEN
+        add_changed_files(filename := ".gitignore", unsorted, git_repo, mocker)
+        mocker.patch("sys.argv", ["stub_name", unique_flag, filename])
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(sort_file_contents.UnsortableError) as e:
+                sort_file_contents.main()
+
+        # THEN
+        with open(git_repo.workspace / filename, "r") as f:
+            content = f.read()
+        assert_matching(
+            "output file contents", "expected file contents", content, unsorted
+        )
+        assert_matching(
+            "Captured error message",
+            "Expected error message",
+            e.exconly(),
+            "src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '.gitignore'. The following entries appear in multiple sections:\n- 'delta' appears in 2 sections.",  # noqa: E501
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize("unique_flag", ["-u", "--unique"])
+    @pytest.mark.parametrize(
+        "unsorted, clashing_entry, description",
+        [
+            ("beta\n# zulu\ndelta\ngamma\nalpha\nzulu\n", "zulu", "simple clash"),
+            (
+                "# leading comment\n# zulu\n# including clash\nalpha\n# alpha\nzulu",
+                "alpha",
+                "potential clash in leading comment",
+            ),
+        ],
+    )
+    def test_commented_and_uncommented_duplicates(
+        cwd,
+        clashing_entry: str,
+        description: str,
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        unsorted: str,
+        unique_flag: str,
+    ):
+        # GIVEN
+        add_changed_files(filename := ".gitignore", unsorted, git_repo, mocker)
+        mocker.patch("sys.argv", ["stub_name", unique_flag, filename])
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(sort_file_contents.UnsortableError) as e:
+                sort_file_contents.main()
+
+        # THEN
+        with open(git_repo.workspace / filename, "r") as f:
+            content = f.read()
+        assert_matching(
+            "output file contents", "expected file contents", content, unsorted
+        )
+        assert_matching(
+            "Captured error message",
+            "Expected error message",
+            e.exconly(),
+            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '{filename}'. The following entries exists in both commented and uncommented forms:\n- '{clashing_entry}'.",  # noqa: E501
+            message=description,
+        )
