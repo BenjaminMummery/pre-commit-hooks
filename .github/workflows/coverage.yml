@@ -21,8 +21,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
-          pip install -Ur test_requirements.txt
-          pip install -e .
+          pip install -e '.[dev]'
       - name: Integration Test Coverage
         run: |-
           pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt

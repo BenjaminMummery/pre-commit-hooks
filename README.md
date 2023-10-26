@@ -1,3 +1,5 @@
+<!--- Copyright (c) 2022 - 2023 Benjamin Mummery -->
+
 # pre-commit-hooks
 
 A selection of quality-of-life tools for use with [pre-commit](https://github.com/pre-commit/pre-commit).
@@ -13,9 +15,10 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [1.2 Usage in a vanilla hook](#12-usage-in-a-vanilla-hook)
   - [2. Hooks](#2-hooks)
     - [2.1 The `add-copyright` Hook](#21-the-add-copyright-hook)
-    - [2.2 The `add-msg-issue` Hook](#22-the-add-msg-issue-hook)
-    - [2.3 The `sort-file-contents` hook](#23-the-sort-file-contents-hook)
-    - [2.4 The `check-docstrings-parse-as-rst` hook](#24-the-check-docstrings-parse-as-rst-hook)
+    - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
+    - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
+    - [2.4 The `sort-file-contents` hook](#24-the-sort-file-contents-hook)
+    - [2.5 The `check-docstrings-parse-as-rst` hook](#25-the-check-docstrings-parse-as-rst-hook)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
 
@@ -43,7 +46,6 @@ repos:
 
 Even if you've already installed pre-commit, it may be necessary to run:
 
-
 ```bash
 pre-commit install
 ```
@@ -52,7 +54,7 @@ pre-commit install
 
 You should see the following output:
 
-```
+```bash
 $ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 pre-commit installed at .git/hooks/prepare-commit-msg
@@ -79,20 +81,48 @@ Check changed source files for something that looks like a copyright comment. If
 
 By default, the copyright message is constructed as a comment in the format
 
-```
+```text
 Copyright (c) <year> <name>
 ```
 
 where the year is the current year, and the name is sourced from the git `user.name` configuration.
 
-#### 2.1.1 Controlling the name and year
+#### 2.1.1 Configuration
 
-The hook looks for copyright information in the following hierarchy:
+If required, the default behaviour can be overruled either by command line arguments or configuration files.
 
-1. Command-line arguments.
-   Either specifying the name and year directly, or providing a configuration file that specifies them.
-2. A `.add-copyright-hook-config.yaml` in the root directory of the repo.
-3. The current year and git user.name
+##### CLI Arguments
+
+```term
+add-copyright [-n NAME] [-f FORMAT] [FILES]
+```
+
+##### `.pre-commit-config.yaml` Configuration
+
+```yaml
+- repo: https://github.com/BenjaminMummery/pre-commit-hooks
+  rev: v1.5.0
+  hooks:
+    - id: add-copyright
+      args: ["-n NAME", "-f FORMAT"]
+```
+
+##### `pyproject.toml` configuration
+
+```toml
+[tool.add_copyright]
+name = "NAME"
+format = "FORMAT"
+```
+
+Behaviour for individual languages can also be configured:
+
+```toml
+[tool.add_copyright.python]
+format = "FORMAT"
+```
+
+where there is a conflict between individual language settings and the global tool settings, the language settings are given authority.
 
 #### 2.1.2 Command line arguments
 
@@ -102,9 +132,6 @@ The `add-copyright` hook accepts the following command line arguments to control
 |------|-------------|
 | `-n` / `--name` | Set a custom name to be used rather than git's `user.name` |
 | `-f` / `--format` | Set a custom f-string for the copyright to be inserted. Must contain `{name}` and `{year}`. |
-| `-c` / `--config` | Specify a configuration file that contains the name and year to be used. |
-
-The name and/or year arguments cannot be used at the same time as the config argument.
 
 If you're using a `.pre-commit-config.yaml`, these can be configured as follows:
 
@@ -120,20 +147,16 @@ repos:
 
 Alternatively, a local configuration file can be specified:
 
-```yaml
-repos:
--   repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.0
-    hooks:
-    -   id: add-copyright
-        args: ["-c", "copyright-config.json"]
-    -   id: add-msg-issue
+##### `pyproject.toml`
+
+```toml
+[tool.add_copyright]
+name = "James T. Kirk"
+format = "Property of {name} as of {year}"
 ```
 
-The config file can contain name and year, and format.
+The config file can contain name and format.
 Any properties that are not set by the config file will be inferred from the current year / git user name.
-Currently supported config formats are: JSON and YAML.
-
 
 #### 2.1.3 `.add-copyright-hook-config.yaml` file.
 
@@ -159,12 +182,17 @@ The add-copyright hook currently runs on changed source files of the following t
 
 
 
+### 2.2 The `update-copyright` Hook
 
-### 2.2 The `add-msg-issue` Hook
+Check changed source files for something that looks like a copyright comment.
+If one is found, the end date is checked against the current date and updated if it is out of date.
+
+
+### 2.3 The `add-msg-issue` Hook
 
 Search the branch name for something that looks like an issue message, and insert it into the commit message.
 
-#### 2.2.1 Example 1: Usage when defining the commit msg from command line
+#### 2.3.1 Example 1: Usage when defining the commit msg from command line
 
 In a branch called `feature/TEST-01/demo`, the command `git commit -m "test commit" -m "Some more description about our test commit."` produces a commit message that reads
 
@@ -175,7 +203,7 @@ test commit
 Some more description about our test commit.
 ```
 
-#### 2.2.2 Example 2: Usage when defining the commit msg from editor
+#### 2.3.2 Example 2: Usage when defining the commit msg from editor
 
 If a message is not specified in the command line, the issue ID is instead inserted into the message prior to it opening in the editor.
 You should be greeted with something that looks like:
@@ -194,7 +222,7 @@ You should be greeted with something that looks like:
 
 Note that this means that the commit will not be aborted due to an empty message unless you delete the inserted ID.
 
-#### 2.2.3 Defining a custom template
+#### 2.3.3 Defining a custom template
 
 If the default template is not to your liking, you can define your own by passing the `--template` argument:
 
@@ -220,12 +248,12 @@ The default template is:
 "{subject}\n\n[{issue_id}]\n{body}"
 ```
 
-### 2.3 The `sort-file-contents` hook
+### 2.4 The `sort-file-contents` hook
 
 The `sort-file-contents` hook sorts the lines in the specified files while retaining sections.
 This is primarily aimed at managing large .gitignore files.
 
-#### 2.3.1 Section - aware sorting
+#### 2.4.1 Section - aware sorting
 
 Sections are identified as sets of sequential lines preceded by a comment and separated from other sections by a blank line.
 The contents of each section are sorted alphabetically, while the overall structure of sections is unchanged.
@@ -264,14 +292,14 @@ charlie
 delta
 ```
 
-#### 2.3.2 Uniqueness
+#### 2.4.2 Uniqueness
 
 The `-u` or `--unique` flag causes the hook to check the sorted lines for uniqueness.
 Duplicate entries within the same section will be removed automatically;
 lines that are duplicated between sections will be left in place and a warning raised to the user.
 This latter behaviour is due to us not knowing which section the line should belong to.
 
-### 2.4 The `check-docstrings-parse-as-rst` hook
+### 2.5 The `check-docstrings-parse-as-rst` hook
 
 Parse python files to extract the docstrings, and check that these parse as ReStructuredText (RST).
 This is intended to be used in repos where automated documentation generation (e.g. Sphynx) will attempt to render docstrings as RST.

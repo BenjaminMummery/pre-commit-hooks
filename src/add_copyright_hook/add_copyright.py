@@ -11,293 +11,29 @@ consult the README file.
 
 import argparse
 import datetime
-import json
 import os
-import re
-import sys
-import typing as t
 from pathlib import Path
+from typing import List, Optional, Set, Tuple
 
-import yaml
-from git import Repo  # type: ignore
-from git.exc import GitCommandError
+from git import GitCommandError, Repo
+from identify import identify
 
-from src._shared import comment_mapping, resolvers
+from src._shared.comment_mapping import get_comment_markers
+from src._shared.config_parsing import read_pyproject_toml
+from src._shared.copyright_parsing import parse_copyright_string
 from src._shared.exceptions import NoCommitsError
 
-DEFAULT_CONFIG_FILE: Path = Path(".add-copyright-hook-config.yaml")
-DEFAULT_FORMAT: str = "Copyright (c) {year} {name}"
+TOOL_NAME = "add_copyright"
 
-
-class ParsedCopyrightString:
-    """Class for storing the components of a parsed copyright string."""
-
-    def __init__(
-        self,
-        commentmarker: str,
-        signifiers: str,
-        start_year: int,
-        end_year: int,
-        name: str,
-        string: str,
-    ):
-        """
-        Construct ParsedCopyrightString.
-
-        Arguments:
-            commentmarker (str): The character(s) that denote that the line is a
-                comment.
-            signifiers (str): The string that indicates that this comment relates to
-                copyright.
-            start_year (int): The earlier year attached to the copyright.
-            end_year (int): The later year attached to the copyright.
-            name (str): The name of the copyright holder.
-            string (str): The full copyright string as it exists in the source file.
-        """
-        self.commentmarker: str = commentmarker
-        self.signifiers: str = signifiers
-        self.start_year: int = start_year
-        self.end_year: int = end_year
-        self.name: str = name
-        self.string: str = string
-        if not self.end_year >= self.start_year:
-            raise ValueError(
-                "Copyright end year cannot be before the start year. "
-                f"Got {self.end_year} and {self.start_year} respectively."
-            )
-
-    def __eq__(self, other) -> bool:
-        return (
-            self.commentmarker == other.commentmarker
-            and self.signifiers == other.signifiers
-            and self.start_year == other.start_year
-            and self.end_year == other.end_year
-            and self.name == other.name
-            and self.string == other.string
-        )
-
-    def __repr__(self) -> str:
-        return (
-            "ParsedCopyrightString object with:\n"
-            f"- comment marker: {self.commentmarker}\n"
-            f"- signifiers: {self.signifiers}\n"
-            f"- start year: {self.start_year}\n"
-            f"- end year: {self.end_year}\n"
-            f"- name: {self.name}\n"
-            f"- string: {self.string}"
-        )
-
-
-def _parse_copyright_string(input: str) -> t.Optional[ParsedCopyrightString]:
-    """
-    Check if the input string is a copyright comment.
-
-    Note: at present this assumes that we're looking for a python comment.
-    Future versions will extend this to include other languages.
-
-    Args:
-        input (str): The string to be checked
-
-    Returns:
-        ParsedCopyrightString or None: If a matching copyright string was found,
-            returns an object containing its information. If a match was not found,
-            returns None.
-    """
-    exp = re.compile(
-        # The line should start with the comment escape character '#'.
-        r"^(?P<commentmarker>#)\s?"
-        # One or more ways of writing 'copyright': the word, the character `©`, or the
-        # approximation `(c)`.
-        r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
-        # Year information - either 4 digits, or 2 sets of 4 digits separated by a dash.
-        r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)" r"\s*"
-        # The name of the copyright holder. No restrictions on this, just take whatever
-        # is left in the string as long as it's not nothing.
-        r"(?P<name>.*)",
-        re.IGNORECASE | re.MULTILINE,
-    )
-    match = re.search(exp, input)
-    if match is None:
-        return None
-
-    matchdict = match.groupdict()
-    start_year, end_year = _parse_years(matchdict["year"])
-
-    return ParsedCopyrightString(
-        matchdict["commentmarker"].strip(),
-        matchdict["signifiers"].strip(),
-        start_year,
-        end_year,
-        matchdict["name"].strip(),
-        match.group().strip(),
-    )
-
-
-def _parse_years(year: str) -> t.Tuple[int, int]:
-    """
-    Parse the identified year string as a range of years.
-
-    Arguments:
-        year (str): the string to be parsed.
-
-    Returns:
-        int, int: the start and end years of the range. If the range is a single year,
-            these values will be the same.
-
-    Raises:
-        SyntaxError: When the year string cannot be parsed.
-    """
-    match = re.match(r"^(?P<start_year>(\d{4}))\s*-\s*(?P<end_year>(\d{4}))", year)
-    if match:
-        return (
-            int(match.groupdict()["start_year"]),
-            int(match.groupdict()["end_year"]),
-        )
-
-    match = re.match(r"^(?P<year>(\d{4}))$", year)
-    if match:
-        return (int(match.groupdict()["year"]), int(match.groupdict()["year"]))
-
-    raise SyntaxError(f"Could not interpret year value '{year}'.")  # pragma: no cover
-
-
-def _update_copyright_string(
-    parsed_string: ParsedCopyrightString, start_year: int, end_year: int
-) -> str:
-    """
-    Update the end year in the copyright string to match the specified year.
-
-    If the string contains a year range, updates the later year. If it contains a single
-    year, converts this to a year range.
-
-    Arguments:
-        parsed_string (ParsedCopyrightString): The copyright string to be updated.
-        start_year (int): The earliest date of work on the file.
-        end_year (int): The latest date of work on the file.
-    """
-    if parsed_string.end_year == parsed_string.start_year:
-        if start_year == end_year:
-            # The existing string contains one year, and it needs to be replaced with a
-            # different year.
-            return parsed_string.string.replace(
-                str(parsed_string.start_year), f"{start_year}"
-            )
-        else:
-            # The existing string contains one year, and it needs to be replaced with a
-            # range.
-            return parsed_string.string.replace(
-                str(parsed_string.start_year), f"{start_year} - {end_year}"
-            )
-    else:
-        if start_year == end_year:
-            # The existing string contains a range, and it needs to be replaced with a
-            # single year.
-            return re.sub(
-                rf"{parsed_string.start_year}\s*-\s*{parsed_string.end_year}",
-                f"{start_year}",
-                parsed_string.string,
-            )
-        else:
-            # The existing string contains a range, and it needs to be replaced with a
-            # different range.
-            new_str = parsed_string.string.replace(
-                str(parsed_string.start_year), f"{start_year}"
-            )
-            return new_str.replace(str(parsed_string.end_year), f"{end_year}")
-
-
-def _has_shebang(input: str) -> bool:
-    """
-    Check whether the input string starts with a shebang.
-
-    Args:
-        input (str): The string to check.
-
-    Returns:
-        bool: True if a shebang is found, false otherwise.
-    """
-    return input.startswith("#!")
-
-
-def _construct_copyright_string(
-    name: str, start_year: int, end_year: int, format: str
-) -> str:
-    """
-    Construct a commented line containing the copyright information.
-
-    Args:
-        name (str): The name of the copyright holder.
-        start_year (str): The start year of the copyright.
-        end_year (str): The end year of the copyright.
-        format (str): The f-string into which the name and year should be
-            inserted.
-    """
-    if start_year == end_year:
-        year = f"{start_year}"
-    else:
-        year = f"{start_year} - {end_year}"
-    outstr = format.format(year=year, name=name)
-
-    return outstr
-
-
-def _insert_copyright_string(copyright: str, content: str) -> str:
-    """
-    Insert the specified copyright string as a new line in the content.
-
-    This method attempts to place the copyright string at the top of the file, unless
-    the file starts with a shebang in which case the copyright string is inserted after
-    the shebang, separated by an empty line.
-
-    Args:
-        copyright (str): The copyright string.
-        content (str): The content into which to insert the copyright string.
-
-    Returns:
-        str: The modified content, including the copyright string.
-    """
-    lines: t.List[str] = [line for line in content.split("\n")]
-
-    shebang: t.Optional[str] = None
-    if _has_shebang(content):
-        shebang = lines[0]
-        lines = lines[1:]
-
-    if len(lines) == 0:  # pragma: no cover
-        # Included for safety, but the way 'lines' is defined makes this condition
-        # impossible.
-        lines = [copyright]
-    elif lines[0] == "":
-        lines = [copyright] + lines
-    else:
-        lines = [copyright, ""] + lines
-
-    if shebang is not None:
-        lines = [shebang, ""] + lines
-
-    return "\n".join(lines)
-
-
-def _copyright_is_current(
-    parsed_copyright_string: ParsedCopyrightString, start_year: int, end_year: int
-) -> bool:
-    """
-    Check if the copyright string is up to date.
-
-    Arguments:
-        parsed_copyright_string (ParsedCopyrightString): The copyright string to check.
-        start_year (int): The earliest year the copyright should cover.
-        end_year (int): The latest year the copyright should cover.
-
-    Returns:
-        bool: True if the copyright covers the range, otherwise False.
-    """
-    if (
-        parsed_copyright_string.end_year >= end_year
-        and parsed_copyright_string.start_year <= start_year
-    ):
-        return True
-    return False
+# Mapping between the language tags as determined by identify, and how they are
+# represented in toml.
+LANGUAGE_TAGS_TOMLKEYS: dict = {
+    "python": "python",
+    "markdown": "markdown",
+    "c++": "cpp",
+    "c#": "c-sharp",
+    "perl": "perl",
+}
 
 
 def _get_earliest_commit_year(file: Path) -> int:
@@ -314,7 +50,6 @@ def _get_earliest_commit_year(file: Path) -> int:
         int: The year of the earliest commit on the file.
 
     """
-
     repo = Repo(".")
 
     try:
@@ -322,11 +57,9 @@ def _get_earliest_commit_year(file: Path) -> int:
     except GitCommandError as e:
         raise NoCommitsError from e
 
-    timestamps: t.Set[int] = set(
+    timestamps: Set[int] = set(
         int(blame[0].committed_date) for blame in blames  # type: ignore
     )
-    if len(timestamps) < 1:
-        raise NoCommitsError(f"File {file} has no Blame history.")
 
     earliest_date: datetime = datetime.datetime.fromtimestamp(  # type: ignore
         min(timestamps)
@@ -335,163 +68,23 @@ def _get_earliest_commit_year(file: Path) -> int:
     return int(earliest_date.year)  # type: ignore
 
 
-def _infer_start_year(
-    file: Path,
-    parsed_copyright_string: t.Optional[ParsedCopyrightString],
-    end_year: int,
-) -> int:
+def _parse_args() -> dict:
     """
-    Infer the start year for the copyright string.
-
-    Ideally we use the date of the earliest commit, but if we don't have one (e.g. the
-    file has not been committed previously) we'll defer to the date of the existing
-    commit string. If we can't do either, we use the end date, i.e. the current year.
-
-    Args:
-        parsed_copyright_string (Optional(ParsedCopyrightString)): The parsed copyright
-            string, if one exists.
-        end_year (int): The current year.
+    Parse the CLI arguments.
 
     Returns:
-        int: the inferred start year.
+        dict with the following keys:
+        - files (list of Path): the paths to each changed file relevant to this hook.
+        - name (str, None): the configured name to add to the copyright
+        - format (str, None): the format that the copyright string should follow.
     """
-    try:
-        return _get_earliest_commit_year(file)
-    except NoCommitsError:
-        pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--name", type=str, default=None)
+    parser.add_argument("-f", "--format", type=str, default=None)
+    parser.add_argument("files", nargs="*", default=[])
+    args = parser.parse_args()
 
-    if parsed_copyright_string:
-        return parsed_copyright_string.start_year
-    return end_year
-
-
-def _ensure_comment(string: str, file: Path) -> str:
-    """
-    Ensure that the string is a comment in the format of the specified file.
-
-    This function deals with three cases:
-    1. The string is already formatted as a comment. Returns the string
-        unchanged.
-    2. The string is unformatted. Adds the appropriate character(s) and returns
-        the string.
-    3. The string is formatted as a comment for a different file type. We can
-        handle cases as simple as a single-character substitution, but anything
-        more complex than that probably needs human oversight.
-
-    Args:
-        string (str): The string to be checked.
-        file (Path): The file in which the string is to be placed. Used for checking
-            that the correct formatting for a comment is used.
-
-    Returns:
-        str: the input string formatted as a comment.
-    """
-    # Determine comment character(s) from file extension
-    comment_line_start, comment_line_end = comment_mapping.get_comment_markers(file)
-
-    # Make sure the comment character(s) are at the start of line
-    if not string.startswith(comment_line_start):
-        string = f"{comment_line_start} {string}"
-
-    # If there's an end-line character, make sure it's at the end of the line.
-    if comment_line_end and not string.endswith(comment_line_end):
-        string = f"{string} {comment_line_end}"
-
-    return string
-
-
-def _ensure_copyright_string(file: Path, name: str, format: str) -> int:
-    """
-    Ensure that the specified file has a copyright string.
-
-    Check the file contents for the presence a copyright string, adding one if it is
-    not already present.
-
-    Args:
-        file (Path): the file to check.
-        name (str): Name of the copyright holder to be added to uncopyrighted
-            files.
-        format (str): f-string specifying the structure of new copyright
-            strings.
-
-    Returns:
-        int: 0 if the file is unchanged, 1 if it was modified.
-    """
-    # Get the start and end years for the copyright.
-    # The start year is the date of the earliest commit to the file. The end year
-    # should be the commit that is currently in process, so we take the current year
-    # from the system clock.
-    end_year: int = _get_current_year()
-
-    with open(file, "r+") as f:
-        contents: str = f.read()
-        new_contents: str
-
-        parsed_copyright_string = _parse_copyright_string(contents)
-
-        start_year: int = _infer_start_year(file, parsed_copyright_string, end_year)
-
-        # If we have a copyright string, and it corresponds to the range of commit
-        # dates, then there's nothing to do.
-        if parsed_copyright_string and _copyright_is_current(
-            parsed_copyright_string, start_year, end_year
-        ):
-            return 0
-
-        print(f"Fixing file `{file}` ", end="")
-        if parsed_copyright_string:
-            # There's already a copyright string, we need to update it.
-            copyright_string: str = _update_copyright_string(
-                parsed_copyright_string, start_year, end_year
-            )
-            new_contents = contents.replace(
-                parsed_copyright_string.string, copyright_string
-            )
-            print(
-                "- updating existing copyright string:\n "
-                f"`{parsed_copyright_string.string}` --> `{copyright_string}`\n"
-            )
-        else:
-            # There's no copyright string, we need to add one.
-            copyright_comment = _ensure_comment(
-                _construct_copyright_string(name, start_year, end_year, format), file
-            )
-            new_contents = _insert_copyright_string(copyright_comment, contents)
-            print(f"- added line(s):\n{copyright_comment}\n")
-
-        f.seek(0, 0)
-        f.truncate()
-        f.write(new_contents)
-
-    # Safety checks
-    _confirm_file_updated(file, new_contents)
-    return 1
-
-
-def _confirm_file_updated(file: Path, expected_contents: str) -> None:
-    """
-    Confirm that the file contents match what we expect them to be.
-
-    Used to confirm that the file has been overwritten with the new values.
-
-    Args:
-        file (Path): Path to the file to examine
-        expected_contents (str): The contents that are expected to have been
-            written to the file.
-
-    Raises:
-        AssertionError: If the contents do not match.
-    """
-    with open(file, "r") as f:
-        file_contents = f.read()
-        assert file_contents == expected_contents
-        assert _parse_copyright_string(file_contents)
-
-
-def _get_current_year() -> int:
-    """Get the current year from the system clock."""
-    today = datetime.date.today()
-    return today.year
+    return args.__dict__
 
 
 def _get_git_user_name() -> str:
@@ -508,42 +101,183 @@ def _get_git_user_name() -> str:
     reader = repo.config_reader()
     name = reader.get_value("user", "name")
     if not isinstance(name, str) or len(name) < 1:
-        raise ValueError("The git username is not configured.")
+        raise ValueError("The git username is not configured.")  # pragma: no cover
     return name
 
 
-def _resolve_user_name(
-    name: t.Optional[str] = None, config: t.Optional[str] = None
-) -> str:
+def _has_shebang(input: str) -> bool:
     """
-    Resolve the user name to attach to the copyright.
-
-    If the name argument is provided, it is returned as the username. Otherwise
-    the user name is inferred from the git configuration.
+    Check whether the input string starts with a shebang.
 
     Args:
-        name (str, optional): The name argument if provided. Defaults to None.
-        config (str, optional): The config argument if provided. Defaults to None.
-
-    Raises:
-        ValueError: When the name argument is not provided, no config file is provided,
-        and the git user name is not configured.
+        input (str): The string to check.
 
     Returns:
-        str: The resolved name.
+        bool: True if a shebang is found, false otherwise.
     """
-    if name is not None:
-        return name
-
-    if config is not None:
-        data = _read_config_file(config)
-        if "name" in data:
-            return data["name"]
-
-    return _get_git_user_name()
+    return input.startswith("#!")
 
 
-def _ensure_valid_format(format: str) -> str:
+def _add_copyright_string_to_content(content: str, copyright_string: str) -> str:
+    """
+    Insert a copyright string into the appropriate place in existing content.
+
+    This method attempts to place the copyright string at the top of the file, unless
+    the file starts with a shebang in which case the copyright string is inserted after
+    the shebang, separated by an empty line.
+
+    Args:
+        content (str): The content to be updated.
+        copyright_string (str): The copyright string to be inserted.
+
+    Returns:
+        str: the new content.
+    """
+    lines: List[str] = content.splitlines()
+    new_lines: List[str] = []
+
+    # If the file starts with a shebang, keep that first in the new content.
+    if _has_shebang(content):
+        new_lines += [lines[0], ""]
+        lines = lines[1:]
+
+    # Remove leading empty lines from the content
+    while len(lines) >= 1 and lines[0] == "":
+        lines = lines[1:]
+
+    new_lines += [copyright_string, ""] + lines
+    if not new_lines[-1] == "":
+        new_lines.append("")
+    return "\n".join(new_lines)
+
+
+def _construct_copyright_string(
+    name: str,
+    start_year: int,
+    end_year: int,
+    format: str,
+    comment_markers: Tuple[str, Optional[str]],
+) -> str:
+    """
+    Construct a commented line containing the copyright information.
+
+    Args:
+        name (str): The name of the copyright holder.
+        start_year (str): The start year of the copyright.
+        end_year (str): The end year of the copyright.
+        format (str): The f-string into which the name and year should be
+            inserted.
+        comment_markers (tuple(str, str|None)): The comment markers to be inserted
+            before and, optionally, after the copyright string.
+
+    Return:
+        str: the copyright string, with appropriate comment escapes.
+    """
+    if start_year == end_year:
+        year = f"{start_year}"
+    else:
+        year = f"{start_year} - {end_year}"
+    commentstr = f"{format.format(year=year, name=name)}"
+    x = _ensure_comment(commentstr, comment_markers)
+    return x
+
+
+def _ensure_comment(
+    copyright_string: str, comment_markers: Tuple[str, Optional[str]]
+) -> str:
+    """
+    Ensure that the string passed in is properly comment escaped.
+
+    Args:
+        copyright_string (str): The string to be checked
+        comment_markers: (tuple(str, str|None)): The comment markers to be inserted
+            before and, optionally, after the copyright string.
+
+    Returns:
+        str: the properly escaped string.
+    """
+    outlines = copyright_string.splitlines()
+    for i, line in enumerate(outlines):
+        newline = line
+        if not line.startswith(comment_markers[0]):
+            newline = f"{comment_markers[0]} {line}"
+        if comment_markers[1] and not line.endswith(comment_markers[1]):
+            newline = f"{newline} {comment_markers[1]}"
+        outlines[i] = newline
+    assert (
+        len(outlines) > 0
+    ), "Unknown error in `_ensure_comment()`: generated no lines."
+    if len(outlines) == 1:
+        return outlines[0]
+    else:
+        return "\n".join(outlines)
+
+
+def _read_default_configuration() -> dict:
+    """
+    Read in the default configuration from a config file.
+
+    Raises:
+        KeyError: when the configuration contains unsupported options.
+
+    Returns:
+        dict: a mapping of key value pairs where the key is the configuration option
+            and the value is its value. For example, the `pyproject.toml`
+            entry
+
+            ```toml
+            [tool.add_copyright]
+            name = "my name"
+            ```
+
+            will be returned as the following dict:
+
+            ```python
+            {"name" : "my name"}
+            ```
+    """
+    supported_langauge_subkeys = ["format"]
+    supported_toml_keys = ["name", "format"] + [
+        v for v in LANGUAGE_TAGS_TOMLKEYS.values()
+    ]
+
+    retv = dict([(key, None) for key in supported_toml_keys])
+
+    # find config file
+    filename = "pyproject.toml"
+    for root, _, files in os.walk(os.getcwd()):
+        if filename in files:
+            filepath = os.path.join(root, filename)
+            break
+        return retv
+
+    # read data from config file
+    data = read_pyproject_toml(Path(filepath), TOOL_NAME)
+    for key in data:
+        # Check that the keys are things we support, and raise an error if not.
+        if key not in supported_toml_keys:
+            raise KeyError(
+                f"Unsupported option in config file {filepath}: '{key}'. "
+                f"Supported options are: {supported_toml_keys}."
+            )
+
+        # If the key is a supported language, check that the subkeys are supported.
+        if key in LANGUAGE_TAGS_TOMLKEYS.values():
+            for subkey in data[key]:
+                if subkey not in supported_langauge_subkeys:
+                    raise KeyError(
+                        f"Unsupported option in config file {filepath}: "
+                        f"'{key}.{subkey}'. "
+                        f"Supported options for '{key}' are: "
+                        f"{supported_langauge_subkeys}."
+                    )
+
+        retv[key] = data[key]
+
+    return retv
+
+
+def _ensure_valid_format(format: str):
     """
     Ensure that the provided format string contains the required keys.
 
@@ -566,92 +300,65 @@ def _ensure_valid_format(format: str) -> str:
             f"The format string '{format}' is missing the following required keys: "
             f"{missing_keys}"
         )
-    return format
 
 
-def _resolve_format(
-    format: t.Optional[str] = None, config: t.Optional[str] = None
-) -> str:
+def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> int:
     """
-    Resolve the format with which the copyright string should be constructed.
+    Ensure that the file has a docstring.
+
+    This function encompasses the heavy lifting for the hook.
 
     Args:
-        format (str, optional): The format argument if provided. Defaults to None.
-        config (str, optional): The config argument if provided. Defaults to None.
-
-    Returns:
-        str: The resolved format.
-    """
-    if format is not None:
-        return _ensure_valid_format(format)
-
-    if config is not None:
-        data = _read_config_file(config)
-        if "format" in data:
-            return _ensure_valid_format(data["format"])
-        print(f"Config file `{config}` has no format field.")
-
-    return _ensure_valid_format(DEFAULT_FORMAT)
-
-
-def _read_config_file(file_path: str) -> t.Mapping[str, str]:
-    """
-    Read in the parameters from the specified configuration file.
-
-    Args:
-        file_path (str): The path to the file.
+        file (path): the file to be checked.
 
     Raises:
-        FileNotFoundError: when the path does not point to an extant file, or points to
-            a file of an unsupported type.
+        KeyError: when the format for the copyright string lacks required keys.
+        ValueError: when the git username is not configured.
+
 
     Returns:
-        dict: The key values pairs interpreted from the file's contents.
+        int: 0 if the file already had a copyright string, 1 if a copyright string had
+            to be added.
     """
-    _file_path = Path(file_path)
-    data: t.Mapping[str, str]
-    with open(_file_path, "r") as f:
-        if _file_path.suffix == ".json":
-            data = json.load(f)
-        elif _file_path.suffix == ".yaml":
-            data = yaml.safe_load(f)
-        else:
-            raise FileNotFoundError(f"{file_path} is not a valid config file.")
+    try:
+        _ensure_valid_format(format)
+    except KeyError:
+        raise
 
-    return data
+    with open(file, "r+") as f:
+        content: str = f.read()
+        comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
+        if parse_copyright_string(content, comment_markers):
+            return 0
 
+        print(f"Fixing file `{file}` ", end="")
 
-def _parse_args() -> argparse.Namespace:
-    """
-    Parse the CLI arguments.
+        copyright_end_year: int = datetime.date.today().year
+        copyright_start_year: int
+        try:
+            copyright_start_year = _get_earliest_commit_year(file)
+        except NoCommitsError:
+            copyright_start_year = copyright_end_year
 
-    Returns:
-        argparse.Namespace with the following attributes:
-        - files (list of Path): the paths to each changed file relevant to this hook.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("files", nargs="*", default=[])
-    parser.add_argument("-n", "--name", type=str, default=None)
-    parser.add_argument("-f", "--format", type=str, default=None)
-    parser.add_argument("-c", "--config", type=str, default=None)
-    args = parser.parse_args()
+        try:
+            new_copyright_string = _construct_copyright_string(
+                name or _get_git_user_name(),
+                copyright_start_year,
+                copyright_end_year,
+                format,
+                comment_markers,
+            )
+        except ValueError:  # pragma: no cover
+            raise
 
-    if args.config and (args.name or args.format):
-        print("The arguments -c and -n|-f are mutually exclusive.")
-        sys.exit(2)
-
-    if args.config is None and os.path.isfile(DEFAULT_CONFIG_FILE):
-        args.config = DEFAULT_CONFIG_FILE
-        print(f"Found config file `{args.config}`.")
-
-    args.name = _resolve_user_name(args.name, args.config)
-    args.format = _resolve_format(args.format, args.config)
-    args.files = resolvers._resolve_files(args.files)
-
-    return args
+        f.seek(0, 0)
+        f.truncate()
+        f.write(_add_copyright_string_to_content(content, new_copyright_string))
+        print(f"- added line(s):\n{new_copyright_string}")
+    return 1
 
 
-def main() -> int:
+def main():
     """
     Entrypoint for the add_copyright hook.
 
@@ -660,17 +367,45 @@ def main() -> int:
     Returns:
         int: 1 if files have been modified, 0 otherwise.
     """
+    # Build the configuration from config files and CLI args.
+    try:
+        configuration = _read_default_configuration()
+    except KeyError:
+        raise
     args = _parse_args()
+    for key in args:
+        if args[key] is not None:
+            configuration[key] = args[key]
 
     # Early exit if no files provided
-    if len(args.files) < 1:
+    if len(configuration["files"]) < 1:
         return 0
 
-    # Filter out files that already have a copyright string
-    retv = 0
-    for file in args.files:
-        retv |= _ensure_copyright_string(file, args.name, args.format)
+    # Add copyright to files that don't already have it.
+    retv: int = 0
+    for file in configuration["files"]:
+        # Global configurations inherited by this file.
+        kwargs: dict = {
+            "format": configuration["format"] or "Copyright (c) {year} {name}"
+        }
 
+        # Extract the language-specific config options for this file. Override global
+        # options where required.
+        for tag in identify.tags_from_path(file):
+            if (tag in LANGUAGE_TAGS_TOMLKEYS.keys()) and (
+                configuration[LANGUAGE_TAGS_TOMLKEYS[tag]] is not None
+            ):
+                for key in configuration[LANGUAGE_TAGS_TOMLKEYS[tag]].keys():
+                    kwargs[key] = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]][key]
+                break
+
+        # Ensure that the file has copyright.
+        try:
+            retv |= _ensure_copyright_string(
+                Path(file), name=configuration["name"], **kwargs
+            )
+        except (KeyError, ValueError):
+            raise
     return retv
 
 

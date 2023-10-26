@@ -1,14 +1,68 @@
 # Copyright (c) 2023 Benjamin Mummery
 
+import datetime
 import os
 from contextlib import contextmanager
-from unittest.mock import Mock, create_autospec
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Union
+from unittest.mock import Mock
 
 import pytest
+from pytest_git import GitRepo
+from pytest_mock import MockerFixture
 
-import src
+
+# region: shared utilities
+def assert_matching(name1: str, name2: str, value1, value2):
+    """
+    Assert that 2 values are the same, and print an informative output if they are not.
+
+    We compare quite a few longish strings in this repo, this gives a better way to
+    understand where they're clashing.
+    """
+    assert value1 == value2, (
+        f"{name1} did not match {name2}:\n"
+        f"= {name1.upper()} ============\n"
+        f"{value1}\n"
+        f"= {name2.upper()} ==========\n"
+        f"{value2}\n"
+        "============================="
+    )
 
 
+class Globals:
+    THIS_YEAR = datetime.date.today().year
+
+
+def add_changed_files(
+    filenames: Union[str, List[str]],
+    contents: Union[str, List[str]],
+    git_repo: GitRepo,
+    mocker: Optional[MockerFixture] = None,
+):
+    if not isinstance(filenames, list):
+        filenames = [filenames]
+    if not isinstance(contents, list):
+        contents = [contents for _ in filenames]
+    for filename, content in zip(filenames, contents):
+        (git_repo.workspace / filename).write_text(content)
+        git_repo.run(f"git add {filename}")
+    if mocker:
+        return mocker.patch("sys.argv", ["stub_name"] + filenames)
+
+
+def write_config_file(path: Path, content: str) -> Path:
+    config_file = path / "pyproject.toml"
+    (config_file).write_text(content)
+    return config_file
+
+
+SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+# endregion
+
+
+# region: Shared fixtures
 @pytest.fixture(scope="session")
 def cwd():
     @contextmanager
@@ -23,8 +77,10 @@ def cwd():
     return cwd
 
 
-# region: Shared fixtures
-SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]
+@pytest.fixture()
+def git_repo(git_repo: GitRepo) -> GitRepo:
+    git_repo.run("git config user.name '<git config username sentinel>'")
+    return git_repo
 
 
 @pytest.fixture
@@ -34,156 +90,108 @@ def mock_get_comment_markers(mocker):
 
 @pytest.fixture
 def mock_resolve_files(mocker):
-    return mocker.patch("src._shared.resolvers._resolve_files")
+    return mocker.patch("src._shared.resolvers.resolve_files")
 
 
 # endregion
 
-# region: add_copyright fixtures
-ADD_COPYRIGHT_FIXTURE_LIST = [
-    "mock_confirm_file_updated",
-    "mock_construct_copyright_string",
-    "mock_copyright_is_current",
-    "mock_default_config_file",
-    "mock_default_format",
-    "mock_ensure_comment",
-    "mock_ensure_copyright_string",
-    "mock_ensure_valid_format",
-    "mock_get_current_year",
-    "mock_get_earliest_commit_year",
-    "mock_get_git_user_name",
-    "mock_has_shebang",
-    "mock_infer_start_year",
-    "mock_insert_copyright_string",
-    "mock_parse_add_copyright_args",
-    "mock_parse_copyright_string",
-    "mock_parse_years",
-    "mock_ParsedCopyrightString",
-    "mock_ParsedCopyrightString_constructor",
-    "mock_read_config_file",
-    "mock_resolve_format",
-    "mock_resolve_user_name",
-    "mock_update_copyright_string",
-] + SHARED_FIXTURE_LIST
+
+# region: add_copyright_hook_fixtures
+class SupportedLanguage(object):
+    """
+    Encompass everything we need to run tests by iterating programmatically over
+    supported languages.
+    """
+
+    def __init__(
+        self,
+        tag: str,
+        toml_key: str,
+        extension: str,
+        comment_format: str,
+        custom_copyright_format_commented: str,
+        custom_copyright_format_uncommented: str,
+    ):
+        self.tag: str = tag
+        self.toml_key: str = toml_key
+        self.extension: str = extension
+        self.comment_format: str = comment_format
+        self.custom_copyright_format_commented: str = custom_copyright_format_commented
+        self.custom_copyright_format_uncommented: str = (
+            custom_copyright_format_uncommented
+        )
+
+    def __str__(self):
+        return self.tag
 
 
-@pytest.fixture
-def mock_confirm_file_updated(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._confirm_file_updated")
-
-
-@pytest.fixture
-def mock_construct_copyright_string(mocker):
-    return mocker.patch(
-        "src.add_copyright_hook.add_copyright._construct_copyright_string"
-    )
-
-
-@pytest.fixture
-def mock_copyright_is_current(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._copyright_is_current")
-
-
-@pytest.fixture
-def mock_default_config_file(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright.DEFAULT_CONFIG_FILE")
-
-
-@pytest.fixture
-def mock_default_format(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright.DEFAULT_FORMAT")
-
-
-@pytest.fixture
-def mock_ensure_comment(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._ensure_comment")
-
-
-@pytest.fixture
-def mock_ensure_copyright_string(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._ensure_copyright_string")
-
-
-@pytest.fixture
-def mock_ensure_valid_format(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._ensure_valid_format")
-
-
-@pytest.fixture
-def mock_get_current_year(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._get_current_year")
-
-
-@pytest.fixture
-def mock_get_earliest_commit_year(mocker):
-    return mocker.patch(
-        "src.add_copyright_hook.add_copyright._get_earliest_commit_year"
-    )
-
-
-@pytest.fixture
-def mock_get_git_user_name(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._get_git_user_name")
-
-
-@pytest.fixture
-def mock_has_shebang(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._has_shebang")
-
-
-@pytest.fixture
-def mock_infer_start_year(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._infer_start_year")
-
-
-@pytest.fixture
-def mock_insert_copyright_string(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._insert_copyright_string")
-
-
-@pytest.fixture
-def mock_parse_add_copyright_args(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._parse_args")
-
-
-@pytest.fixture
-def mock_parse_copyright_string(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._parse_copyright_string")
-
-
-@pytest.fixture
-def mock_parse_years(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._parse_years")
-
-
-@pytest.fixture
-def mock_read_config_file(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._read_config_file")
-
-
-@pytest.fixture
-def mock_resolve_format(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._resolve_format")
-
-
-@pytest.fixture
-def mock_resolve_user_name(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._resolve_user_name")
-
-
-@pytest.fixture
-def mock_update_copyright_string(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright._update_copyright_string")
-
-
-@pytest.fixture
-def mock_ParsedCopyrightString(mocker):
-    return create_autospec(src.add_copyright_hook.add_copyright.ParsedCopyrightString)
-
-
-@pytest.fixture
-def mock_ParsedCopyrightString_constructor(mocker):
-    return mocker.patch("src.add_copyright_hook.add_copyright.ParsedCopyrightString")
+@dataclass
+class CopyrightGlobals:
+    SUPPORTED_LANGUAGES = [
+        SupportedLanguage(
+            "python",
+            "python",
+            ".py",
+            "# {content}",
+            "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "markdown",
+            "markdown",
+            ".md",
+            "<!--- {content} -->",
+            "<!--- Copyright {name} as of {year}. -->",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "c++",
+            "cpp",
+            ".cpp",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "c#",
+            "c-sharp",
+            ".cs",
+            "/* {content} */",
+            "/* Copyright {name} as of {year}.*/",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "perl",
+            "perl",
+            ".pl",
+            "# {content}",
+            "# Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+    ]
+    VALID_COPYRIGHT_STRINGS = [
+        "Copyright {end_year} NAME",
+        "Copyright (c) {end_year} NAME",
+        "(c) {end_year} NAME",
+        "Copyright 1026-{end_year} Aristotle",
+        "Copyright 1026 - {end_year} Aristotle",
+    ]
+    INVALID_COPYRIGHT_STRINGS = [
+        (
+            "Copyright 2012 - 1312 NAME",
+            "ValueError: Copyright end year cannot be before the start year. Got 1312 and 2012 respectively.",  # noqa: E501
+        )
+    ]
+    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
+        "name",
+        "format",
+        "python",
+        "markdown",
+        "cpp",
+        "c-sharp",
+        "perl",
+    ]
+    SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 
 
 # endregion
