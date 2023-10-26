@@ -38,7 +38,7 @@ test: test_venv test_unit test_integration
 
 test_all: test_venv test_unit test_integration test_system
 	@. test_venv/bin/activate; \
-	@python3 -c "$$PRETTYPRINT_PYSCRIPT"
+	python -c "$$PRETTYPRINT_PYSCRIPT"
 
 # TESTING BY LEVEL
 test_unit: test_venv

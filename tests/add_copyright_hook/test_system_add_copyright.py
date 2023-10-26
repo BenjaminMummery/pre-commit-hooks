@@ -20,7 +20,6 @@ COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
 THIS_YEAR = datetime.date.today().year
 
 
-@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
@@ -105,7 +104,6 @@ class TestNoChanges:
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
 )
-@pytest.mark.slow
 class TestDefaultBehaviour:
     class TestEmptyFiles:
         @staticmethod

@@ -18,7 +18,6 @@ COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "update-copyright"]
 THIS_YEAR = datetime.date.today().year
 
 
-@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
@@ -133,7 +132,6 @@ class TestNoChanges:
         assert "Passed" in process.stdout
 
 
-@pytest.mark.slow
 class TestChanges:
     @staticmethod
     @pytest.mark.parametrize(
@@ -247,7 +245,6 @@ class TestChanges:
             assert expected_stdout in process.stdout
 
 
-@pytest.mark.slow
 class TestFailureStates:
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)

@@ -64,9 +64,6 @@ ignore_errors = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
-markers = [
-    "slow: marks tests as slow (deselect with `-m 'not slow'`)"
-]
 
 [tool.interrogate]
 ignore-init-method = true

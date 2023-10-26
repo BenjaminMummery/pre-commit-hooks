@@ -4,7 +4,6 @@ import os
 import subprocess
 from typing import List
 
-import pytest
 from pytest_git import GitRepo
 
 from tests.examples.invalid_rst_python import expected_stdout as bad_rst_expected_stdout
@@ -22,7 +21,6 @@ def mock_file_content(git_repo: GitRepo, files: List[str], input_content_filenam
     return input_content
 
 
-@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
@@ -84,7 +82,6 @@ class TestNoChanges:
             assert output_content == input_content.format(file=file)
 
 
-@pytest.mark.slow
 class TestBadRST:
     @staticmethod
     def test_fails_for_bad_docstrings(git_repo: GitRepo, cwd):

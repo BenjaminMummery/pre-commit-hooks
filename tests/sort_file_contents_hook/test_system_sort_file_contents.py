@@ -11,7 +11,6 @@ from tests.conftest import SortFileContentsGlobals, add_changed_files, assert_ma
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "sort-file-contents"]
 
 
-@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
