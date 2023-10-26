@@ -14,14 +14,16 @@ from pytest_mock import MockerFixture
 
 
 # region: shared utilities
-def assert_matching(name1: str, name2: str, value1, value2):
+def assert_matching(
+    name1: str, name2: str, value1, value2, message: Optional[str] = None
+):
     """
     Assert that 2 values are the same, and print an informative output if they are not.
 
     We compare quite a few longish strings in this repo, this gives a better way to
     understand where they're clashing.
     """
-    assert value1 == value2, (
+    failure_message = (
         f"{name1} did not match {name2}:\n"
         f"= {name1.upper()} ============\n"
         f"{value1}\n"
@@ -29,6 +31,9 @@ def assert_matching(name1: str, name2: str, value1, value2):
         f"{value2}\n"
         "============================="
     )
+    if message:
+        failure_message += f"\n{message}"
+    assert value1 == value2, failure_message
 
 
 class Globals:
