@@ -7,6 +7,7 @@ from freezegun import freeze_time
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
+from tomli import TOMLDecodeError
 
 from src.add_copyright_hook import add_copyright
 from tests.conftest import (
@@ -852,4 +853,54 @@ class TestFailureStates:
         # THEN
         assert_matching(
             "Output error string", "Expected error string", e.exconly(), error_message
+        )
+
+    @staticmethod
+    def test_raises_error_for_invalid_toml(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
+        add_changed_files("hello" + language.extension, "", git_repo, mocker)
+        write_config_file(
+            git_repo.workspace,
+            "[not]valid\ntoml",
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(TOMLDecodeError) as e:
+                add_copyright.main()
+
+        # THEN
+        assert_matching(
+            "Output error string",
+            "Expected error string",
+            e.exconly(),
+            "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)",  # noqa: E501
+        )
+
+    @staticmethod
+    def test_raises_error_for_invalid_file_format(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        """
+        This should never happen in practice since the pre-commit framework should
+        prevent non-supported files getting passed in.
+        """
+        # GIVEN
+        add_changed_files("hello.fake", "", git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(NotImplementedError) as e:
+                add_copyright.main()
+
+        # THEN
+        assert e.exconly().startswith(
+            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
         )

@@ -615,3 +615,30 @@ class TestFailureStates:
         # THEN
         assert process.returncode == 1
         assert error_message in process.stdout
+
+    @staticmethod
+    def test_raises_error_for_invalid_toml(
+        cwd,
+        git_repo: GitRepo,
+    ):
+        # GIVEN
+        add_changed_files(
+            "hello" + CopyrightGlobals.SUPPORTED_LANGUAGES[0].extension, "", git_repo
+        )
+        write_config_file(
+            git_repo.workspace,
+            "[not]valid\ntoml",
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 1
+        assert (
+            "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)"  # noqa: E501
+            in process.stdout
+        )

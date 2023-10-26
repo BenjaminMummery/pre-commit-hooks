@@ -264,3 +264,26 @@ class TestFailureStates:
         assert_matching(
             "Output error string", "Expected error string", e.exconly(), error_message
         )
+
+    @staticmethod
+    def test_raises_error_for_invalid_file_format(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        """
+        This should never happen in practice since the pre-commit framework should
+        prevent non-supported files getting passed in.
+        """
+        # GIVEN
+        add_changed_files("hello.fake", "", git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(NotImplementedError) as e:
+                update_copyright.main()
+
+        # THEN
+        assert e.exconly().startswith(
+            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
+        )
