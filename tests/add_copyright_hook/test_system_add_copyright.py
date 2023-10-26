@@ -540,8 +540,15 @@ class TestFailureStates:
 
         # THEN
         assert process.returncode == 1
-        expected_stdout = f"KeyError: \"Unsupported option in config file /private{git_repo.workspace / 'pyproject.toml'}: '{language.toml_key}.unsupported_option'. Supported options for '{language.toml_key}' are: {CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}.\""  # noqa: E501
-        assert expected_stdout in process.stdout, process.stdout
+        expected_error_string: str = (
+            'KeyError: "Unsupported option in config file '
+            + (str(Path("/private")) if "/private" in process.stdout else "")
+            + f"{git_repo.workspace / 'pyproject.toml'}: "
+            f"'{language.toml_key}.unsupported_option'. "
+            f"Supported options for '{language.toml_key}' are: "
+            f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+        )
+        assert expected_error_string in process.stdout, process.stdout
 
     @staticmethod
     @pytest.mark.parametrize(
