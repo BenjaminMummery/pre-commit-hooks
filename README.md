@@ -324,16 +324,18 @@ Tests are organised in three levels:
 The provided `Makefile` defines commands for running various combinations of tests:
 
 - General Purpose:
-    - test: run all tests that aren't marked as slow.
-    - test_all: run all tests and show coverage.
-    - clean: remove the test venv and all temporary files.
+    - `test`: run unit and integration tests and show coverage (fail fast).
+    - `test_all`: as `test`, but also runs system tests (fail fast).
+    - `clean`: remove the test venv and all temporary files.
 - Testing by Level: run all tests of the specified level and show coverage (fail fast).
-    - test_unit
-    - test_integration
-    - test_system
-- Testing by hook: run all tests for the specified hook and show coverage (fail fast).
-    - test_add_copyright
-    - test_add_issue
-    - test_sort_file_contents
-- Testing shared resources (fail fast):
-    - test_shared: run all tests for utilities on which multiple hooks rely and show coverage (fail fast).
+    - `test_unit`
+    - `test_integration`
+    - `test_system`
+- Testing by hook: run all tests for the specified hook and show coverage (fail slow).
+    - `test_add_copyright`
+    - `test_add_issue`
+    - `test_check_docstrings_parse_as_rst`
+    - `test_sort_file_contents`
+    - `test_update_copyright`
+- Testing shared resources:
+    - `test_shared`: run all unit tests for utilities on which multiple hooks rely and show coverage (fail fast).
