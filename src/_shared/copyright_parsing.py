@@ -43,16 +43,6 @@ class ParsedCopyrightString:
                 f"Got {self.end_year} and {self.start_year} respectively."
             )
 
-    def __eq__(self, other) -> bool:
-        return (
-            self.commentmarker == other.commentmarker
-            and self.signifiers == other.signifiers
-            and self.start_year == other.start_year
-            and self.end_year == other.end_year
-            and self.name == other.name
-            and self.string == other.string
-        )
-
     def __repr__(self) -> str:
         return (
             "ParsedCopyrightString object with:\n"
