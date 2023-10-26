@@ -6,7 +6,7 @@ from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
 from src.sort_file_contents_hook import sort_file_contents
-from tests.conftest import add_changed_files, assert_matching
+from tests.conftest import SortFileContentsGlobals, add_changed_files, assert_matching
 
 
 @pytest.mark.usefixtures("git_repo")
@@ -32,12 +32,7 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "file_contents",
-        [
-            "Alpha\nBeta\nGamma",
-            "A\nC\nE\n\nB\nD\nF",
-            "# leading comment with clashing entry\n# beta\nbeta\ndelta\nzulu\n",
-        ],
+        "file_contents", SortFileContentsGlobals.SORTED_FILE_CONTENTS
     )
     def test_all_changed_files_are_sorted(
         capsys: CaptureFixture,
@@ -90,64 +85,7 @@ class TestNoChanges:
 class TestSorting:
     @staticmethod
     @pytest.mark.parametrize(
-        "unsorted, sorted, description",
-        [
-            (
-                "beta\ndelta\ngamma\nalpha\n",
-                "alpha\nbeta\ndelta\ngamma\n",
-                "no sections",
-            ),
-            (
-                "beta\ndelta\n\ngamma\nalpha\n",
-                "beta\ndelta\n\nalpha\ngamma\n",
-                "sections",
-            ),
-            (
-                "# zulu\nbeta\ndelta\ngamma\nalpha\n",
-                "# zulu\nalpha\nbeta\ndelta\ngamma\n",
-                "leading comment, no sections",
-            ),
-            (
-                "# zulu\n# alpha\nbeta\ngamma\ndelta\n",
-                "# zulu\n# alpha\nbeta\ndelta\ngamma\n",
-                "multiline leading comment, no sections",
-            ),
-            (
-                "# zulu\nbeta\ndelta\n\n# epsilon\ngamma\nalpha\n",
-                "# zulu\nbeta\ndelta\n\n# epsilon\nalpha\ngamma\n",
-                "multiple sections with leading comment",
-            ),
-            (
-                "beta\n# zulu\ndelta\ngamma\nalpha\n",
-                "alpha\nbeta\ndelta\ngamma\n# zulu\n",
-                "commented line within section - sort to end",
-            ),
-            (
-                "beta\nzulu\n# delta\ngamma\nalpha\n",
-                "alpha\nbeta\n# delta\ngamma\nzulu\n",
-                "commented line within section - sort to middle",
-            ),
-            (
-                "beta\ndelta\n\n# zulu\n\ngamma\nalpha\n",
-                "beta\ndelta\n\n# zulu\n\nalpha\ngamma\n",
-                "floating comment",
-            ),
-            (
-                "beta\ndelta\nbeta\n\ngamma\nalpha\ngamma\n",
-                "beta\nbeta\ndelta\n\nalpha\ngamma\ngamma\n",
-                "duplicates within sections",
-            ),
-            (
-                "beta\ndelta\n\ngamma\nalpha\ndelta\n",
-                "beta\ndelta\n\nalpha\ndelta\ngamma\n",
-                "duplicates between sections",
-            ),
-            (
-                "beta\ndelta\n\n\ngamma\nalpha\n",
-                "beta\ndelta\n\nalpha\ngamma\n",
-                "double linebreak between sections",
-            ),
-        ],
+        "unsorted, sorted, description", SortFileContentsGlobals.UNSORTED_FILE_CONTENTS
     )
     def test_default_file_sorting(
         capsys: CaptureFixture,
@@ -182,39 +120,15 @@ class TestSorting:
             captured.out,
             f"Sorting file '{filename}'\n",
         )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+        assert_matching(
+            "captured stderr", "expected stderr", captured.err, "", message=description
+        )
 
     @staticmethod
     @pytest.mark.parametrize("unique_flag", ["-u", "--unique"])
     @pytest.mark.parametrize(
         "unsorted, sorted, description",
-        [
-            (
-                "beta\ndelta\ngamma\nalpha\ndelta\n",
-                "alpha\nbeta\ndelta\ngamma\n",
-                "no sections",
-            ),
-            (
-                "beta\ndelta\nbeta\n\ngamma\nalpha\nalpha\n",
-                "beta\ndelta\n\nalpha\ngamma\n",
-                "sections",
-            ),
-            (
-                "# zulu\nbeta\ndelta\ngamma\nalpha\ngamma\n",
-                "# zulu\nalpha\nbeta\ndelta\ngamma\n",
-                "leading comment, no sections",
-            ),
-            (
-                "# zulu\nbeta\ndelta\ndelta\n\n# epsilon\ngamma\nalpha\n",
-                "# zulu\nbeta\ndelta\n\n# epsilon\nalpha\ngamma\n",
-                "multiple sections with leading comment",
-            ),
-            (
-                "beta\ndelta\n# zulu\n# zulu\n",
-                "beta\ndelta\n# zulu\n",
-                "duplicate comments",
-            ),
-        ],
+        SortFileContentsGlobals.DUPLICATES_WITHIN_SECTIONS_FILE_CONTENTS,
     )
     def test_sorting_unique(
         capsys: CaptureFixture,
@@ -242,7 +156,7 @@ class TestSorting:
             "expected file contents",
             content,
             sorted,
-            message="Failed to sort file with {description}.",
+            message=f"Failed to sort file with {description}.",
         )
         captured = capsys.readouterr()
         assert_matching(
@@ -250,16 +164,24 @@ class TestSorting:
             "expected stdout",
             captured.out,
             f"Sorting file '{filename}'\n",
+            message=description,
         )
-        assert_matching("captured stderr", "expected stderr", captured.err, "")
+        assert_matching(
+            "captured stderr", "expected stderr", captured.err, "", message=description
+        )
 
 
 class TestFailureStates:
     @staticmethod
     @pytest.mark.parametrize("unique_flag", ["-u", "--unique"])
-    @pytest.mark.parametrize("unsorted", ["beta\ndelta\n\ngamma\nalpha\ndelta\n"])
+    @pytest.mark.parametrize(
+        "unsorted, clashing_entry, description",
+        SortFileContentsGlobals.DUPLICATES_BETWEEN_SECTIONS_FILE_CONTENTS,
+    )
     def test_duplicates_between_sections_with_unique_flag(
         cwd,
+        clashing_entry: str,
+        description: str,
         mocker: MockerFixture,
         git_repo: GitRepo,
         unsorted: str,
@@ -284,21 +206,15 @@ class TestFailureStates:
             "Captured error message",
             "Expected error message",
             e.exconly(),
-            "src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '.gitignore'. The following entries appear in multiple sections:\n- 'delta' appears in 2 sections.",  # noqa: E501
+            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '.gitignore'. The following entries appear in multiple sections:\n- '{clashing_entry}' appears in 2 sections.",  # noqa: E501
+            message=description,
         )
 
     @staticmethod
     @pytest.mark.parametrize("unique_flag", ["-u", "--unique"])
     @pytest.mark.parametrize(
         "unsorted, clashing_entry, description",
-        [
-            ("beta\n# zulu\ndelta\ngamma\nalpha\nzulu\n", "zulu", "simple clash"),
-            (
-                "# leading comment\n# zulu\n# including clash\nalpha\n# alpha\nzulu",
-                "alpha",
-                "potential clash in leading comment",
-            ),
-        ],
+        SortFileContentsGlobals.COMMENTED_AND_UNCOMMENTED_DUPLICATES,
     )
     def test_commented_and_uncommented_duplicates(
         cwd,
