@@ -247,3 +247,25 @@ class TestFailureStates:
             f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '{filename}'. The following entries exists in both commented and uncommented forms:\n- '{clashing_entry}'.",  # noqa: E501
             message=description,
         )
+
+    @staticmethod
+    def test_missing_file(
+        cwd,
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+    ):
+        # GIVEN
+        mocker.patch("sys.argv", ["stub_name", filename := "file_does_not_exist"])
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(FileNotFoundError) as e:
+                sort_file_contents.main()
+
+        # THEN
+        assert_matching(
+            "Captured error message",
+            "Expected error message",
+            e.exconly(),
+            f"FileNotFoundError: {filename}",
+        )

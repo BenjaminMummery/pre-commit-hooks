@@ -82,8 +82,3 @@ test_sort_file_contents: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS; \
 	pytest tests/sort_file_contents_hook -x
-
-test_check_docstrings_parse_as_rst: test_venv
-	@. test_venv/bin/activate; \
-	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'CHECK_DOCSTRINGS_PARSE_AS_AST' TESTS; \
-	pytest tests/check_docstrings_parse_as_rst_hook -x
