@@ -14,6 +14,7 @@ import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+from src._shared import resolvers
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.copyright_parsing import parse_copyright_string
 
@@ -83,7 +84,13 @@ def _parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
-    return parser.parse_args()
+
+    args = parser.parse_args()
+
+    # Check that files exist
+    args.files = resolvers.resolve_files(args.files)
+
+    return args
 
 
 def main():

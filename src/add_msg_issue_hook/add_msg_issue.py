@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2022 - 2023 Benjamin Mummery
 
 """
 Parse the branch name for anything resembling an issue id, and add it to the commit msg.
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
-
-Code structure:
-
-main()
-├── _parse_args()
-├── _get_branch_name()
-├── _get_issue_ids_from_branch_name()
-├── _issue_is_in_message()
-└── _insert_issue_into_message()
 """
 
 import argparse
@@ -31,9 +22,18 @@ DEFAULT_TEMPLATE: str = "{subject}\n\n[{issue_id}]\n{body}"
 FALLBACK_TEMPLATE: str = "{message}\n[{issue_id}]"
 
 
+class BranchNameReadError(BaseException):
+    """Raised when the name of the curtrent git branch cannot be read."""
+
+    pass
+
+
 def _get_branch_name() -> str:
     """
     Get the name of the current git branch.
+
+    Raises:
+        BranchNameReadError: when we can't read the name of the current branch.
 
     Returns:
         str: The branch name. this string will be empty if we're not in a git repo.
@@ -43,9 +43,10 @@ def _get_branch_name() -> str:
         branch = subprocess.check_output(
             ["git", "symbolic-ref", "--short", "HEAD"], universal_newlines=True
         ).strip()
-    except Exception as e:
-        print("Getting branch name for add_msg_issue_hook pre-commit hook failed:")
-        print(e)
+    except subprocess.CalledProcessError as e:
+        raise BranchNameReadError(
+            "Getting branch name for add_msg_issue_hook pre-commit hook failed."
+        ) from e
     return branch
 
 
@@ -161,28 +162,24 @@ def _parse_args() -> argparse.Namespace:
     )
     args = parser.parse_args()
 
-    fallback_message = (
-        rf"The default template '{DEFAULT_TEMPLATE}' will be used instead. "
-        "For more information, see "
-        "https://github.com/BenjaminMummery/pre-commit-hooks"
-    )
     for keyword in [r"{subject}", r"{body}", r"{issue_id}"]:
         if keyword not in args.template:
-            print(
+            raise KeyError(
                 rf"Template argument '{args.template}' did not contain the required "
-                f"keyword {{keyword}} and cannot be used. " + fallback_message
+                f"keyword '{keyword}' and cannot be used. "
+                "For more information, see "
+                "https://github.com/BenjaminMummery/pre-commit-hooks"
             )
-            args.template = DEFAULT_TEMPLATE
-            break
+
     try:
         args.template.format(subject="s", body="b", issue_id="i")
     except KeyError as e:
-        print(
+        raise KeyError(
             rf"Template argument '{args.template}' contained unrecognised keywords: "
             + str(e)
-            + fallback_message
-        )
-        args.template = DEFAULT_TEMPLATE
+            + " and cannot be used. For more information, see "
+            + "https://github.com/BenjaminMummery/pre-commit-hooks"
+        ) from e
 
     return args
 
@@ -191,7 +188,12 @@ def main() -> int:
     """Identify jira issue ids in the branch name and insert into the commit msg."""
     args = _parse_args()
 
-    issue_ids: List[str] = _get_issue_ids_from_branch_name(_get_branch_name())
+    try:
+        branch_name: str = _get_branch_name()
+    except BranchNameReadError:
+        raise
+
+    issue_ids: List[str] = _get_issue_ids_from_branch_name(branch_name)
     if len(issue_ids) < 1:
         return 0  # If no IDs are found, then there's nothing to do
 

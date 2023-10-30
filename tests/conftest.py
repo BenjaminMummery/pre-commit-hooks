@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Union
-from unittest.mock import Mock
 
 import pytest
 from pytest_git import GitRepo
@@ -14,14 +13,16 @@ from pytest_mock import MockerFixture
 
 
 # region: shared utilities
-def assert_matching(name1: str, name2: str, value1, value2):
+def assert_matching(
+    name1: str, name2: str, value1, value2, message: Optional[str] = None
+):
     """
     Assert that 2 values are the same, and print an informative output if they are not.
 
     We compare quite a few longish strings in this repo, this gives a better way to
     understand where they're clashing.
     """
-    assert value1 == value2, (
+    failure_message = (
         f"{name1} did not match {name2}:\n"
         f"= {name1.upper()} ============\n"
         f"{value1}\n"
@@ -29,6 +30,9 @@ def assert_matching(name1: str, name2: str, value1, value2):
         f"{value2}\n"
         "============================="
     )
+    if message:
+        failure_message += f"\n{message}"
+    assert value1 == value2, failure_message
 
 
 class Globals:
@@ -196,105 +200,112 @@ class CopyrightGlobals:
 
 # endregion
 
-# region: add_msg_issue_fixtures
-ADD_MSG_ISSUE_FIXTURE_LIST = [
-    "mock_default_template",
-    "mock_fallback_template",
-    "mock_get_branch_name",
-    "mock_get_issue_ids_from_branch_name",
-    "mock_insert_issue_into_message",
-    "mock_issue_is_in_message",
-    "mock_parse_add_msg_issue_args",
-] + SHARED_FIXTURE_LIST
-
-
-@pytest.fixture
-def mock_default_template(mocker):
-    return mocker.patch(
-        "src.add_msg_issue_hook.add_msg_issue.DEFAULT_TEMPLATE", Mock(format=Mock())
-    )
-
-
-@pytest.fixture
-def mock_fallback_template(mocker):
-    return mocker.patch(
-        "src.add_msg_issue_hook.add_msg_issue.FALLBACK_TEMPLATE", Mock(format=Mock())
-    )
-
-
-@pytest.fixture
-def mock_get_branch_name(mocker):
-    return mocker.patch("src.add_msg_issue_hook.add_msg_issue._get_branch_name")
-
-
-@pytest.fixture
-def mock_get_issue_ids_from_branch_name(mocker):
-    return mocker.patch(
-        "src.add_msg_issue_hook.add_msg_issue._get_issue_ids_from_branch_name"
-    )
-
-
-@pytest.fixture
-def mock_insert_issue_into_message(mocker):
-    return mocker.patch(
-        "src.add_msg_issue_hook.add_msg_issue._insert_issue_into_message"
-    )
-
-
-@pytest.fixture
-def mock_issue_is_in_message(mocker):
-    return mocker.patch("src.add_msg_issue_hook.add_msg_issue._issue_is_in_message")
-
-
-@pytest.fixture
-def mock_parse_add_msg_issue_args(mocker):
-    return mocker.patch("src.add_msg_issue_hook.add_msg_issue._parse_args")
-
-
-# endregion
 
 # region: sort_file_contents_fixtures
 
-SORT_FILE_CONTENTS_FEATURE_LIST = [
-    "mock_find_duplicates",
-    "mock_identify_sections",
-    "mock_parse_sort_file_contents_args",
-    "mock_separate_leading_comment",
-    "mock_sort_contents",
-    "mock_sort_lines",
-] + SHARED_FIXTURE_LIST
 
-SORT_FILE_CONTENTS_IMPORT: str = "src.sort_file_contents_hook.sort_file_contents."
-
-
-@pytest.fixture
-def mock_sort_lines(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_sort_lines")
-
-
-@pytest.fixture
-def mock_separate_leading_comment(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_separate_leading_comment")
-
-
-@pytest.fixture
-def mock_identify_sections(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_identify_sections")
-
-
-@pytest.fixture
-def mock_find_duplicates(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_find_duplicates")
-
-
-@pytest.fixture
-def mock_sort_contents(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_sort_contents")
-
-
-@pytest.fixture
-def mock_parse_sort_file_contents_args(mocker):
-    return mocker.patch(SORT_FILE_CONTENTS_IMPORT + "_parse_args")
+@dataclass
+class SortFileContentsGlobals:
+    SORTED_FILE_CONTENTS = [
+        "Alpha\nBeta\nGamma",
+        "A\nC\nE\n\nB\nD\nF",
+        "# leading comment with clashing entry\n# beta\nbeta\ndelta\nzulu\n",
+    ]
+    UNSORTED_FILE_CONTENTS = [
+        (
+            "beta\ndelta\ngamma\nalpha\n",
+            "alpha\nbeta\ndelta\ngamma\n",
+            "no sections",
+        ),
+        (
+            "beta\ndelta\n\ngamma\nalpha\n",
+            "beta\ndelta\n\nalpha\ngamma\n",
+            "sections",
+        ),
+        (
+            "# zulu\nbeta\ndelta\ngamma\nalpha\n",
+            "# zulu\nalpha\nbeta\ndelta\ngamma\n",
+            "leading comment, no sections",
+        ),
+        (
+            "# zulu\n# alpha\nbeta\ngamma\ndelta\n",
+            "# zulu\n# alpha\nbeta\ndelta\ngamma\n",
+            "multiline leading comment, no sections",
+        ),
+        (
+            "# zulu\nbeta\ndelta\n\n# epsilon\ngamma\nalpha\n",
+            "# zulu\nbeta\ndelta\n\n# epsilon\nalpha\ngamma\n",
+            "multiple sections with leading comment",
+        ),
+        (
+            "beta\n# zulu\ndelta\ngamma\nalpha\n",
+            "alpha\nbeta\ndelta\ngamma\n# zulu\n",
+            "commented line within section - sort to end",
+        ),
+        (
+            "beta\nzulu\n# delta\ngamma\nalpha\n",
+            "alpha\nbeta\n# delta\ngamma\nzulu\n",
+            "commented line within section - sort to middle",
+        ),
+        (
+            "beta\ndelta\n\n# zulu\n\ngamma\nalpha\n",
+            "beta\ndelta\n\n# zulu\n\nalpha\ngamma\n",
+            "floating comment",
+        ),
+        (
+            "beta\ndelta\nbeta\n\ngamma\nalpha\ngamma\n",
+            "beta\nbeta\ndelta\n\nalpha\ngamma\ngamma\n",
+            "duplicates within sections",
+        ),
+        (
+            "beta\ndelta\n\ngamma\nalpha\ndelta\n",
+            "beta\ndelta\n\nalpha\ndelta\ngamma\n",
+            "duplicates between sections",
+        ),
+        (
+            "beta\ndelta\n\n\ngamma\nalpha\n",
+            "beta\ndelta\n\nalpha\ngamma\n",
+            "double linebreak between sections",
+        ),
+    ]
+    DUPLICATES_WITHIN_SECTIONS_FILE_CONTENTS = [
+        (
+            "beta\ndelta\ngamma\nalpha\ndelta\n",
+            "alpha\nbeta\ndelta\ngamma\n",
+            "no sections",
+        ),
+        (
+            "beta\ndelta\nbeta\n\ngamma\nalpha\nalpha\n",
+            "beta\ndelta\n\nalpha\ngamma\n",
+            "sections",
+        ),
+        (
+            "# zulu\nbeta\ndelta\ngamma\nalpha\ngamma\n",
+            "# zulu\nalpha\nbeta\ndelta\ngamma\n",
+            "leading comment, no sections",
+        ),
+        (
+            "# zulu\nbeta\ndelta\ndelta\n\n# epsilon\ngamma\nalpha\n",
+            "# zulu\nbeta\ndelta\n\n# epsilon\nalpha\ngamma\n",
+            "multiple sections with leading comment",
+        ),
+        (
+            "beta\ndelta\n# zulu\n# zulu\n",
+            "beta\ndelta\n# zulu\n",
+            "duplicate comments",
+        ),
+    ]
+    DUPLICATES_BETWEEN_SECTIONS_FILE_CONTENTS = [
+        ("beta\ndelta\n\ngamma\nalpha\ndelta\n", "delta", "simple case")
+    ]
+    COMMENTED_AND_UNCOMMENTED_DUPLICATES = [
+        ("beta\n# zulu\ndelta\ngamma\nalpha\nzulu\n", "zulu", "simple clash"),
+        (
+            "# leading comment\n# zulu\n# including clash\nalpha\n# alpha\nzulu",
+            "alpha",
+            "potential clash in leading comment",
+        ),
+    ]
 
 
 # endregion

@@ -18,6 +18,7 @@ from typing import List, Optional, Set, Tuple
 from git import GitCommandError, Repo
 from identify import identify
 
+from src._shared import resolvers
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.config_parsing import read_pyproject_toml
 from src._shared.copyright_parsing import parse_copyright_string
@@ -83,6 +84,9 @@ def _parse_args() -> dict:
     parser.add_argument("-f", "--format", type=str, default=None)
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
+
+    # Check that files exist
+    args.files = resolvers.resolve_files(args.files)
 
     return args.__dict__
 
@@ -328,6 +332,7 @@ def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> in
     with open(file, "r+") as f:
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
+
         if parse_copyright_string(content, comment_markers):
             return 0
 

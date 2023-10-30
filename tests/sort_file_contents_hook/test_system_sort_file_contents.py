@@ -4,77 +4,123 @@ import os
 import subprocess
 
 import pytest
+from pytest_git import GitRepo
+
+from tests.conftest import SortFileContentsGlobals, add_changed_files, assert_matching
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "sort-file-contents"]
 
 
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "unsorted, sorted, description",
-    [
-        (
-            "beta\n" "delta\n" "gamma\n" "alpha\n",
-            "alpha\n" "beta\n" "delta\n" "gamma\n",
-            "no sections",
-        ),
-        (
-            "beta\n" "delta\n" "\n" "gamma\n" "alpha\n",
-            "beta\n" "delta\n" "\n" "alpha\n" "gamma\n",
-            "sections",
-        ),
-        (
-            "# zulu\n" "beta\n" "delta\n" "gamma\n" "alpha\n",
-            "# zulu\n" "alpha\n" "beta\n" "delta\n" "gamma\n",
-            "leading comment, no sections",
-        ),
-        (
-            "# zulu\n" "beta\n" "delta\n" "\n" "# epsilon\n" "gamma\n" "alpha\n",
-            "# zulu\n" "beta\n" "delta\n" "\n" "# epsilon\n" "alpha\n" "gamma\n",
-            "multiple sections with leading comment",
-        ),
-        (
-            "beta\n" "# zulu\n" "delta\n" "gamma\n" "alpha\n",
-            "alpha\n" "beta\n" "delta\n" "gamma\n" "# zulu\n",
-            "commented line within section",
-        ),
-        (
-            "beta\n" "delta\n" "\n" "# zulu\n" "\n" "gamma\n" "alpha\n",
-            "beta\n" "delta\n" "\n" "# zulu\n" "\n" "alpha\n" "gamma\n",
-            "floating comment",
-        ),
-    ],
-)
-def test_sorting(git_repo, cwd, unsorted, sorted, description):
-    file = git_repo.workspace / ".gitignore"
-    file.write_text(unsorted)
-    git_repo.run("git add .gitignore")
+class TestNoChanges:
+    @staticmethod
+    def test_no_files_changed(git_repo: GitRepo, cwd):
+        """No files have been changed, nothing to check."""
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
 
-    with cwd(git_repo.workspace):
-        process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+        assert process.returncode == 0, process.stdout
+        assert "Sort gitignore sections" in process.stdout
+        assert "Passed" in process.stdout
 
-    assert process.returncode == 1
-    with open(file, "r") as f:
-        content = f.read()
-    assert content == sorted, f"failed to sort file with {description}"
+    @staticmethod
+    def test_no_supported_files_changed(git_repo: GitRepo, cwd):
+        """Files have been changed, but none of them are files that we support."""
+        # GIVEN
+        files = ["hello.txt", ".gitignore", "test.yaml"]
+        for file in files:
+            f = git_repo.workspace / file
+            f.write_text(f"<file {file} content sentinel>")
+            git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 0
+        for file in files:
+            with open(git_repo.workspace / file, "r") as f:
+                content = f.read()
+            assert content == f"<file {file} content sentinel>"
+        assert "Sort gitignore sections" in process.stdout
+        assert "Passed" in process.stdout
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "file_contents", SortFileContentsGlobals.SORTED_FILE_CONTENTS
+    )
+    def test_all_changed_files_are_sorted(git_repo: GitRepo, cwd, file_contents: str):
+        # GIVEN
+        add_changed_files(file := ".gitignore", file_contents, git_repo)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 0
+        with open(git_repo.workspace / file, "r") as f:
+            content = f.read()
+        assert content == file_contents
+        assert "Sort gitignore sections" in process.stdout
+        assert "Passed" in process.stdout
+
+    @staticmethod
+    def test_empty_file(git_repo: GitRepo, cwd):
+        # GIVEN
+        add_changed_files(file := ".gitignore", "", git_repo)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 0
+        with open(git_repo.workspace / file, "r") as f:
+            content = f.read()
+        assert content == ""
+        assert "Sort gitignore sections" in process.stdout
+        assert "Passed" in process.stdout
 
 
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "file_contents, description",
-    [
-        ("", "empty file"),
-        ("alpha\nbeta\ngamma\n", "sorted file"),
-    ],
-)
-def test_no_sorting(git_repo, cwd, file_contents, description):
-    file = git_repo.workspace / ".gitignore"
-    file.write_text(file_contents)
-    git_repo.run("git add .gitignore")
+class TestSorting:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "unsorted, sorted, description", SortFileContentsGlobals.UNSORTED_FILE_CONTENTS
+    )
+    def test_default_file_sorting(
+        cwd,
+        git_repo: GitRepo,
+        unsorted: str,
+        sorted: str,
+        description: str,
+    ):
+        # GIVEN
+        add_changed_files(filename := ".gitignore", unsorted, git_repo)
 
-    with cwd(git_repo.workspace):
-        process: subprocess.CompletedProcess = subprocess.run(COMMAND)
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
 
-    assert process.returncode == 0
-    with open(file, "r") as f:
-        content = f.read()
-    assert content == file_contents, description
+        # THEN
+        assert process.returncode == 1
+        with open(git_repo.workspace / filename, "r") as f:
+            content = f.read()
+        assert_matching(
+            "output file contents",
+            "expected file contents",
+            content,
+            sorted,
+            message=f"Failed to sort file with {description}.",
+        )
+        assert f"Sorting file '{filename}'" in process.stdout

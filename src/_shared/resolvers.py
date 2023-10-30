@@ -21,10 +21,10 @@ def resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     Returns:
         List[Path]: A list of paths coressponding to the changed files.
     """
-    if isinstance(files, str):
-        files = [files]
 
-    _files: t.List[Path] = [Path(file) for file in files]
+    _files: t.List[Path] = [
+        Path(file) for file in (files if isinstance(files, list) else [files])
+    ]
 
     for file in _files:
         if not os.path.isfile(file):

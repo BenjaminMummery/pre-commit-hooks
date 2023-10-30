@@ -20,7 +20,6 @@ COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
 THIS_YEAR = datetime.date.today().year
 
 
-@pytest.mark.slow
 class TestNoChanges:
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
@@ -105,7 +104,6 @@ class TestNoChanges:
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
 )
-@pytest.mark.slow
 class TestDefaultBehaviour:
     class TestEmptyFiles:
         @staticmethod
@@ -475,145 +473,203 @@ class TestCustomBehaviour:
 
 
 class TestFailureStates:
-    @staticmethod
-    @pytest.mark.parametrize(
-        "config_file_content",
-        [
-            '[tool.add_copyright]\nunsupported_option="should not matter"\n',
-            '[tool.add_copyright.unsupported_option]\nname="foo"\n',
-        ],
-    )
-    def test_unsupported_config_options(
-        cwd, config_file_content: str, git_repo: GitRepo
-    ):
-        # GIVEN
-        add_changed_files("hello.py", "", git_repo)
-        config_file = write_config_file(git_repo.workspace, config_file_content)
+    class TestConfigFailures:
+        @staticmethod
+        @pytest.mark.parametrize(
+            "config_file_content",
+            [
+                '[tool.add_copyright]\nunsupported_option="should not matter"\n',
+                '[tool.add_copyright.unsupported_option]\nname="foo"\n',
+            ],
+        )
+        def test_unsupported_config_options(
+            cwd, config_file_content: str, git_repo: GitRepo
+        ):
+            # GIVEN
+            add_changed_files("hello.py", "", git_repo)
+            config_file = write_config_file(git_repo.workspace, config_file_content)
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
+
+            # THEN
+            assert process.returncode == 1
+            expected_stdout = (
+                'KeyError: "Unsupported option in config file '
+                + (str(Path("/private")) if "/private" in process.stdout else "")
+                + f"{config_file}: 'unsupported_option'. "
+                "Supported options are: "
+                f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+            )
+            assert expected_stdout in process.stdout
+
+        @staticmethod
+        @pytest.mark.parametrize(
+            "config_file_content",
+            [
+                '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
+            ],
+        )
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        def test_unsupported_language_config_options(
+            cwd,
+            config_file_content: str,
+            git_repo: GitRepo,
+            language: SupportedLanguage,
+        ):
+            # GIVEN
+            add_changed_files("hello.py", "", git_repo)
+            write_config_file(
+                git_repo.workspace,
+                config_file_content.format(language=language.toml_key),
             )
 
-        # THEN
-        assert process.returncode == 1
-        expected_stdout = (
-            'KeyError: "Unsupported option in config file '
-            + (str(Path("/private")) if "/private" in process.stdout else "")
-            + f"{config_file}: 'unsupported_option'. "
-            "Supported options are: "
-            f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+            # GIVEN
+            file = "hello.py"
+            (git_repo.workspace / file).write_text("")
+            git_repo.run(f"git add {file}")
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
+
+            # THEN
+            assert process.returncode == 1
+            expected_error_string: str = (
+                'KeyError: "Unsupported option in config file '
+                + (str(Path("/private")) if "/private" in process.stdout else "")
+                + f"{git_repo.workspace / 'pyproject.toml'}: "
+                f"'{language.toml_key}.unsupported_option'. "
+                f"Supported options for '{language.toml_key}' are: "
+                f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+            )
+            assert expected_error_string in process.stdout, process.stdout
+
+        @staticmethod
+        @pytest.mark.parametrize(
+            "input_format, missing_keys",
+            [
+                ("copyright 1996 {name}", "year"),
+                ("copyright {year} Harold Hadrada", "name"),
+            ],
         )
-        assert expected_stdout in process.stdout
-
-    @staticmethod
-    @pytest.mark.parametrize(
-        "config_file_content",
-        [
-            '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
-        ],
-    )
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    def test_unsupported_language_config_options(
-        cwd,
-        config_file_content: str,
-        git_repo: GitRepo,
-        language: SupportedLanguage,
-    ):
-        # GIVEN
-        add_changed_files("hello.py", "", git_repo)
-        write_config_file(
-            git_repo.workspace, config_file_content.format(language=language.toml_key)
-        )
-
-        # GIVEN
-        file = "hello.py"
-        (git_repo.workspace / file).write_text("")
-        git_repo.run(f"git add {file}")
-
-        # WHEN
-        with cwd(git_repo.workspace):
-            process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        def test_missing_custom_format_keys(
+            cwd,
+            git_repo: GitRepo,
+            input_format: str,
+            language: SupportedLanguage,
+            missing_keys: str,
+        ):
+            # GIVEN
+            add_changed_files(f"hello{language.extension}", "", git_repo)
+            write_config_file(
+                git_repo.workspace,
+                f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
             )
 
-        # THEN
-        assert process.returncode == 1
-        expected_error_string: str = (
-            'KeyError: "Unsupported option in config file '
-            + (str(Path("/private")) if "/private" in process.stdout else "")
-            + f"{git_repo.workspace / 'pyproject.toml'}: "
-            f"'{language.toml_key}.unsupported_option'. "
-            f"Supported options for '{language.toml_key}' are: "
-            f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
-        )
-        assert expected_error_string in process.stdout, process.stdout
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "input_format, missing_keys",
-        [
-            ("copyright 1996 {name}", "year"),
-            ("copyright {year} Harold Hadrada", "name"),
-        ],
-    )
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    def test_missing_custom_format_keys(
-        cwd,
-        git_repo: GitRepo,
-        input_format: str,
-        language: SupportedLanguage,
-        missing_keys: str,
-    ):
-        # GIVEN
-        add_changed_files(f"hello{language.extension}", "", git_repo)
-        write_config_file(
-            git_repo.workspace,
-            f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
-        )
+            # THEN
+            assert process.returncode == 1
+            expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""  # noqa: E501
+            print("E:", expected_stdout)
+            print("R:", process.stdout)
+            assert expected_stdout in process.stdout
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+    class TestInputFileFailures:
+        @staticmethod
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        @pytest.mark.parametrize(
+            "copyright_string, error_message",
+            CopyrightGlobals.INVALID_COPYRIGHT_STRINGS,
+        )
+        def test_raises_error_for_invalid_copyright_string(
+            cwd,
+            git_repo: GitRepo,
+            copyright_string: str,
+            error_message: str,
+            language: SupportedLanguage,
+        ):
+            # GIVEN
+            add_changed_files(
+                "hello" + language.extension,
+                (
+                    language.comment_format.format(content=copyright_string)
+                    + "\n\n<file content sentinel>"
+                ),
+                git_repo,
             )
 
-        # THEN
-        assert process.returncode == 1
-        expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""  # noqa: E501
-        print("E:", expected_stdout)
-        print("R:", process.stdout)
-        assert expected_stdout in process.stdout
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
 
-    @staticmethod
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    @pytest.mark.parametrize(
-        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
-    )
-    def test_raises_error_for_invalid_copyright_string(
-        cwd,
-        git_repo: GitRepo,
-        copyright_string: str,
-        error_message: str,
-        language: SupportedLanguage,
-    ):
-        # GIVEN
-        add_changed_files(
-            "hello" + language.extension,
-            (
-                language.comment_format.format(content=copyright_string)
-                + "\n\n<file content sentinel>"
-            ),
-            git_repo,
-        )
+            # THEN
+            assert process.returncode == 1
+            assert error_message in process.stdout
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+        @staticmethod
+        def test_raises_error_for_invalid_toml(
+            cwd,
+            git_repo: GitRepo,
+        ):
+            # GIVEN
+            add_changed_files(
+                "hello" + CopyrightGlobals.SUPPORTED_LANGUAGES[0].extension,
+                "",
+                git_repo,
+            )
+            write_config_file(
+                git_repo.workspace,
+                "[not]valid\ntoml",
             )
 
-        # THEN
-        assert process.returncode == 1
-        assert error_message in process.stdout
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
+
+            # THEN
+            assert process.returncode == 1
+            assert (
+                "src._shared.exceptions.InvalidConfigError: Could not parse config file "  # noqa: E501
+                in process.stdout
+            )
+
+        @staticmethod
+        def test_raises_error_for_multiple_copyright_strings(
+            cwd,
+            git_repo: GitRepo,
+        ):
+            # GIVEN
+            copyright_string = CopyrightGlobals.SUPPORTED_LANGUAGES[
+                0
+            ].comment_format.format(content="Copyright 1312 NAME")
+            add_changed_files(
+                f"hello{CopyrightGlobals.SUPPORTED_LANGUAGES[0].extension}",
+                f"{copyright_string}\n{copyright_string}",
+                git_repo,
+            )
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                process: subprocess.CompletedProcess = subprocess.run(
+                    COMMAND, capture_output=True, text=True
+                )
+
+            # THEN
+            assert process.returncode == 1
+            assert "ValueError: Found multiple copyright strings: " in process.stdout

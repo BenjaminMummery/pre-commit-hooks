@@ -18,7 +18,6 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
     - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
     - [2.4 The `sort-file-contents` hook](#24-the-sort-file-contents-hook)
-    - [2.5 The `check-docstrings-parse-as-rst` hook](#25-the-check-docstrings-parse-as-rst-hook)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
 
@@ -41,7 +40,6 @@ repos:
     -   id: add-msg-issue
     -   id: sort-file-contents
         files: .gitignore
-    -   id: check-docstrings-parse-as-rst
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -299,11 +297,6 @@ Duplicate entries within the same section will be removed automatically;
 lines that are duplicated between sections will be left in place and a warning raised to the user.
 This latter behaviour is due to us not knowing which section the line should belong to.
 
-### 2.5 The `check-docstrings-parse-as-rst` hook
-
-Parse python files to extract the docstrings, and check that these parse as ReStructuredText (RST).
-This is intended to be used in repos where automated documentation generation (e.g. Sphynx) will attempt to render docstrings as RST.
-
 ## 3. Development
 
 ### 3.1 Testing
@@ -324,16 +317,17 @@ Tests are organised in three levels:
 The provided `Makefile` defines commands for running various combinations of tests:
 
 - General Purpose:
-    - test: run all tests that aren't marked as slow.
-    - test_all: run all tests and show coverage.
-    - clean: remove the test venv and all temporary files.
+    - `test`: run unit and integration tests and show coverage (fail fast).
+    - `test_all`: as `test`, but also runs system tests (fail fast).
+    - `clean`: remove the test venv and all temporary files.
 - Testing by Level: run all tests of the specified level and show coverage (fail fast).
-    - test_unit
-    - test_integration
-    - test_system
-- Testing by hook: run all tests for the specified hook and show coverage (fail fast).
-    - test_add_copyright
-    - test_add_issue
-    - test_sort_file_contents
-- Testing shared resources (fail fast):
-    - test_shared: run all tests for utilities on which multiple hooks rely and show coverage (fail fast).
+    - `test_unit`
+    - `test_integration`
+    - `test_system`
+- Testing by hook: run all tests for the specified hook and show coverage (fail slow).
+    - `test_add_copyright`
+    - `test_add_issue`
+    - `test_sort_file_contents`
+    - `test_update_copyright`
+- Testing shared resources:
+    - `test_shared`: run all unit tests for utilities on which multiple hooks rely and show coverage (fail fast).
