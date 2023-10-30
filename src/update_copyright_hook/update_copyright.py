@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from src._shared.comment_mapping import get_comment_markers
-from src._shared.copyright_parsing import parse_copyright_string_from_content
+from src._shared.copyright_parsing import parse_copyright_string
 
 REMOVED_COLOUR: str = "\033[91m"
 ADDED_COLOUR: str = "\033[92m"
@@ -39,11 +39,7 @@ def _update_copyright_dates(file: Path) -> int:
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
 
-        if not (
-            copyright_string := parse_copyright_string_from_content(
-                content, comment_markers
-            )
-        ):
+        if not (copyright_string := parse_copyright_string(content, comment_markers)):
             return 0
 
         if copyright_string.end_year == (

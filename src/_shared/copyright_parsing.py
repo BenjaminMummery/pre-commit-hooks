@@ -55,7 +55,7 @@ class ParsedCopyrightString:
         )
 
 
-def parse_copyright_string(
+def _parse_copyright_string_line(
     input: str, comment_markers: Tuple[str, Optional[str]]
 ) -> Optional[ParsedCopyrightString]:
     """
@@ -77,11 +77,7 @@ def parse_copyright_string(
         return None
 
     # Safety catch for if we've been fiven multiple lines.
-    if not len(input.splitlines()) == 1:
-        raise ValueError(
-            "parse_copyright_string is designed to examine one line at a time, "
-            f"got:\n{input}"
-        )
+    assert len(input.splitlines()) == 1
 
     # Regex string components
     leading_comment_marker_group: str = (
@@ -136,7 +132,7 @@ def parse_copyright_string(
     )
 
 
-def parse_copyright_string_from_content(
+def parse_copyright_string(
     input: str, comment_markers: Tuple[str, Optional[str]]
 ) -> Optional[ParsedCopyrightString]:
     """
@@ -156,7 +152,7 @@ def parse_copyright_string_from_content(
     """
     copyright_strings = []
     for line in input.splitlines():
-        if parsed_string := parse_copyright_string(line, comment_markers):
+        if parsed_string := _parse_copyright_string_line(line, comment_markers):
             copyright_strings.append(parsed_string)
     if len(copyright_strings) == 0:
         return None
