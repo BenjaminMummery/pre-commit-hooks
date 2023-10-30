@@ -20,7 +20,7 @@ from identify import identify
 
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.config_parsing import read_pyproject_toml
-from src._shared.copyright_parsing import parse_copyright_string
+from src._shared.copyright_parsing import parse_copyright_string_from_content
 from src._shared.exceptions import NoCommitsError
 
 TOOL_NAME = "add_copyright"
@@ -328,7 +328,8 @@ def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> in
     with open(file, "r+") as f:
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
-        if parse_copyright_string(content, comment_markers):
+
+        if parse_copyright_string_from_content(content, comment_markers):
             return 0
 
         print(f"Fixing file `{file}` ", end="")

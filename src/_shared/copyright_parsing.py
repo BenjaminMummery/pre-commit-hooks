@@ -11,7 +11,7 @@ class ParsedCopyrightString:
 
     def __init__(
         self,
-        commentmarker: str,
+        commentmarkers: Tuple[str, Optional[str]],
         signifiers: str,
         start_year: int,
         end_year: int,
@@ -22,8 +22,8 @@ class ParsedCopyrightString:
         Construct ParsedCopyrightString.
 
         Arguments:
-            commentmarker (str): The character(s) that denote that the line is a
-                comment.
+            commentmarkers (tuple(str, str|None)): The character(s) that denote that
+                the line is a comment.
             signifiers (str): The string that indicates that this comment relates to
                 copyright.
             start_year (int): The earlier year attached to the copyright.
@@ -31,7 +31,7 @@ class ParsedCopyrightString:
             name (str): The name of the copyright holder.
             string (str): The full copyright string as it exists in the source file.
         """
-        self.commentmarker: str = commentmarker
+        self.commentmarkers: Tuple[str, Optional[str]] = commentmarkers
         self.signifiers: str = signifiers
         self.start_year: int = start_year
         self.end_year: int = end_year
@@ -46,7 +46,7 @@ class ParsedCopyrightString:
     def __repr__(self) -> str:
         return (
             "ParsedCopyrightString object with:\n"
-            f"- comment marker: {self.commentmarker}\n"
+            f"- comment marker(s): {self.commentmarkers}\n"
             f"- signifiers: {self.signifiers}\n"
             f"- start year: {self.start_year}\n"
             f"- end year: {self.end_year}\n"
@@ -72,24 +72,47 @@ def parse_copyright_string(
             returns an object containing its information. If a match was not found,
             returns None.
     """
-    # Construct regex string
-    exp = (
-        # The line should start with the comment escape character '#'.
-        r"^(?P<commentmarker>" + re.escape(comment_markers[0]) + r")\s?"
-        # One or more ways of writing 'copyright': the word, the character `©`, or the
-        # approximation `(c)`.
-        r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)"
-        # Year information - either 4 digits, or 2 sets of 4 digits separated by a dash.
-        r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)"
-        r"\s*"
-        # The name of the copyright holder. No restrictions on this, just take whatever
-        # is left in the string as long as it's not nothing.
-        r"(?P<name>.*)"
+    # Early return for empty line
+    if input == "":
+        return None
+
+    # Safety catch for if we've been fiven multiple lines.
+    if not len(input.splitlines()) == 1:
+        raise ValueError(
+            "parse_copyright_string is designed to examine one line at a time, "
+            f"got:\n{input}"
+        )
+
+    # Regex string components
+    leading_comment_marker_group: str = (
+        r"(?P<leadingcommentmarker>" + re.escape(comment_markers[0]) + r")"
     )
+    copyright_signifier_group: str = r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)\s?"
+    year_group: str = r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)\s?"
+    name_group: str = r"(?P<name>\D[^\n]+)\s?"
+
+    # Construct regex string
+    exp: str = (
+        # Mark the start of the string
+        r"^"
+        # Capture the leading comment marker
+        + leading_comment_marker_group
+        + r"\s?"
+        # Capture the copyright signifier ((c), copyright, things of this nature)
+        + copyright_signifier_group
+        + r"\s?"
+        # Capture name and year in either order
+        + r"(?:"
+        + year_group
+        + r"|"
+        + name_group
+        + r"){2}"
+    )
+    # If there's a trailing comment marker, match that too
     if comment_markers[1]:
-        # If there's a trailing commentmarker, the line should end with that
-        exp += r"\s?(?P<trailing_commentmarker>" + re.escape(comment_markers[1]) + r")"
-    exp += r"\s*$"
+        exp += r"(?P<trailingcommentmarker>" + re.escape(comment_markers[1]) + r")"
+    # Mark the end of the string.
+    exp += r"$"
 
     # Search the input
     match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
@@ -98,15 +121,48 @@ def parse_copyright_string(
 
     matchdict = match.groupdict()
     start_year, end_year = _parse_years(matchdict["year"])
+    leading_comment = matchdict["leadingcommentmarker"].strip()
+    trailing_comment = (
+        None if not comment_markers[1] else matchdict["trailingcommentmarker"].strip()
+    )
 
     return ParsedCopyrightString(
-        matchdict["commentmarker"].strip(),
+        (leading_comment, trailing_comment),
         matchdict["signifiers"].strip(),
         start_year,
         end_year,
         matchdict["name"].strip(),
         match.group().strip(),
     )
+
+
+def parse_copyright_string_from_content(
+    input: str, comment_markers: Tuple[str, Optional[str]]
+) -> Optional[ParsedCopyrightString]:
+    """
+    Search through lines of content looking for copyright markers.
+
+    Args:
+        input (str): The content to be searched.
+        comment_markers (tuple(str, str|None)): The characters marking the beginning and
+            (optionally) end of a comment.
+
+    Raises:
+        ValueError: When the content contains multiple copyright strings.
+
+    Returns:
+        ParsedCopyrightString|None: the parsed copyright string if one was found,
+            otherwise None.
+    """
+    copyright_strings = []
+    for line in input.splitlines():
+        if parsed_string := parse_copyright_string(line, comment_markers):
+            copyright_strings.append(parsed_string)
+    if len(copyright_strings) == 0:
+        return None
+    if len(copyright_strings) > 1:
+        raise ValueError(f"Found multiple copyright strings: {copyright_strings}")
+    return copyright_strings[0]
 
 
 def _parse_years(year: str) -> Tuple[int, int]:

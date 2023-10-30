@@ -7,7 +7,7 @@ import typing as t
 from pathlib import Path
 
 
-def resolve_files(files: t.List[str]) -> t.List[Path]:
+def resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
     """
     Convert the list of files into a list of paths.
 
@@ -21,7 +21,10 @@ def resolve_files(files: t.List[str]) -> t.List[Path]:
     Returns:
         List[Path]: A list of paths coressponding to the changed files.
     """
-    _files: t.List[Path] = [Path(file) for file in files]
+
+    _files: t.List[Path] = [
+        Path(file) for file in (files if isinstance(files, list) else [files])
+    ]
 
     for file in _files:
         if not os.path.isfile(file):
