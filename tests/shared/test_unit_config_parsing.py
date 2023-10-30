@@ -3,32 +3,59 @@
 from pathlib import Path
 
 import pytest
+from tomli import TOMLDecodeError
 
 from src._shared import config_parsing
+from tests.conftest import assert_matching
 
 file_content = """[tool.foo]
 option1="blah"
 
 """
+invalid_file_content = """this [is not] valid
+TOML
+
+"""
 
 
-@pytest.mark.parametrize("tool_name, expected_options", [("foo", {"option1": "blah"})])
-def test_happy_path(tmp_path: Path, tool_name: str, expected_options: dict):
-    file = tmp_path / "pyproject.toml"
-    file.write_text(file_content)
+class TestParsing:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "tool_name, expected_options", [("foo", {"option1": "blah"})]
+    )
+    def test_reads_correctly(tmp_path: Path, tool_name: str, expected_options: dict):
+        file = tmp_path / "pyproject.toml"
+        file.write_text(file_content)
 
-    assert config_parsing.read_pyproject_toml(file, tool_name) == expected_options
+        assert config_parsing.read_pyproject_toml(file, tool_name) == expected_options
+
+    @staticmethod
+    def test_returns_empty_dict_for_missing_section(tmp_path: Path):
+        file = tmp_path / "pyproject.toml"
+        file.write_text(file_content)
+
+        assert config_parsing.read_pyproject_toml(file, "tool_name") == {}
 
 
-def test_raises_FileNotFoundError_for_missing_file(tmp_path: Path):
-    file = tmp_path / "pyproject.toml"
+class TestFailureStates:
+    @staticmethod
+    def test_raises_FileNotFoundError_for_missing_file(tmp_path: Path):
+        file = tmp_path / "pyproject.toml"
 
-    with pytest.raises(FileNotFoundError):
-        config_parsing.read_pyproject_toml(file, "tool_name")
+        with pytest.raises(FileNotFoundError):
+            config_parsing.read_pyproject_toml(file, "tool_name")
 
+    @staticmethod
+    def test_raises_TOMLDecodeError_for_invalid_toml(tmp_path: Path):
+        file = tmp_path / "pyproject.toml"
+        file.write_text(invalid_file_content)
 
-def test_returns_empty_dict_for_missing_section(tmp_path: Path):
-    file = tmp_path / "pyproject.toml"
-    file.write_text(file_content)
+        with pytest.raises(TOMLDecodeError) as e:
+            config_parsing.read_pyproject_toml(file, "tool_name")
 
-    assert config_parsing.read_pyproject_toml(file, "tool_name") == {}
+        assert_matching(
+            "captured exception",
+            "expected exception",
+            e.exconly(),
+            "tomli.TOMLDecodeError: Expected '=' after a key in a key/value pair (at line 1, column 6)",  # noqa: E501
+        )
