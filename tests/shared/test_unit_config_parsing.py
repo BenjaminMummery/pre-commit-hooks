@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import pytest
-from tomli import TOMLDecodeError
 
 from src._shared import config_parsing
+from src._shared.exceptions import InvalidConfigError
 from tests.conftest import assert_matching
 
 file_content = """[tool.foo]
@@ -46,16 +46,16 @@ class TestFailureStates:
             config_parsing.read_pyproject_toml(file, "tool_name")
 
     @staticmethod
-    def test_raises_TOMLDecodeError_for_invalid_toml(tmp_path: Path):
+    def test_raises_InvalidConfigError_for_invalid_toml(tmp_path: Path):
         file = tmp_path / "pyproject.toml"
         file.write_text(invalid_file_content)
 
-        with pytest.raises(TOMLDecodeError) as e:
+        with pytest.raises(InvalidConfigError) as e:
             config_parsing.read_pyproject_toml(file, "tool_name")
 
         assert_matching(
-            "captured exception",
-            "expected exception",
+            "Output error string",
+            "Expected error string",
             e.exconly(),
-            "tomli.TOMLDecodeError: Expected '=' after a key in a key/value pair (at line 1, column 6)",  # noqa: E501
+            f"src._shared.exceptions.InvalidConfigError: Could not parse config file '{file}'.",  # noqa: E501
         )

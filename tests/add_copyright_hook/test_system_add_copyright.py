@@ -645,7 +645,7 @@ class TestFailureStates:
             # THEN
             assert process.returncode == 1
             assert (
-                "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)"  # noqa: E501
+                "src._shared.exceptions.InvalidConfigError: Could not parse config file "  # noqa: E501
                 in process.stdout
             )
 

@@ -22,3 +22,15 @@ class TestInits:
             e.exconly(),
             "src._shared.exceptions.NoCommitsError: <sentinel>",
         )
+
+    @staticmethod
+    def test_InvalidConfigError_init():
+        with pytest.raises(exceptions.InvalidConfigError) as e:
+            raiser(exceptions.InvalidConfigError)
+
+        assert_matching(
+            "captured exception",
+            "expected exception",
+            e.exconly(),
+            "src._shared.exceptions.InvalidConfigError: <sentinel>",
+        )

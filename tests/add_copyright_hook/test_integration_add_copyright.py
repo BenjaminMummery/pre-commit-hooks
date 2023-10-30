@@ -7,8 +7,8 @@ from freezegun import freeze_time
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
-from tomli import TOMLDecodeError
 
+from src._shared.exceptions import InvalidConfigError
 from src.add_copyright_hook import add_copyright
 from tests.conftest import (
     CopyrightGlobals,
@@ -751,14 +751,14 @@ class TestFailureStates:
             # GIVEN
             language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
             add_changed_files("hello" + language.extension, "", git_repo, mocker)
-            write_config_file(
+            file = write_config_file(
                 git_repo.workspace,
                 "[not]valid\ntoml",
             )
 
             # WHEN
             with cwd(git_repo.workspace):
-                with pytest.raises(TOMLDecodeError) as e:
+                with pytest.raises(InvalidConfigError) as e:
                     add_copyright.main()
 
             # THEN
@@ -766,7 +766,9 @@ class TestFailureStates:
                 "Output error string",
                 "Expected error string",
                 e.exconly(),
-                "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)",  # noqa: E501
+                "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
+                + (str(Path("/private")) if "/private" in e.exconly() else "")
+                + f"{file}'.",
             )
 
         @staticmethod
