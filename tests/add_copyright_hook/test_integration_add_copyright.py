@@ -702,205 +702,241 @@ class TestCustomBehaviour:
 
 
 class TestFailureStates:
-    @staticmethod
-    @pytest.mark.parametrize(
-        "config_file_content",
-        [
-            '[tool.add_copyright]\nunsupported_option="should not matter"\n',
-            '[tool.add_copyright.unsupported_option]\nname="foo"\n',
-        ],
-    )
-    def test_raises_KeyError_for_unsupported_config_options(
-        cwd,
-        git_repo: GitRepo,
-        config_file_content: str,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        add_changed_files("hello.py", "", git_repo, mocker)
-        config_file = write_config_file(git_repo.workspace, config_file_content)
-
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(KeyError) as e:
-                add_copyright.main()
-
-        # THEN
-        expected_error_string: str = (
-            'KeyError: "Unsupported option in config file '
-            + (str(Path("/private")) if "/private" in e.exconly() else "")
-            + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
-            "Supported options are: "
-            f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+    class TestConfigFailures:
+        @staticmethod
+        @pytest.mark.parametrize(
+            "config_file_content",
+            [
+                '[tool.add_copyright]\nunsupported_option="should not matter"\n',
+                '[tool.add_copyright.unsupported_option]\nname="foo"\n',
+            ],
         )
+        def test_raises_KeyError_for_unsupported_config_options(
+            cwd,
+            git_repo: GitRepo,
+            config_file_content: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            add_changed_files("hello.py", "", git_repo, mocker)
+            config_file = write_config_file(git_repo.workspace, config_file_content)
 
-        assert_matching(
-            "Output error string",
-            "Expected error string",
-            e.exconly(),
-            expected_error_string,
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(KeyError) as e:
+                    add_copyright.main()
+
+            # THEN
+            expected_error_string: str = (
+                'KeyError: "Unsupported option in config file '
+                + (str(Path("/private")) if "/private" in e.exconly() else "")
+                + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+                "Supported options are: "
+                f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+            )
+
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                expected_error_string,
+            )
+
+        @staticmethod
+        def test_raises_error_for_invalid_toml(
+            cwd,
+            git_repo: GitRepo,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
+            add_changed_files("hello" + language.extension, "", git_repo, mocker)
+            write_config_file(
+                git_repo.workspace,
+                "[not]valid\ntoml",
+            )
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(TOMLDecodeError) as e:
+                    add_copyright.main()
+
+            # THEN
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)",  # noqa: E501
+            )
+
+        @staticmethod
+        @pytest.mark.parametrize(
+            "config_file_content",
+            [
+                '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
+            ],
         )
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        def test_raises_KeyError_for_unsupported_language_config_options(
+            cwd,
+            config_file_content: str,
+            git_repo: GitRepo,
+            language: SupportedLanguage,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            add_changed_files("hello.py", "", git_repo, mocker)
+            config_file = write_config_file(
+                git_repo.workspace,
+                config_file_content.format(language=language.toml_key),
+            )
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "config_file_content",
-        [
-            '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
-        ],
-    )
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    def test_raises_KeyError_for_unsupported_language_config_options(
-        cwd,
-        config_file_content: str,
-        git_repo: GitRepo,
-        language: SupportedLanguage,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        add_changed_files("hello.py", "", git_repo, mocker)
-        config_file = write_config_file(
-            git_repo.workspace, config_file_content.format(language=language.toml_key)
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(KeyError) as e:
+                    add_copyright.main()
+
+            # THEN
+            expected_error_string: str = (
+                'KeyError: "Unsupported option in config file '
+                + (str(Path("/private")) if "/private" in e.exconly() else "")
+                + f"{git_repo.workspace/ config_file}: "
+                f"'{language.toml_key}.unsupported_option'. "
+                f"Supported options for '{language.toml_key}' are: "
+                f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+            )
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                expected_error_string,
+            )
+
+        @staticmethod
+        @pytest.mark.parametrize(
+            "input_format, missing_keys",
+            [
+                ("copyright 1996 {name}", "year"),
+                ("copyright {year} Harold Hadrada", "name"),
+            ],
         )
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        def test_raises_KeyError_for_missing_custom_format_keys(
+            cwd,
+            git_repo: GitRepo,
+            input_format: str,
+            language: SupportedLanguage,
+            missing_keys: str,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            add_changed_files("hello" + language.extension, "", git_repo, mocker)
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(KeyError) as e:
-                add_copyright.main()
+            write_config_file(
+                git_repo.workspace,
+                f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
+            )
 
-        # THEN
-        expected_error_string: str = (
-            'KeyError: "Unsupported option in config file '
-            + (str(Path("/private")) if "/private" in e.exconly() else "")
-            + f"{git_repo.workspace/ config_file}: "
-            f"'{language.toml_key}.unsupported_option'. "
-            f"Supported options for '{language.toml_key}' are: "
-            f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(KeyError) as e:
+                    add_copyright.main()
+
+            # THEN
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
+            )
+
+    class TestInputFileFailures:
+        @staticmethod
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        @pytest.mark.parametrize(
+            "copyright_string, error_message",
+            CopyrightGlobals.INVALID_COPYRIGHT_STRINGS,
         )
-        assert_matching(
-            "Output error string",
-            "Expected error string",
-            e.exconly(),
-            expected_error_string,
-        )
+        def test_raises_error_for_invalid_copyright_string(
+            cwd,
+            git_repo: GitRepo,
+            copyright_string: str,
+            error_message: str,
+            language: SupportedLanguage,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            add_changed_files(
+                "hello" + language.extension,
+                (
+                    language.comment_format.format(content=copyright_string)
+                    + "\n\n<file content sentinel>"
+                ),
+                git_repo,
+                mocker,
+            )
 
-    @staticmethod
-    @pytest.mark.parametrize(
-        "input_format, missing_keys",
-        [
-            ("copyright 1996 {name}", "year"),
-            ("copyright {year} Harold Hadrada", "name"),
-        ],
-    )
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    def test_raises_KeyError_for_missing_custom_format_keys(
-        cwd,
-        git_repo: GitRepo,
-        input_format: str,
-        language: SupportedLanguage,
-        missing_keys: str,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        add_changed_files("hello" + language.extension, "", git_repo, mocker)
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(ValueError) as e:
+                    add_copyright.main()
 
-        write_config_file(
-            git_repo.workspace,
-            f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
-        )
+            # THEN
+            assert_matching(
+                "Output error string",
+                "Expected error string",
+                e.exconly(),
+                error_message,
+            )
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(KeyError) as e:
-                add_copyright.main()
+        @staticmethod
+        def test_raises_error_for_invalid_file_format(
+            cwd,
+            git_repo: GitRepo,
+            mocker: MockerFixture,
+        ):
+            """
+            This should never happen in practice since the pre-commit framework should
+            prevent non-supported files getting passed in.
+            """
+            # GIVEN
+            add_changed_files("hello.fake", "", git_repo, mocker)
 
-        # THEN
-        assert_matching(
-            "Output error string",
-            "Expected error string",
-            e.exconly(),
-            f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
-        )
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(NotImplementedError) as e:
+                    add_copyright.main()
 
-    @staticmethod
-    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-    @pytest.mark.parametrize(
-        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
-    )
-    def test_raises_error_for_invalid_copyright_string(
-        cwd,
-        git_repo: GitRepo,
-        copyright_string: str,
-        error_message: str,
-        language: SupportedLanguage,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        add_changed_files(
-            "hello" + language.extension,
-            (
-                language.comment_format.format(content=copyright_string)
-                + "\n\n<file content sentinel>"
-            ),
-            git_repo,
-            mocker,
-        )
+            # THEN
+            assert e.exconly().startswith(
+                "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
+            )
 
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(ValueError) as e:
-                add_copyright.main()
+        @staticmethod
+        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        def test_raises_error_for_multiple_copyright_strings(
+            language: SupportedLanguage,
+            cwd,
+            git_repo: GitRepo,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            copyright_string = language.comment_format.format(
+                content="Copyright 1312 NAME"
+            )
+            add_changed_files(
+                f"hello{language.extension}",
+                f"{copyright_string}\n{copyright_string}",
+                git_repo,
+                mocker,
+            )
 
-        # THEN
-        assert_matching(
-            "Output error string", "Expected error string", e.exconly(), error_message
-        )
+            # WHEN
+            with cwd(git_repo.workspace):
+                with pytest.raises(ValueError) as e:
+                    add_copyright.main()
 
-    @staticmethod
-    def test_raises_error_for_invalid_toml(
-        cwd,
-        git_repo: GitRepo,
-        mocker: MockerFixture,
-    ):
-        # GIVEN
-        language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
-        add_changed_files("hello" + language.extension, "", git_repo, mocker)
-        write_config_file(
-            git_repo.workspace,
-            "[not]valid\ntoml",
-        )
-
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(TOMLDecodeError) as e:
-                add_copyright.main()
-
-        # THEN
-        assert_matching(
-            "Output error string",
-            "Expected error string",
-            e.exconly(),
-            "tomli.TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)",  # noqa: E501
-        )
-
-    @staticmethod
-    def test_raises_error_for_invalid_file_format(
-        cwd,
-        git_repo: GitRepo,
-        mocker: MockerFixture,
-    ):
-        """
-        This should never happen in practice since the pre-commit framework should
-        prevent non-supported files getting passed in.
-        """
-        # GIVEN
-        add_changed_files("hello.fake", "", git_repo, mocker)
-
-        # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(NotImplementedError) as e:
-                add_copyright.main()
-
-        # THEN
-        assert e.exconly().startswith(
-            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
-        )
+            # THEN
+            assert e.exconly().startswith(
+                "ValueError: Found multiple copyright strings: "
+            )
