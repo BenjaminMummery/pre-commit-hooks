@@ -6,11 +6,15 @@ from src._shared import exceptions
 from tests.conftest import assert_matching
 
 
+def raiser(exception: Exception):
+    raise exception("<sentinel>")
+
+
 class TestInits:
     @staticmethod
     def test_NoCommitsError_init():
         with pytest.raises(exceptions.NoCommitsError) as e:
-            raise exceptions.NoCommitsError("<sentinel>")
+            raiser(exceptions.NoCommitsError)
 
         assert_matching(
             "captured exception",
