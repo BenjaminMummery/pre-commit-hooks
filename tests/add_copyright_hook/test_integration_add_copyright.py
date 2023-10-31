@@ -16,7 +16,6 @@ from tests.conftest import (
     SupportedLanguage,
     add_changed_files,
     assert_matching,
-    write_config_file,
 )
 
 
@@ -355,9 +354,8 @@ class TestCustomBehaviour:
                 mocker.patch(
                     "sys.argv", ["stub_name", "-n", "<arg name sentinel>", file]
                 )
-                write_config_file(
-                    git_repo.workspace,
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                (git_repo.workspace / "pyproject.toml").write_text(
+                    '[tool.add_copyright]\nname="<config file username sentinel>"\n'
                 )
 
                 # WHEN
@@ -401,9 +399,8 @@ class TestCustomBehaviour:
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
-                write_config_file(
-                    git_repo.workspace,
-                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
+                (git_repo.workspace / "pyproject.toml").write_text(
+                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n'
                 )
 
                 # WHEN
@@ -446,9 +443,8 @@ class TestCustomBehaviour:
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
-                write_config_file(
-                    git_repo.workspace,
-                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
+                (git_repo.workspace / "pyproject.toml").write_text(
+                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n'
                 )
 
                 # WHEN
@@ -481,7 +477,7 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     class TestConfigFiles:
-        class TestGlobalConfigs:
+        class TestHookConfigs:
             @staticmethod
             @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
@@ -499,7 +495,7 @@ class TestCustomBehaviour:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -553,7 +549,7 @@ class TestCustomBehaviour:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -604,12 +600,9 @@ class TestCustomBehaviour:
                     git_repo,
                     mocker,
                 )
-                write_config_file(
-                    git_repo.workspace,
-                    (
-                        f"[tool.add_copyright.{language.toml_key}]\n"
-                        f'format="""{language.custom_copyright_format_commented}"""\n'
-                    ),
+                (git_repo.workspace / "pyproject.toml").write_text(
+                    f"[tool.add_copyright.{language.toml_key}]\n"
+                    f'format="""{language.custom_copyright_format_commented}"""\n'
                 )
 
                 # WHEN
@@ -661,12 +654,9 @@ class TestCustomBehaviour:
                     git_repo,
                     mocker,
                 )
-                write_config_file(
-                    git_repo.workspace,
-                    (
-                        f"[tool.add_copyright.{language.toml_key}]\n"
-                        f'format="""{language.custom_copyright_format_uncommented}"""\n'
-                    ),
+                (git_repo.workspace / "pyproject.toml").write_text(
+                    f"[tool.add_copyright.{language.toml_key}]\n"
+                    f'format="""{language.custom_copyright_format_uncommented}"""\n'
                 )
 
                 # WHEN
@@ -719,7 +709,9 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo, mocker)
-            config_file = write_config_file(git_repo.workspace, config_file_content)
+            (config_file := git_repo.workspace / "pyproject.toml").write_text(
+                config_file_content
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -751,8 +743,7 @@ class TestFailureStates:
             # GIVEN
             language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
             add_changed_files("hello" + language.extension, "", git_repo, mocker)
-            file = write_config_file(
-                git_repo.workspace,
+            (file := git_repo.workspace / "pyproject.toml").write_text(
                 "[not]valid\ntoml",
             )
 
@@ -788,8 +779,7 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo, mocker)
-            config_file = write_config_file(
-                git_repo.workspace,
+            (config_file := git_repo.workspace / "pyproject.toml").write_text(
                 config_file_content.format(language=language.toml_key),
             )
 
@@ -834,8 +824,7 @@ class TestFailureStates:
             # GIVEN
             add_changed_files("hello" + language.extension, "", git_repo, mocker)
 
-            write_config_file(
-                git_repo.workspace,
+            (git_repo.workspace / "pyproject.toml").write_text(
                 f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
             )
 

@@ -4,7 +4,6 @@ import datetime
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional, Union
 
 import pytest
@@ -56,12 +55,6 @@ def add_changed_files(
         git_repo.run(f"git add {filename}")
     if mocker:
         return mocker.patch("sys.argv", ["stub_name"] + filenames)
-
-
-def write_config_file(path: Path, content: str) -> Path:
-    config_file = path / "pyproject.toml"
-    (config_file).write_text(content)
-    return config_file
 
 
 SHARED_FIXTURE_LIST = ["mock_get_comment_markers", "mock_resolve_files"]

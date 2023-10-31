@@ -13,7 +13,6 @@ from tests.conftest import (
     SupportedLanguage,
     add_changed_files,
     assert_matching,
-    write_config_file,
 )
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "add-copyright"]
@@ -263,7 +262,7 @@ class TestDefaultBehaviour:
 
 class TestCustomBehaviour:
     class TestConfigFiles:
-        class TestGlobalConfigs:
+        class TestHookConfigs:
             @staticmethod
             @pytest.mark.parametrize(
                 "config_file_content",
@@ -285,7 +284,7 @@ class TestCustomBehaviour:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file_content)
+                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -340,7 +339,7 @@ class TestCustomBehaviour:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file_content)
+                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -390,7 +389,7 @@ class TestCustomBehaviour:
                         for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ]
                 )
-                write_config_file(git_repo.workspace, toml_text)
+                (git_repo.workspace / "pyproject.toml").write_text(toml_text)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -439,7 +438,7 @@ class TestCustomBehaviour:
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
                     )
-                write_config_file(git_repo.workspace, toml_text)
+                (git_repo.workspace / "pyproject.toml").write_text(toml_text)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -487,7 +486,9 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo)
-            config_file = write_config_file(git_repo.workspace, config_file_content)
+            (config_file := git_repo.workspace / "pyproject.toml").write_text(
+                config_file_content
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -522,8 +523,7 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo)
-            write_config_file(
-                git_repo.workspace,
+            (git_repo.workspace / "pyproject.toml").write_text(
                 config_file_content.format(language=language.toml_key),
             )
 
@@ -568,8 +568,7 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files(f"hello{language.extension}", "", git_repo)
-            write_config_file(
-                git_repo.workspace,
+            (git_repo.workspace / "pyproject.toml").write_text(
                 f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
             )
 
@@ -631,8 +630,7 @@ class TestFailureStates:
                 "",
                 git_repo,
             )
-            write_config_file(
-                git_repo.workspace,
+            (git_repo.workspace / "pyproject.toml").write_text(
                 "[not]valid\ntoml",
             )
 
