@@ -11,6 +11,7 @@ duplicated or clashing entries, either inter or intra.
 
 import os
 import sys
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Tuple
 
@@ -38,10 +39,13 @@ def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
         import tomli as tomllib  # pragma: no cover
 
     # Load in the config file
+    with open(pyproject_toml, "r") as f:
+        content = f.read()
     with open(pyproject_toml, "rb") as f:
         try:
             config = tomllib.load(f)
         except tomllib.TOMLDecodeError as e:
+            print(content)
             raise InvalidConfigError(
                 f"Could not parse config file '{pyproject_toml}'."
             ) from e
@@ -51,6 +55,27 @@ def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
         return {}
 
     return tool_config
+
+
+def _read_ini(filepath: Path, tool_name: str) -> dict:
+    """
+    Read in default configuration opentions from a setup.cfg file.
+
+    Args:
+        filepath (Path): The location of the file to be read.
+        tool_name (str): The name of the tool whose options we want to read.
+
+    Returns:
+        dict: A mapping of key-value pairs where the key is the config option
+            name, and the value is its value.
+    """
+    config_object = ConfigParser()
+    config_object.read(filepath)
+    hook_level = config_object[tool_name]
+    outdict = {}
+    for key in hook_level.keys():
+        outdict[key] = hook_level[key]
+    return outdict
 
 
 def read_config(tool_name: str) -> Tuple[dict, Path]:
@@ -71,9 +96,13 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
         Tuple[dict, Path]: The parsed configuration options, and the file from which
             they were read.
     """
-    filename = "pyproject.toml"
+    supported_config_files: dict = {
+        "pyproject.toml": _read_pyproject_toml,
+        "setup.cfg": _read_ini,
+    }
     for root, _, files in os.walk(os.getcwd()):
-        if filename in files:
-            filepath = Path(os.path.join(root, filename))
-            return _read_pyproject_toml(filepath, tool_name), filepath
+        for filename in supported_config_files.keys():
+            if filename in files:
+                filepath = Path(os.path.join(root, filename))
+                return supported_config_files[filename](filepath, tool_name), filepath
     raise FileNotFoundError("No config files found.")
