@@ -732,6 +732,77 @@ class TestCustomBehaviour:
                         f"{copyright_string}\n",
                     )
 
+            @staticmethod
+            @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "config_file, config_file_content",
+                [
+                    (
+                        "pyproject.toml",
+                        '[tool.add_copyright.{toml_key}]\nformat="""{format_str}"""\n',  # noqa: E501
+                    ),
+                    # (
+                    #     "setup.cfg",
+                    #     "[add_copyright.{toml_key}]\nformat={format_str}\n",
+                    # ),
+                ],
+            )
+            def test_multiline_custom_format(
+                cwd,
+                config_file: str,
+                config_file_content: str,
+                git_repo: GitRepo,
+                language: SupportedLanguage,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
+                    mocker,
+                )
+                (git_repo.workspace / config_file).write_text(
+                    config_file_content.format(
+                        toml_key=language.toml_key,
+                        format_str=language.custom_copyright_format_multiline,
+                    )
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                for lang in CopyrightGlobals.SUPPORTED_LANGUAGES:
+                    if lang.extension == language.extension:
+                        # If we're looking at the language we've set up a custom format
+                        # for, then we should see a copyright with that formatting.
+                        copyright_string = (
+                            language.custom_copyright_format_multiline.format(
+                                name="<git config username sentinel>", year="1312"
+                            )
+                        )
+                    else:
+                        # Otherwise we expect the default copyright format.
+                        copyright_string = lang.comment_format.format(
+                            content="Copyright (c) {year} {name}".format(
+                                name="<git config username sentinel>", year="1312"
+                            )
+                        )
+
+                    with open(git_repo.workspace / f"hello{lang.extension}", "r") as f:
+                        output_content = f.read()
+                    assert_matching(
+                        "output content",
+                        "expected content",
+                        output_content,
+                        f"{copyright_string}\n",
+                    )
+
 
 class TestFailureStates:
     class TestConfigFailures:

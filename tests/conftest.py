@@ -110,7 +110,7 @@ class SupportedLanguage(object):
         comment_format: str,
         custom_copyright_format_commented: str,
         custom_copyright_format_uncommented: str,
-        custom_copyright_format_multiline: Optional[str] = None,
+        custom_copyright_format_multiline: str,
     ):
         self.tag: str = tag
         self.toml_key: str = toml_key
@@ -145,6 +145,7 @@ class CopyrightGlobals:
             "<!--- {content} -->",
             "<!--- Copyright {name} as of {year}. -->",
             "Copyright {name} as of {year}",
+            "<!---\nCopyright {name} as of {year}.\n-->",
         ),
         SupportedLanguage(
             "c++",
@@ -153,6 +154,7 @@ class CopyrightGlobals:
             "// {content}",
             "// Copyright {name} as of {year}.",
             "Copyright {name} as of {year}",
+            "///////////////////\n//Copyright {name} as of {year}\n////////////////",
         ),
         SupportedLanguage(
             "c#",
@@ -161,6 +163,7 @@ class CopyrightGlobals:
             "/* {content} */",
             "/* Copyright {name} as of {year}.*/",
             "Copyright {name} as of {year}",
+            "/*\nCopyright {name} as of {year}.\n*/",
         ),
         SupportedLanguage(
             "perl",
@@ -169,6 +172,7 @@ class CopyrightGlobals:
             "# {content}",
             "# Copyright {name} as of {year}.",
             "Copyright {name} as of {year}",
+            "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
         ),
     ]
     VALID_COPYRIGHT_STRINGS = [
