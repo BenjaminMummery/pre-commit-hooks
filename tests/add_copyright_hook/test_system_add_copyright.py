@@ -265,13 +265,21 @@ class TestCustomBehaviour:
         class TestHookConfigs:
             @staticmethod
             @pytest.mark.parametrize(
-                "config_file_content",
+                "config_file, config_file_content",
                 [
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                    (
+                        "pyproject.toml",
+                        '[tool.add_copyright]\nname="<config file username sentinel>"\n',  # noqa: E501
+                    ),
+                    (
+                        "setup.cfg",
+                        "[add_copyright]\nname=<config file username sentinel>\n",
+                    ),
                 ],
             )
             def test_custom_name_option_overrules_git_username(
                 cwd,
+                config_file: str,
                 config_file_content: str,
                 git_repo: GitRepo,
             ):
@@ -284,7 +292,7 @@ class TestCustomBehaviour:
                     "",
                     git_repo,
                 )
-                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
+                (git_repo.workspace / config_file).write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):

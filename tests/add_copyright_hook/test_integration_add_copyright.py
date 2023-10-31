@@ -481,21 +481,29 @@ class TestCustomBehaviour:
             @staticmethod
             @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
-                "config_file_content",
+                "config_file, config_file_content",
                 [
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                    (
+                        "pyproject.toml",
+                        '[tool.add_copyright]\nname="<config file username sentinel>"\n',  # noqa: E501
+                    ),
+                    (
+                        "setup.cfg",
+                        "[add_copyright]\nname=<config file username sentinel>\n",
+                    ),
                 ],
             )
             def test_custom_name_option_overrules_git_username(
                 capsys: CaptureFixture,
                 cwd,
+                config_file: str,
                 config_file_content: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                (git_repo.workspace / "pyproject.toml").write_text(config_file_content)
+                (git_repo.workspace / config_file).write_text(config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
