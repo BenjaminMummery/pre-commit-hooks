@@ -199,13 +199,23 @@ def _ensure_comment(
     Returns:
         str: the properly escaped string.
     """
+    # Handle languages with comment end markers.
+    # All we care about in these cases is that the string starts and ends with the
+    # correct markers.
+    if comment_markers[1]:
+        _copyright_string: str = copyright_string.strip()
+        if not _copyright_string.startswith(comment_markers[0]):
+            _copyright_string = f"{comment_markers[0]} {_copyright_string}"
+        if not _copyright_string.endswith(comment_markers[1]):
+            _copyright_string += f" {comment_markers[1]}"
+        return _copyright_string
+
+    # Handle languages where each line needs to start with a comment marker.
     outlines = copyright_string.splitlines()
     for i, line in enumerate(outlines):
         newline = line
         if not line.startswith(comment_markers[0]):
             newline = f"{comment_markers[0]} {line}"
-        if comment_markers[1] and not line.endswith(comment_markers[1]):
-            newline = f"{newline} {comment_markers[1]}"
         outlines[i] = newline
     assert (
         len(outlines) > 0
