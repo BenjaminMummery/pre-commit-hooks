@@ -40,6 +40,11 @@ test_all: test_venv test_unit test_integration test_system
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT"
 
+test_retry: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING FAILED TESTS; \
+	pytest --lf
+
 # TESTING BY LEVEL
 test_unit: test_venv
 	@. test_venv/bin/activate; \
