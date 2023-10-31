@@ -13,7 +13,7 @@ import os
 import sys
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 from src._shared.exceptions import InvalidConfigError
 
@@ -71,10 +71,25 @@ def _read_ini(filepath: Path, tool_name: str) -> dict:
     """
     config_object = ConfigParser()
     config_object.read(filepath)
-    hook_level = config_object[tool_name]
-    outdict = {}
-    for key in hook_level.keys():
-        outdict[key] = hook_level[key]
+
+    outdict: Dict[str, Any] = {}
+
+    # Hook level configurations
+    if tool_name in config_object.keys():
+        for key in config_object[tool_name].keys():
+            outdict[key] = config_object[tool_name][key]
+
+    # Sublevel configurations
+    for key in config_object.keys():
+        if len(sections := key.split(".")) != 2:
+            continue
+        if sections[0] == tool_name:
+            option_section: str = sections[1]
+            sectiondict: dict = {}
+            for subkey in config_object[key].keys():
+                sectiondict[subkey] = config_object[key][subkey]
+            outdict[option_section] = sectiondict
+
     return outdict
 
 
