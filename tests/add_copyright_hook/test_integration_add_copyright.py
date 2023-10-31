@@ -609,8 +609,23 @@ class TestCustomBehaviour:
         class TestPerLanguageConfigs:
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "config_file, config_file_content",
+                [
+                    (
+                        "pyproject.toml",
+                        '[tool.add_copyright.{toml_key}]\nformat="""{format_str}"""\n',  # noqa: E501
+                    ),
+                    (
+                        "setup.cfg",
+                        "[add_copyright.{toml_key}]\nformat={format_str}\n",
+                    ),
+                ],
+            )
             def test_custom_formatting_commented_overrules_default_format(
                 cwd,
+                config_file: str,
+                config_file_content: str,
                 git_repo: GitRepo,
                 language: SupportedLanguage,
                 mocker: MockerFixture,
@@ -625,9 +640,11 @@ class TestCustomBehaviour:
                     git_repo,
                     mocker,
                 )
-                (git_repo.workspace / "pyproject.toml").write_text(
-                    f"[tool.add_copyright.{language.toml_key}]\n"
-                    f'format="""{language.custom_copyright_format_commented}"""\n'
+                (git_repo.workspace / config_file).write_text(
+                    config_file_content.format(
+                        toml_key=language.toml_key,
+                        format_str=language.custom_copyright_format_commented,
+                    )
                 )
 
                 # WHEN
@@ -638,14 +655,14 @@ class TestCustomBehaviour:
                 for lang in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     if lang.extension == language.extension:
                         # If we're looking at the language we've set up a custom format
-                        # for, then we should see a copyright with that formatting.
+                        # for, then we should see a copyright with that formatting...
                         copyright_string = (
                             language.custom_copyright_format_commented.format(
                                 name="<git config username sentinel>", year="1312"
                             )
                         )
                     else:
-                        # Otherwise we expect the default copyright format.
+                        # ...otherwise we expect the default copyright format.
                         copyright_string = lang.comment_format.format(
                             content="Copyright (c) {year} {name}".format(
                                 name="<git config username sentinel>", year="1312"

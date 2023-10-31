@@ -110,6 +110,7 @@ class SupportedLanguage(object):
         comment_format: str,
         custom_copyright_format_commented: str,
         custom_copyright_format_uncommented: str,
+        custom_copyright_format_multiline: Optional[str] = None,
     ):
         self.tag: str = tag
         self.toml_key: str = toml_key
@@ -119,6 +120,7 @@ class SupportedLanguage(object):
         self.custom_copyright_format_uncommented: str = (
             custom_copyright_format_uncommented
         )
+        self.custom_copyright_format_multiline: str = custom_copyright_format_multiline
 
     def __str__(self):
         return self.tag
@@ -132,8 +134,9 @@ class CopyrightGlobals:
             "python",
             ".py",
             "# {content}",
-            "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
+            "# © Copyright {year} {name}",
             "Copyright {name} as of {year}",
+            "################################################################################\n# © Copyright {year} {name}\n################################################################################",  # noqa: E501
         ),
         SupportedLanguage(
             "markdown",
