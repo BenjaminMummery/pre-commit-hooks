@@ -26,8 +26,10 @@ def assert_matching(
         f"{name1} did not match {name2}:\n"
         f"= {name1.upper()} ============\n"
         f"{value1}\n"
+        f"(type: {type(value1)})\n"
         f"= {name2.upper()} ==========\n"
         f"{value2}\n"
+        f"(type: {type(value2)})\n"
         "============================="
     )
     if message:

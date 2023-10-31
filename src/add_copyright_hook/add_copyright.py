@@ -11,7 +11,6 @@ consult the README file.
 
 import argparse
 import datetime
-import os
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
@@ -20,7 +19,7 @@ from identify import identify
 
 from src._shared import resolvers
 from src._shared.comment_mapping import get_comment_markers
-from src._shared.config_parsing import read_pyproject_toml
+from src._shared.config_parsing import read_config
 from src._shared.copyright_parsing import parse_copyright_string
 from src._shared.exceptions import NoCommitsError
 
@@ -247,21 +246,17 @@ def _read_default_configuration() -> dict:
 
     retv = dict([(key, None) for key in supported_toml_keys])
 
-    # find config file
-    filename = "pyproject.toml"
-    for root, _, files in os.walk(os.getcwd()):
-        if filename in files:
-            filepath = os.path.join(root, filename)
-            break
+    # read data from config file
+    try:
+        data, config_file = read_config(TOOL_NAME)
+    except FileNotFoundError:
         return retv
 
-    # read data from config file
-    data = read_pyproject_toml(Path(filepath), TOOL_NAME)
     for key in data:
         # Check that the keys are things we support, and raise an error if not.
         if key not in supported_toml_keys:
             raise KeyError(
-                f"Unsupported option in config file {filepath}: '{key}'. "
+                f"Unsupported option in config file {config_file}: '{key}'. "
                 f"Supported options are: {supported_toml_keys}."
             )
 
@@ -270,7 +265,7 @@ def _read_default_configuration() -> dict:
             for subkey in data[key]:
                 if subkey not in supported_langauge_subkeys:
                     raise KeyError(
-                        f"Unsupported option in config file {filepath}: "
+                        f"Unsupported option in config file {config_file}: "
                         f"'{key}.{subkey}'. "
                         f"Supported options for '{key}' are: "
                         f"{supported_langauge_subkeys}."
