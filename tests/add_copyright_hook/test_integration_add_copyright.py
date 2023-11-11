@@ -606,10 +606,7 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
         @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-        class TestPerLanguageConfigs:
-            @staticmethod
-            @freeze_time("1312-01-01")
-            @pytest.mark.parametrize(
+        @pytest.mark.parametrize(
                 "config_file, config_file_content",
                 [
                     (
@@ -618,10 +615,13 @@ class TestCustomBehaviour:
                     ),
                     (
                         "setup.cfg",
-                        "[add_copyright.{toml_key}]\nformat={format_str}\n",
+                        '[add_copyright.{toml_key}]\nformat={format_str}\n',
                     ),
                 ],
             )
+        class TestPerLanguageConfigs:
+            @staticmethod
+            @freeze_time("1312-01-01")
             def test_custom_formatting_commented_overrules_default_format(
                 cwd,
                 config_file: str,
@@ -682,6 +682,8 @@ class TestCustomBehaviour:
             @freeze_time("1312-01-01")
             def test_custom_formatting_uncommented_overrules_default_format(
                 cwd,
+                config_file: str,
+                config_file_content: str,
                 git_repo: GitRepo,
                 language: SupportedLanguage,
                 mocker: MockerFixture,
@@ -696,9 +698,11 @@ class TestCustomBehaviour:
                     git_repo,
                     mocker,
                 )
-                (git_repo.workspace / "pyproject.toml").write_text(
-                    f"[tool.add_copyright.{language.toml_key}]\n"
-                    f'format="""{language.custom_copyright_format_uncommented}"""\n'
+                (git_repo.workspace / config_file).write_text(
+                    config_file_content.format(
+                        toml_key=language.toml_key,
+                        format_str=language.custom_copyright_format_uncommented,
+                    )
                 )
 
                 # WHEN
@@ -734,19 +738,6 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
-            @pytest.mark.parametrize(
-                "config_file, config_file_content",
-                [
-                    (
-                        "pyproject.toml",
-                        '[tool.add_copyright.{toml_key}]\nformat="""{format_str}"""\n',  # noqa: E501
-                    ),
-                    # (
-                    #     "setup.cfg",
-                    #     "[add_copyright.{toml_key}]\nformat={format_str}\n",
-                    # ),
-                ],
-            )
             def test_multiline_custom_format(
                 cwd,
                 config_file: str,
@@ -755,6 +746,9 @@ class TestCustomBehaviour:
                 language: SupportedLanguage,
                 mocker: MockerFixture,
             ):
+                if config_file in ["setup.cfg"]:
+                    pytest.skip("ini files do not support multiline values.")
+                    
                 # GIVEN
                 add_changed_files(
                     [

@@ -395,9 +395,22 @@ class TestCustomBehaviour:
                     )
                     assert expected_stdout in process.stdout
 
+        @pytest.mark.parametrize(
+            "config_file, config_file_content",
+            [
+                (
+                    "pyproject.toml",
+                    '[tool.add_copyright.{toml_key}]\nformat="""{format_str}"""\n',  # noqa: E501
+                ),
+                (
+                    "setup.cfg",
+                    "[add_copyright.{toml_key}]\nformat={format_str}\n",
+                ),
+            ],
+        )
         class TestPerLanguageConfigs:
             @staticmethod
-            def test_custom_formatting_commented(cwd, git_repo: GitRepo):
+            def test_custom_formatting_commented(cwd, git_repo: GitRepo, config_file: str, config_file_content: str):
                 # GIVEN
                 add_changed_files(
                     [
@@ -408,13 +421,12 @@ class TestCustomBehaviour:
                     git_repo,
                 )
 
-                toml_text = "\n".join(
+                config_text = "\n".join(
                     [
-                        f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'  # noqa: E501
-                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+                        f"{config_file_content.format(toml_key=language.toml_key, format_str=language.custom_copyright_format_commented)}\n" for language in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ]
                 )
-                (git_repo.workspace / "pyproject.toml").write_text(toml_text)
+                (git_repo.workspace / config_file).write_text(config_text)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -447,7 +459,7 @@ class TestCustomBehaviour:
                     assert expected_stdout in process.stdout
 
             @staticmethod
-            def test_custom_formatting_uncommented(cwd, git_repo: GitRepo):
+            def test_custom_formatting_uncommented(cwd, git_repo: GitRepo, config_file: str, config_file_content: str):
                 # GIVEN
                 add_changed_files(
                     [
@@ -495,6 +507,24 @@ class TestCustomBehaviour:
                     )
                     assert expected_stdout in process.stdout
 
+            @staticmethod
+            def test_multiline_custom_format(cwd, git_repo: GitRepo):
+                # GIVEN
+                add_changed_files(
+                    [
+                        f"hello{lang.extension}"
+                        for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+                    ],
+                    "",
+                    git_repo,
+                )
+                toml_text = ""
+                for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
+                    toml_text += (
+                        f"[tool.add_copyright.{language.toml_key}]\n"
+                        f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
+                    )
+                (git_repo.workspace / "pyproject.toml").write_text(toml_text)
 
 class TestFailureStates:
     class TestConfigFailures:
