@@ -17,9 +17,9 @@ from src.add_copyright_hook.add_copyright import (
 
 @pytest.fixture()
 def mock_repo(mocker: MockerFixture) -> add_copyright.Repo:
-    return mocker.patch(
-        f"{add_copyright.__name__}.Repo", Mock(return_value=create_autospec(Repo))
-    )
+    mocked_repo = create_autospec(Repo)
+    mocker.patch(f"{add_copyright.__name__}.Repo", Mock(return_value=mocked_repo))
+    return mocked_repo
 
 
 class TestGetEarliestCommitYear:
@@ -27,10 +27,13 @@ class TestGetEarliestCommitYear:
     def test_raises_InvalidGitRepositoryError_for_nonexistent_git_repo(
         tmp_path: Path,
         cwd,
-        mock_repo,
+        mocker,
     ):
         # GIVEN
-        mock_repo.side_effect = InvalidGitRepositoryError
+        mocker.patch(
+            f"{add_copyright.__name__}.Repo",
+            Mock(side_effect=InvalidGitRepositoryError),
+        )
 
         # WHEN / THEN
         with pytest.raises(InvalidGitRepositoryError):
@@ -41,12 +44,11 @@ class TestGetEarliestCommitYear:
     def test_raises_NoCommitsError_for_nonexistent_git_repo(
         tmp_path: Path,
         cwd,
-        mocker,
+        mock_repo,
     ):
         # GIVEN
-        mocked_repo = create_autospec(Repo)
-        mocked_repo.blame.side_effect = GitCommandError(["<command sentinel>"])
-        mocker.patch(f"{add_copyright.__name__}.Repo", Mock(return_value=mocked_repo))
+
+        mock_repo.blame.side_effect = GitCommandError(["<command sentinel>"])
 
         # WHEN / THEN
         with pytest.raises(NoCommitsError):
