@@ -13,6 +13,7 @@ from src.add_copyright_hook.add_copyright import (
     NoCommitsError,
     Path,
     Repo,
+    argparse,
 )
 
 
@@ -67,3 +68,24 @@ class TestGetEarliestCommitYear:
 
         # THEN
         assert ret == 1970
+
+
+class TestParseArgs:
+    @staticmethod
+    def test_parse_args(mocker: MockerFixture):
+        # GIVEN
+        mocked_argparse = create_autospec(argparse.ArgumentParser)
+        mocker.patch(
+            f"{add_copyright.__name__}.argparse.ArgumentParser",
+            Mock(return_value=mocked_argparse),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.resolvers.resolve_files",
+            return_value=["<file sentinel>"],
+        )
+
+        # WHEN
+        ret = add_copyright._parse_args()
+
+        # THEN
+        assert ret["files"] == ["<file sentinel>"]
