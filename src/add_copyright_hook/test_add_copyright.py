@@ -3,6 +3,7 @@
 from unittest.mock import Mock, create_autospec
 
 import pytest
+from git.repo.base import BlameEntry
 from pytest_mock import MockerFixture
 
 from src.add_copyright_hook import add_copyright
@@ -47,10 +48,22 @@ class TestGetEarliestCommitYear:
         mock_repo,
     ):
         # GIVEN
-
         mock_repo.blame.side_effect = GitCommandError(["<command sentinel>"])
 
         # WHEN / THEN
         with pytest.raises(NoCommitsError):
             with cwd(tmp_path):
                 add_copyright._get_earliest_commit_year(Mock())
+
+    @staticmethod
+    def test_single_commit(tmp_path: Path, cwd, mock_repo):
+        # GIVEN
+        mock_blameentry = create_autospec(BlameEntry)
+        mock_repo.blame.return_value = [mock_blameentry]
+
+        # WHEN
+        with cwd(tmp_path):
+            ret = add_copyright._get_earliest_commit_year(Mock())
+
+        # THEN
+        assert ret == 1970
