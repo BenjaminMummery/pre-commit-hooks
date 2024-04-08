@@ -1,10 +1,10 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from pathlib import Path
 
 import pytest
 
-from src._shared import comment_mapping
+from . import comment_mapping
 
 
 class TestGetCommentMarkers:

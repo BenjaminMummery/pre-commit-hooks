@@ -1,12 +1,12 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from pathlib import Path
 
 import pytest
 
-from src._shared import config_parsing
-from src._shared.exceptions import InvalidConfigError
-from tests.conftest import assert_matching
+from conftest import assert_matching
+
+from . import config_parsing
 
 file_content = """[tool.foo]
 option1="blah"
@@ -50,7 +50,7 @@ class TestFailureStates:
         file = tmp_path / "pyproject.toml"
         file.write_text(invalid_file_content)
 
-        with pytest.raises(InvalidConfigError) as e:
+        with pytest.raises(config_parsing.InvalidConfigError) as e:
             config_parsing.read_pyproject_toml(file, "tool_name")
 
         assert_matching(

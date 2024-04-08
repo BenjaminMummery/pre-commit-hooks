@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from typing import Optional, Tuple
 from unittest.mock import Mock
@@ -6,9 +6,10 @@ from unittest.mock import Mock
 import pytest
 from pytest_mock import MockerFixture
 
-from src._shared import copyright_parsing
+from conftest import assert_matching
 from src._shared.comment_mapping import COMMENT_MARKERS
-from tests.conftest import assert_matching
+
+from . import copyright_parsing
 
 
 # region: fixtures mocking all public functions, classes, and methods.

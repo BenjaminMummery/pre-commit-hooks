@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from pathlib import Path
 from typing import List
@@ -7,8 +7,8 @@ import pytest
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
+from conftest import assert_matching
 from src.add_msg_issue_hook import add_msg_issue
-from tests.conftest import assert_matching
 
 BRANCH_NAMES = [
     ("ORQSDK-3", "ORQSDK-3"),

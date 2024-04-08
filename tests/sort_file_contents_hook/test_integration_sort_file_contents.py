@@ -1,12 +1,12 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import pytest
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
+from conftest import SortFileContentsGlobals, add_changed_files, assert_matching
 from src.sort_file_contents_hook import sort_file_contents
-from tests.conftest import SortFileContentsGlobals, add_changed_files, assert_matching
 
 
 @pytest.mark.usefixtures("git_repo")

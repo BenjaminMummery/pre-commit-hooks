@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from pathlib import Path
 
@@ -8,9 +8,7 @@ from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
-from src._shared.exceptions import InvalidConfigError
-from src.add_copyright_hook import add_copyright
-from tests.conftest import (
+from conftest import (
     CopyrightGlobals,
     Globals,
     SupportedLanguage,
@@ -18,6 +16,8 @@ from tests.conftest import (
     assert_matching,
     write_config_file,
 )
+from src._shared.exceptions import InvalidConfigError
+from src.add_copyright_hook import add_copyright
 
 
 @pytest.mark.usefixtures("git_repo")
