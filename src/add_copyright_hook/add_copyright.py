@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """
 Check that source files contain a copyright string, and add one to files that don't.
@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
-from git import GitCommandError, Repo
+from git import GitCommandError, InvalidGitRepositoryError, Repo
 from identify import identify
 
 from src._shared import resolvers
@@ -45,13 +45,18 @@ def _get_earliest_commit_year(file: Path) -> int:
         file (Path): The path to the file to be checked
 
     Raises:
+        InvalidGitRepositoryError: when the hook is called in a directory that
+        is not a git repository.
         NoCommitsError: when the file has no commits for us to examine the blame.
 
     Returns:
         int: The year of the earliest commit on the file.
 
     """
-    repo = Repo(".")
+    try:
+        repo = Repo(".")
+    except InvalidGitRepositoryError:
+        raise
 
     try:
         blames = repo.blame(repo.head, str(file))
