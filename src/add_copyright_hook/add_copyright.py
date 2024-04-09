@@ -110,7 +110,7 @@ def _get_git_user_name() -> str:
     reader = repo.config_reader()
     name = reader.get_value("user", "name")
     if not isinstance(name, str) or len(name) < 1:
-        raise ValueError("The git username is not configured.")  # pragma: no cover
+        raise ValueError("The git username is not configured.")
     return name
 
 
