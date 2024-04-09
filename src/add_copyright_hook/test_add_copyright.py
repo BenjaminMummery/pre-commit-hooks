@@ -89,3 +89,45 @@ class TestParseArgs:
 
         # THEN
         assert ret["files"] == ["<file sentinel>"]
+
+
+class TestGetGitUserName:
+    @staticmethod
+    @pytest.mark.parametrize("return_name", [None, ""])
+    def test_raises_valueerror_for_no_configured_username(mock_repo, return_name):
+        # GIVEN
+        mock_reader = Mock()
+        mock_reader.get_value.return_value = return_name
+        mock_repo.config_reader.return_value = mock_reader
+
+        # WHEN
+        with pytest.raises(ValueError) as e:
+            _ = add_copyright._get_git_user_name()
+
+        # THEN
+        assert e.exconly() == "ValueError: The git username is not configured."
+
+    @staticmethod
+    def test_get_git_user_name(mock_repo):
+        # GIVEN
+        mock_reader = Mock()
+        mock_reader.get_value.return_value = "<name sentinel>"
+        mock_repo.config_reader.return_value = mock_reader
+
+        # WHEN
+        ret = add_copyright._get_git_user_name()
+
+        # THEN
+        assert ret == "<name sentinel>"
+
+
+class TestHasShebang:
+    @staticmethod
+    @pytest.mark.parametrize("input", ["#! thing/other"])
+    def test_returns_true_for_shebang(input):
+        assert add_copyright._has_shebang(input)
+
+    @staticmethod
+    @pytest.mark.parametrize("input", ["# Not a shebang"])
+    def test_returns_false_for_no_shebang(input):
+        assert not add_copyright._has_shebang(input)
