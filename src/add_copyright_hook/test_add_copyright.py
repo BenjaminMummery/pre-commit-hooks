@@ -188,3 +188,200 @@ class TestAddCopyrightStringToContent:
 
         # THEN
         assert ret == f"{copyright}\n\n{content}\n"
+
+
+@pytest.mark.parametrize("name", ["<name sentinel>"])
+class TestConstructCopyrightString:
+    @staticmethod
+    def test_single_year(name: str, mocker: MockerFixture):
+        # GIVEN
+        start_year = 2000
+        end_year = start_year
+        format = "year: {year}, name: {name}"
+        comment_markers = Mock()
+        mocked_ensure_comment = Mock(return_value="<return sentinel>")
+        mocker.patch(f"{add_copyright.__name__}._ensure_comment", mocked_ensure_comment)
+
+        # WHEN
+        ret = add_copyright._construct_copyright_string(
+            name, start_year, end_year, format, comment_markers
+        )
+
+        # THEN
+        assert ret == "<return sentinel>"
+        mocked_ensure_comment.assert_called_once_with(
+            f"year: {start_year}, name: {name}", comment_markers
+        )
+
+    @staticmethod
+    def test_year_range(name: str, mocker: MockerFixture):
+        # GIVEN
+        start_year = 2000
+        end_year = 3000
+        format = "year: {year}, name: {name}"
+        comment_markers = Mock()
+        mocked_ensure_comment = Mock(return_value="<return sentinel>")
+        mocker.patch(f"{add_copyright.__name__}._ensure_comment", mocked_ensure_comment)
+
+        # WHEN
+        ret = add_copyright._construct_copyright_string(
+            name, start_year, end_year, format, comment_markers
+        )
+
+        # THEN
+        assert ret == "<return sentinel>"
+        mocked_ensure_comment.assert_called_once_with(
+            f"year: {start_year} - {end_year}, name: {name}", comment_markers
+        )
+
+
+class TestEnsureComment:
+    class TestSingleLine:
+        @staticmethod
+        def test_adds_leading_comment_marker():
+            # GIVEN
+            string = "<input sentinel>"
+            comment_markers = ("#", None)
+
+            # WHEN
+            ret = add_copyright._ensure_comment(string, comment_markers)
+
+            # THEN
+            assert ret == "# <input sentinel>"
+
+        @staticmethod
+        def test_adds_enclosing_comment_markers():
+            # GIVEN
+            string = "<input sentinel>"
+            comment_markers = ("#", "!")
+
+            # WHEN
+            ret = add_copyright._ensure_comment(string, comment_markers)
+
+            # THEN
+            assert ret == "# <input sentinel> !"
+
+    class TestMultipleLines:
+        @staticmethod
+        def test_adds_leading_comment_marker():
+            # GIVEN
+            string = "<input line 1 sentinel>\n<input line 2 sentinel>"
+            comment_markers = ("#", None)
+
+            # WHEN
+            ret = add_copyright._ensure_comment(string, comment_markers)
+
+            # THEN
+            assert ret == "# <input line 1 sentinel>\n# <input line 2 sentinel>"
+
+        @staticmethod
+        def test_adds_enclosing_comment_markers():
+            # GIVEN
+            string = "<input line 1 sentinel>\n<input line 2 sentinel>"
+            comment_markers = ("#", "!")
+
+            # WHEN
+            ret = add_copyright._ensure_comment(string, comment_markers)
+
+            # THEN
+            assert ret == "# <input line 1 sentinel> !\n# <input line 2 sentinel> !"
+
+    class TestReadDefaultConfiguration:
+        @staticmethod
+        def test_no_config_file(cwd, tmp_path: Path, mocker: MockerFixture):
+            # GIVEN
+            mocker.patch(
+                f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+                {"mock_key": "mock_value"},
+            )
+
+            # WHEN
+            with cwd(tmp_path):
+                ret = add_copyright._read_default_configuration()
+
+            # THEN
+            assert ret == {"name": None, "format": None, "mock_value": None}
+
+        @staticmethod
+        def test_pyproject_toml_config(cwd, tmp_path: Path, mocker: MockerFixture):
+            # GIVEN
+            mocker.patch(
+                f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+                {"mock_key": "mock_value"},
+            )
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text('[tool.add_copyright]\nname = "my name"')
+
+            # WHEN
+            with cwd(tmp_path):
+                ret = add_copyright._read_default_configuration()
+
+            # THEN
+            assert ret == {"name": "my name", "format": None, "mock_value": None}
+
+        @staticmethod
+        def test_raises_KeyError_for_unsupported_keys(
+            cwd, tmp_path: Path, mocker: MockerFixture
+        ):
+            # GIVEN
+            mocker.patch(
+                f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+                {"mock_key": "mock_value"},
+            )
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                '[tool.add_copyright]\nname = "my name"\nflugendorf = "something"'
+            )
+
+            # WHEN
+            with pytest.raises(KeyError) as e:
+                with cwd(tmp_path):
+                    _ = add_copyright._read_default_configuration()
+
+            # THEN
+            assert "flugendorf" in e.exconly()
+
+        @staticmethod
+        def test_language_specific_subkeys(cwd, tmp_path: Path, mocker: MockerFixture):
+            # GIVEN
+            mocker.patch(
+                f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+                {"mock_key": "mock_value"},
+            )
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                '[tool.add_copyright.mock_value]\nformat="<format sentinel>"'
+            )
+
+            # WHEN
+            with cwd(tmp_path):
+                ret = add_copyright._read_default_configuration()
+
+            # THEN
+            assert ret == {
+                "name": None,
+                "format": None,
+                "mock_value": {"format": "<format sentinel>"},
+            }
+
+        @staticmethod
+        def test_raises_KeyError_for_unsupported_language_specific_subkey(
+            cwd, tmp_path: Path, mocker: MockerFixture
+        ):
+            # GIVEN
+            mocker.patch(
+                f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+                {"mock_key": "mock_value"},
+            )
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                '[tool.add_copyright.mock_value]\nformat="<format sentinel>"\nbadkey="something"'  # NOQA: E501
+            )
+
+            # WHEN
+            with pytest.raises(KeyError) as e:
+                with cwd(tmp_path):
+                    _ = add_copyright._read_default_configuration()
+
+            # THEN
+            assert "badkey" in e.exconly()
