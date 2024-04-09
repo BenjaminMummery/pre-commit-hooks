@@ -385,3 +385,87 @@ class TestEnsureComment:
 
             # THEN
             assert "badkey" in e.exconly()
+
+
+class TestEnsureValidFormat:
+    @staticmethod
+    @pytest.mark.parametrize("input", ["{name}{year}"])
+    def test_good_format(input):
+        # All we care about is that the method doesn't raise an error
+        add_copyright._ensure_valid_format(input)
+
+    @staticmethod
+    @pytest.mark.parametrize("input", ["{name}"])
+    def test_bad_format(input):
+        with pytest.raises(KeyError):
+            add_copyright._ensure_valid_format(input)
+
+
+class TestEnsureCopyrightString:
+    @staticmethod
+    def test_explicit_raise_invalid_format(tmp_path: Path, mocker: MockerFixture, cwd):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._ensure_valid_format", Mock(side_effect=KeyError)
+        )
+        tmp_file = tmp_path / "foo"
+
+        # WHEN / THEN
+        with pytest.raises(KeyError):
+            with cwd(tmp_path):
+                _ = add_copyright._ensure_copyright_string(tmp_file, Mock(), Mock())
+
+    @staticmethod
+    def test_early_return_for_existing_copyright(
+        tmp_path: Path, mocker: MockerFixture, cwd
+    ):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format", Mock())
+        mocker.patch(
+            f"{add_copyright.__name__}.get_comment_markers",
+            Mock(return_value=("#", None)),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.parse_copyright_string", Mock(return_value=True)
+        )
+        tmp_file = tmp_path / "foo"
+        tmp_file.write_text("")
+
+        # WHEN
+        with cwd(tmp_path):
+            ret = add_copyright._ensure_copyright_string(tmp_file, Mock(), Mock())
+
+        # THEN
+        assert ret == 0
+
+    @staticmethod
+    def test_uses_current_year_for_no_commits(
+        tmp_path: Path, mocker: MockerFixture, cwd
+    ):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format", Mock())
+        mocker.patch(
+            f"{add_copyright.__name__}.get_comment_markers",
+            Mock(return_value=("#", None)),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.parse_copyright_string", Mock(return_value=False)
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._get_earliest_commit_year",
+            Mock(side_effect=NoCommitsError),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._construct_copyright_string",
+            Mock(return_value="<copyright_string_sentinel>"),
+        )
+        name = Mock()
+        tmp_file = tmp_path / "foo"
+        tmp_file.write_text("")
+
+        # WHEN
+        with cwd(tmp_path):
+            ret = add_copyright._ensure_copyright_string(tmp_file, name, Mock())
+
+        # THEN
+        assert ret == 1
