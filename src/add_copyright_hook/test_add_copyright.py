@@ -131,3 +131,60 @@ class TestHasShebang:
     @pytest.mark.parametrize("input", ["# Not a shebang"])
     def test_returns_false_for_no_shebang(input):
         assert not add_copyright._has_shebang(input)
+
+
+@pytest.mark.parametrize(
+    "content", ["<content sentinel>", "<multi\nline\ncontent\nsentinel>"]
+)
+class TestAddCopyrightStringToContent:
+    @staticmethod
+    def test_simple_content_block(mocker: MockerFixture, content: str):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        copyright = "<copyright sentinel>"
+        content += "\n"
+
+        # WHEN
+        ret = add_copyright._add_copyright_string_to_content(content, copyright)
+
+        # THEN
+        assert ret == f"{copyright}\n\n{content}"
+
+    @staticmethod
+    def test_adds_trailing_newline(mocker: MockerFixture, content: str):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        copyright = "<copyright sentinel>"
+
+        # WHEN
+        ret = add_copyright._add_copyright_string_to_content(content, copyright)
+
+        # THEN
+        assert ret == f"{copyright}\n\n{content}\n"
+
+    @staticmethod
+    def test_keeps_shebang_first(mocker: MockerFixture, content: str):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=True))
+        copyright = "<copyright sentinel>"
+        shebang = "<shebang sentinel>"
+
+        # WHEN
+        ret = add_copyright._add_copyright_string_to_content(
+            shebang + "\n" + content, copyright
+        )
+
+        # THEN
+        assert ret == f"{shebang}\n\n{copyright}\n\n{content}\n"
+
+    @staticmethod
+    def test_handles_leading_newlines(mocker: MockerFixture, content: str):
+        # GIVEN
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        copyright = "<copyright sentinel>"
+
+        # WHEN
+        ret = add_copyright._add_copyright_string_to_content("\n" + content, copyright)
+
+        # THEN
+        assert ret == f"{copyright}\n\n{content}\n"
