@@ -469,3 +469,137 @@ class TestEnsureCopyrightString:
 
         # THEN
         assert ret == 1
+
+
+class TestMain:
+    @staticmethod
+    def test_explicit_raise(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._read_default_configuration",
+            Mock(side_effect=KeyError),
+        )
+
+        # WHEN
+        with pytest.raises(KeyError):
+            add_copyright.main()
+
+    @staticmethod
+    def test_early_return_for_no_files(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._read_default_configuration",
+            Mock(return_value={}),
+        )
+        mocker.patch(f"{add_copyright.__name__}._parse_args", Mock(return_value={}))
+        mocker.patch(
+            f"{add_copyright.__name__}._parse_args", Mock(return_value={"files": []})
+        )
+
+        # WHEN
+        ret = add_copyright.main()
+
+        # THEN
+        assert ret == 0
+
+    @staticmethod
+    def test_all_files_have_copyright(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._read_default_configuration",
+            Mock(
+                return_value={
+                    "format": None,
+                    "name": "<name sentinel>",
+                    "<language key sentinel>": None,
+                }
+            ),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._parse_args",
+            Mock(return_value={"files": ["<file sentinel>"]}),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.identify.tags_from_path",
+            Mock(return_value=["<identify tag sentinel>"]),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._ensure_copyright_string", Mock(return_value=0)
+        )
+
+        # WHEN
+        ret = add_copyright.main()
+
+        # THEN
+        assert ret == 0
+
+    @staticmethod
+    def test_extracting_language_specific_config(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._read_default_configuration",
+            Mock(
+                return_value={
+                    "format": None,
+                    "name": "<name sentinel>",
+                    "<language key sentinel>": {"key_sentinel": "<value sentinel>"},
+                }
+            ),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._parse_args",
+            Mock(return_value={"files": ["<file sentinel>"]}),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.identify.tags_from_path",
+            Mock(return_value=["<identify tag sentinel>"]),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
+            {"<identify tag sentinel>": "<language key sentinel>"},
+        )
+        mock_copyright_string = mocker.patch(
+            f"{add_copyright.__name__}._ensure_copyright_string", Mock(return_value=0)
+        )
+
+        # WHEN
+        _ = add_copyright.main()
+
+        # THEN
+        mock_copyright_string.assert_called_once_with(
+            Path("<file sentinel>"),
+            name="<name sentinel>",
+            format="Copyright (c) {year} {name}",
+            key_sentinel="<value sentinel>",
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize("exception", [KeyError, ValueError])
+    def test_explicit_reraise(mocker: MockerFixture, exception: Exception):
+        # GIVEN
+        mocker.patch(
+            f"{add_copyright.__name__}._read_default_configuration",
+            Mock(
+                return_value={
+                    "format": None,
+                    "name": "<name sentinel>",
+                    "<language key sentinel>": None,
+                }
+            ),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._parse_args",
+            Mock(return_value={"files": ["<file sentinel>"]}),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}.identify.tags_from_path",
+            Mock(return_value=["<identify tag sentinel>"]),
+        )
+        mocker.patch(
+            f"{add_copyright.__name__}._ensure_copyright_string",
+            Mock(side_effect=exception),
+        )
+
+        # WHEN / THEN
+        with pytest.raises(exception):
+            _ = add_copyright.main()
