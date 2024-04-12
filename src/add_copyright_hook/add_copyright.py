@@ -378,6 +378,8 @@ def main():
         int: 1 if files have been modified, 0 otherwise.
     """
     # Build the configuration from config files and CLI args.
+    # Fields that appear in both the configuration and CLI args use the CLI
+    # values.
     try:
         configuration = _read_default_configuration()
     except KeyError:
