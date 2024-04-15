@@ -102,3 +102,49 @@ class TestSortLines:
 
             # THEN
             assert ret == expected
+
+
+class TestSeparateLeadingComment:
+    @staticmethod
+    def test_no_leading_comment():
+        # GIVEN
+        input = ["A", "B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._separate_leading_comment(input)
+
+        # THEN
+        assert ret == (None, input)
+
+    @staticmethod
+    def test_separates_leading_comment():
+        # GIVEN
+        input = ["# A", "B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._separate_leading_comment(input)
+
+        # THEN
+        assert ret == (["# A"], ["B", "C"])
+
+    @staticmethod
+    def test_separates_multiple_leading_comments():
+        # GIVEN
+        input = ["# A", "# B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._separate_leading_comment(input)
+
+        # THEN
+        assert ret == (["# A", "# B"], ["C"])
+
+    @staticmethod
+    def test_leaves_interstitial_comments():
+        # GIVEN
+        input = ["A", "# B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._separate_leading_comment(input)
+
+        # THEN
+        assert ret == (None, input)
