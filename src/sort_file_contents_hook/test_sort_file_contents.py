@@ -148,3 +148,64 @@ class TestSeparateLeadingComment:
 
         # THEN
         assert ret == (None, input)
+
+
+class TestIdentifySection:
+    @staticmethod
+    @pytest.mark.parametrize("input", [[], [""], ["\n"]])
+    def test_early_return_for_no_input(input: List[str]):
+        # WHEN
+        ret = sort_file_contents._identify_sections(input)
+
+        # THEN
+        assert ret == [[]]
+
+    @staticmethod
+    def test_early_return_for_single_line():
+        # GIVEN
+        input = ["<sentinel>"]
+
+        # WHEN
+        ret = sort_file_contents._identify_sections(input)
+
+        # THEN
+        assert ret == [input]
+
+    @staticmethod
+    def test_identifies_single_section():
+        # GIVEN
+        input = ["<line 1 sentinel>", "<line 2 sentinel>"]
+
+        # WHEN
+        ret = sort_file_contents._identify_sections(input)
+
+        # THEN
+        assert ret == [input]
+
+    @staticmethod
+    def test_identifies_multiple_section():
+        # GIVEN
+        input = ["<line 1 sentinel>", "<line 2 sentinel>", "", "<line 3 sentinel>"]
+
+        # WHEN
+        ret = sort_file_contents._identify_sections(input)
+
+        # THEN
+        assert ret == [
+            ["<line 1 sentinel>", "<line 2 sentinel>"],
+            ["<line 3 sentinel>"],
+        ]
+
+    @staticmethod
+    def test_handles_multiple_linebreaks():
+        # GIVEN
+        input = ["<line 1 sentinel>", "<line 2 sentinel>", "", "", "<line 3 sentinel>"]
+
+        # WHEN
+        ret = sort_file_contents._identify_sections(input)
+
+        # THEN
+        assert ret == [
+            ["<line 1 sentinel>", "<line 2 sentinel>"],
+            ["<line 3 sentinel>"],
+        ]
