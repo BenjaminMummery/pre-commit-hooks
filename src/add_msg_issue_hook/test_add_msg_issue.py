@@ -1,12 +1,16 @@
 # Copyright (c) 2024 Benjamin Mummery
 
-from unittest.mock import Mock
+from unittest.mock import Mock, create_autospec
 
 import pytest
 from pytest_mock import MockerFixture
 
 from src.add_msg_issue_hook import add_msg_issue
-from src.add_msg_issue_hook.add_msg_issue import BranchNameReadError, subprocess
+from src.add_msg_issue_hook.add_msg_issue import (
+    BranchNameReadError,
+    argparse,
+    subprocess,
+)
 
 
 class TestGetBranchName:
@@ -202,3 +206,60 @@ class TestInsertIssueIntoMessage:
                 ret
                 == "<template sentinel>\n<subject sentinel>\n<issue sentinel>\n\n# <body sentinel>"  # noqa: E501
             )
+
+
+class TestParseArgs:
+    @staticmethod
+    def test_parse_args(mocker: MockerFixture):
+        # GIVEN
+        mocked_namespace = create_autospec(argparse.Namespace)
+        mocked_namespace.template = "{subject}{body}{issue_id}"
+        mocked_argparse = create_autospec(argparse.ArgumentParser)
+        mocked_argparse.parse_args.return_value = mocked_namespace
+        mocker.patch(
+            f"{add_msg_issue.__name__}.argparse.ArgumentParser",
+            Mock(return_value=mocked_argparse),
+        )
+
+        # WHEN
+        ret = add_msg_issue._parse_args()
+
+        # THEN
+        assert ret == mocked_namespace
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "template", ["{body}{issue_id}", "{subject}{issue_id}", "{subject}{body}"]
+    )
+    def test_raises_keyerror_for_missing_template_key(
+        mocker: MockerFixture, template: str
+    ):
+        # GIVEN
+        mocked_namespace = create_autospec(argparse.Namespace)
+        mocked_namespace.template = template
+        mocked_argparse = create_autospec(argparse.ArgumentParser)
+        mocked_argparse.parse_args.return_value = mocked_namespace
+        mocker.patch(
+            f"{add_msg_issue.__name__}.argparse.ArgumentParser",
+            Mock(return_value=mocked_argparse),
+        )
+
+        # WHEN / THEN
+        with pytest.raises(KeyError):
+            _ = add_msg_issue._parse_args()
+
+    @staticmethod
+    def test_raises_keyerror_for_unrecognised_template_key(mocker: MockerFixture):
+        # GIVEN
+        mocked_namespace = create_autospec(argparse.Namespace)
+        mocked_namespace.template = "{subject}{body}{issue_id}{something_else}"
+        mocked_argparse = create_autospec(argparse.ArgumentParser)
+        mocked_argparse.parse_args.return_value = mocked_namespace
+        mocker.patch(
+            f"{add_msg_issue.__name__}.argparse.ArgumentParser",
+            Mock(return_value=mocked_argparse),
+        )
+
+        # WHEN / THEN
+        with pytest.raises(KeyError):
+            _ = add_msg_issue._parse_args()
