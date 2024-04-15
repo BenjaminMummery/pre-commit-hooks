@@ -209,3 +209,49 @@ class TestIdentifySection:
             ["<line 1 sentinel>", "<line 2 sentinel>"],
             ["<line 3 sentinel>"],
         ]
+
+
+class TestFindDuplicates:
+    @staticmethod
+    def test_no_lines():
+        # GIVEN
+        input: List[str] = []
+
+        # WHEN
+        ret = sort_file_contents._find_duplicates(input)
+
+        # THEN
+        assert ret == []
+
+    @staticmethod
+    def test_no_duplicates():
+        # GIVEN
+        input = ["A", "B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._find_duplicates(input)
+
+        # THEN
+        assert ret == []
+
+    @staticmethod
+    def test_finds_single_case_of_duplicates():
+        # GIVEN
+        input = ["A", "B", "B", "C"]
+
+        # WHEN
+        ret = sort_file_contents._find_duplicates(input)
+
+        # THEN
+        assert ret == [("B", 2)]
+
+    @staticmethod
+    def test_finds_multiple_duplicates():
+        # GIVEN
+        input = ["A", "B", "B", "C", "A", "A"]
+
+        # WHEN
+        ret = sort_file_contents._find_duplicates(input)
+
+        # THEN
+        assert ret == [("A", 3), ("B", 2)]
