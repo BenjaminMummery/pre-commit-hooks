@@ -115,30 +115,90 @@ class TestIssueIsInMessage:
 
 
 class TestInsertIssueIntoMessage:
-    @staticmethod
-    def test_early_return_if_message_starts_with_comment():
-        # GIVEN
-        issue = "SDK-1123"
-        message = "# Some comment\n\nNot a comment down here."
-        template = Mock()
+    class TestMessageStartsWithComment:
+        @staticmethod
+        def test_single_line_message():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "# <message sentinel>"
+            template = Mock()
 
-        # WHEN
-        ret = add_msg_issue._insert_issue_into_message(issue, message, template)
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(issue, message, template)
 
-        # THEN
-        assert ret == f"{message}\n[{issue}]"
+            # THEN
+            assert ret == f"{message}\n[{issue}]"
 
-    @staticmethod
-    def test_handles_trailing_newline_in_message():
-        # GIVEN
-        issue = "SDK-1123"
-        message = "# Some comment\n\nNot a comment down here."
-        template = Mock()
+        @staticmethod
+        def test_multi_line_message():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "# <message sentinel>\n\n<message content sentinel>"
+            template = Mock()
 
-        # WHEN
-        ret = add_msg_issue._insert_issue_into_message(
-            issue, message + "\n\n", template
-        )
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(issue, message, template)
 
-        # THEN
-        assert ret == f"{message}\n[{issue}]"
+            # THEN
+            assert ret == f"{message}\n[{issue}]"
+
+        @staticmethod
+        def test_handles_trailing_newline_in_message():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "# <message sentinel>"
+            template = Mock()
+
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(
+                issue, message + "\n\n", template
+            )
+
+            # THEN
+            assert ret == f"{message}\n[{issue}]"
+
+    class TestMessageStartsWithContent:
+        @staticmethod
+        def test_subject_only():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "<message sentinel>"
+            template = "<template sentinel>\n{subject}\n{issue_id}\n{body}"
+
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(issue, message, template)
+
+            # THEN
+            assert ret == "<template sentinel>\n<message sentinel>\n<issue sentinel>"
+
+        @staticmethod
+        def test_subject_and_body():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "<subject sentinel>\n\n<body sentinel>"
+            template = "<template sentinel>\n{subject}\n{issue_id}\n{body}"
+
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(issue, message, template)
+
+            # THEN
+            assert (
+                ret
+                == "<template sentinel>\n<subject sentinel>\n<issue sentinel>\n<body sentinel>"  # noqa: E501
+            )
+
+        @staticmethod
+        def test_handles_comment_led_body():
+            # GIVEN
+            issue = "<issue sentinel>"
+            message = "<subject sentinel>\n\n# <body sentinel>"
+            template = "<template sentinel>\n{subject}\n{issue_id}\n{body}"
+
+            # WHEN
+            ret = add_msg_issue._insert_issue_into_message(issue, message, template)
+
+            # THEN
+            assert (
+                ret
+                == "<template sentinel>\n<subject sentinel>\n<issue sentinel>\n\n# <body sentinel>"  # noqa: E501
+            )
