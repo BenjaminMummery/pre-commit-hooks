@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """
 Sort file contents while preserving section structure.
@@ -96,7 +96,7 @@ def _identify_sections(lines: t.List[str]) -> t.List[t.List[str]]:
     """
     blank_lines = ["\n", ""]
 
-    # Early exit for empty file
+    # Early exit for empty or single line file
     if len(lines) < 2:
         return [[line for line in lines if line not in blank_lines]]
 
