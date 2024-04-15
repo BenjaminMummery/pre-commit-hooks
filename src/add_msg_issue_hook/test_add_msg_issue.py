@@ -1,6 +1,6 @@
 # Copyright (c) 2024 Benjamin Mummery
 
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, create_autospec, mock_open
 
 import pytest
 from pytest_mock import MockerFixture
@@ -263,3 +263,109 @@ class TestParseArgs:
         # WHEN / THEN
         with pytest.raises(KeyError):
             _ = add_msg_issue._parse_args()
+
+
+class TestMain:
+    @staticmethod
+    def test_explicit_re_raise_of_BranchNameReadError(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_msg_issue.__name__}._parse_args",
+            Mock(),
+        )
+        mocker.patch(
+            f"{add_msg_issue.__name__}._get_branch_name",
+            Mock(side_effect=BranchNameReadError),
+        )
+        mocker.patch(
+            f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
+            mocked_get_issue_ids := Mock(),
+        )
+        mocker.patch("builtins.open", mocked_open := Mock())
+        mocker.patch(
+            f"{add_msg_issue.__name__}._issue_is_in_message",
+            mocked_issue_in_message := Mock(),
+        )
+
+        # WHEN
+        with pytest.raises(BranchNameReadError):
+            _ = add_msg_issue.main()
+
+        # THEN
+        mocked_get_issue_ids.assert_not_called()
+        mocked_open.assert_not_called()
+        mocked_issue_in_message.assert_not_called()
+
+    @staticmethod
+    def test_early_return_for_no_issues(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_msg_issue.__name__}._parse_args",
+            Mock(),
+        )
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(
+            f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
+            Mock(return_value=[]),
+        )
+        mocker.patch("builtins.open", mocked_open := Mock())
+        mocker.patch(
+            f"{add_msg_issue.__name__}._issue_is_in_message",
+            mocked_issue_in_message := Mock(),
+        )
+
+        # WHEN
+        ret = add_msg_issue.main()
+
+        # THEN
+        assert ret == 0
+        mocked_open.assert_not_called()
+        mocked_issue_in_message.assert_not_called()
+
+    @staticmethod
+    def test_early_return_for_issue_already_in_message(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_msg_issue.__name__}._parse_args",
+            Mock(),
+        )
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(
+            f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
+            Mock(return_value=["<issue sentinel>"]),
+        )
+        mocker.patch("builtins.open", mock_open(read_data="<message sentinel>"))
+        mocker.patch(
+            f"{add_msg_issue.__name__}._issue_is_in_message",
+            Mock(return_value=True),
+        )
+
+        # WHEN
+        ret = add_msg_issue.main()
+
+        # THEN
+        assert ret == 0
+
+    @staticmethod
+    def test_write(mocker: MockerFixture):
+        # GIVEN
+        mocker.patch(
+            f"{add_msg_issue.__name__}._parse_args",
+            Mock(),
+        )
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(
+            f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
+            Mock(return_value=["<issue sentinel>"]),
+        )
+        mocker.patch("builtins.open", mock_open(read_data="<message sentinel>"))
+        mocker.patch(
+            f"{add_msg_issue.__name__}._issue_is_in_message",
+            Mock(return_value=False),
+        )
+
+        # WHEN
+        ret = add_msg_issue.main()
+
+        # THEN
+        assert ret == 0
