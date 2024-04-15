@@ -20,7 +20,7 @@ from src.add_copyright_hook.add_copyright import (
 @pytest.fixture()
 def mock_repo(mocker: MockerFixture) -> add_copyright.Repo:
     mocked_repo = create_autospec(Repo)
-    mocker.patch(f"{add_copyright.__name__}.Repo", Mock(return_value=mocked_repo))
+    mocker.patch(f"{add_copyright.__name__}.Repo", return_value=mocked_repo)
     return mocked_repo
 
 
@@ -34,7 +34,7 @@ class TestGetEarliestCommitYear:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}.Repo",
-            Mock(side_effect=InvalidGitRepositoryError),
+            side_effect=InvalidGitRepositoryError,
         )
 
         # WHEN / THEN
@@ -77,7 +77,7 @@ class TestParseArgs:
         mocked_argparse = create_autospec(argparse.ArgumentParser)
         mocker.patch(
             f"{add_copyright.__name__}.argparse.ArgumentParser",
-            Mock(return_value=mocked_argparse),
+            return_value=mocked_argparse,
         )
         mocker.patch(
             f"{add_copyright.__name__}.resolvers.resolve_files",
@@ -140,7 +140,7 @@ class TestAddCopyrightStringToContent:
     @staticmethod
     def test_simple_content_block(mocker: MockerFixture, content: str):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", return_value=False)
         copyright = "<copyright sentinel>"
         content += "\n"
 
@@ -153,7 +153,7 @@ class TestAddCopyrightStringToContent:
     @staticmethod
     def test_adds_trailing_newline(mocker: MockerFixture, content: str):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", return_value=False)
         copyright = "<copyright sentinel>"
 
         # WHEN
@@ -165,7 +165,7 @@ class TestAddCopyrightStringToContent:
     @staticmethod
     def test_keeps_shebang_first(mocker: MockerFixture, content: str):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=True))
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", return_value=True)
         copyright = "<copyright sentinel>"
         shebang = "<shebang sentinel>"
 
@@ -180,7 +180,7 @@ class TestAddCopyrightStringToContent:
     @staticmethod
     def test_handles_leading_newlines(mocker: MockerFixture, content: str):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._has_shebang", Mock(return_value=False))
+        mocker.patch(f"{add_copyright.__name__}._has_shebang", return_value=False)
         copyright = "<copyright sentinel>"
 
         # WHEN
@@ -199,8 +199,10 @@ class TestConstructCopyrightString:
         end_year = start_year
         format = "year: {year}, name: {name}"
         comment_markers = Mock()
-        mocked_ensure_comment = Mock(return_value="<return sentinel>")
-        mocker.patch(f"{add_copyright.__name__}._ensure_comment", mocked_ensure_comment)
+        mocked_ensure_comment = mocker.patch(
+            f"{add_copyright.__name__}._ensure_comment",
+            return_value="<return sentinel>",
+        )
 
         # WHEN
         ret = add_copyright._construct_copyright_string(
@@ -220,8 +222,10 @@ class TestConstructCopyrightString:
         end_year = 3000
         format = "year: {year}, name: {name}"
         comment_markers = Mock()
-        mocked_ensure_comment = Mock(return_value="<return sentinel>")
-        mocker.patch(f"{add_copyright.__name__}._ensure_comment", mocked_ensure_comment)
+        mocked_ensure_comment = mocker.patch(
+            f"{add_copyright.__name__}._ensure_comment",
+            return_value="<return sentinel>",
+        )
 
         # WHEN
         ret = add_copyright._construct_copyright_string(
@@ -406,7 +410,7 @@ class TestEnsureCopyrightString:
     def test_explicit_raise_invalid_format(tmp_path: Path, mocker: MockerFixture, cwd):
         # GIVEN
         mocker.patch(
-            f"{add_copyright.__name__}._ensure_valid_format", Mock(side_effect=KeyError)
+            f"{add_copyright.__name__}._ensure_valid_format", side_effect=KeyError
         )
         tmp_file = tmp_path / "foo"
 
@@ -420,13 +424,13 @@ class TestEnsureCopyrightString:
         tmp_path: Path, mocker: MockerFixture, cwd
     ):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format", Mock())
+        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format")
         mocker.patch(
             f"{add_copyright.__name__}.get_comment_markers",
-            Mock(return_value=("#", None)),
+            return_value=("#", None),
         )
         mocker.patch(
-            f"{add_copyright.__name__}.parse_copyright_string", Mock(return_value=True)
+            f"{add_copyright.__name__}.parse_copyright_string", return_value=True
         )
         tmp_file = tmp_path / "foo"
         tmp_file.write_text("")
@@ -443,21 +447,21 @@ class TestEnsureCopyrightString:
         tmp_path: Path, mocker: MockerFixture, cwd
     ):
         # GIVEN
-        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format", Mock())
+        mocker.patch(f"{add_copyright.__name__}._ensure_valid_format")
         mocker.patch(
             f"{add_copyright.__name__}.get_comment_markers",
-            Mock(return_value=("#", None)),
+            return_value=("#", None),
         )
         mocker.patch(
-            f"{add_copyright.__name__}.parse_copyright_string", Mock(return_value=False)
+            f"{add_copyright.__name__}.parse_copyright_string", return_value=False
         )
         mocker.patch(
             f"{add_copyright.__name__}._get_earliest_commit_year",
-            Mock(side_effect=NoCommitsError),
+            side_effect=NoCommitsError,
         )
         mocker.patch(
             f"{add_copyright.__name__}._construct_copyright_string",
-            Mock(return_value="<copyright_string_sentinel>"),
+            return_value="<copyright_string_sentinel>",
         )
         name = Mock()
         tmp_file = tmp_path / "foo"
@@ -477,7 +481,7 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}._read_default_configuration",
-            Mock(side_effect=KeyError),
+            side_effect=KeyError,
         )
 
         # WHEN
@@ -489,11 +493,11 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}._read_default_configuration",
-            Mock(return_value={}),
+            return_value={},
         )
-        mocker.patch(f"{add_copyright.__name__}._parse_args", Mock(return_value={}))
+        mocker.patch(f"{add_copyright.__name__}._parse_args", return_value={})
         mocker.patch(
-            f"{add_copyright.__name__}._parse_args", Mock(return_value={"files": []})
+            f"{add_copyright.__name__}._parse_args", return_value={"files": []}
         )
 
         # WHEN
@@ -507,24 +511,22 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}._read_default_configuration",
-            Mock(
-                return_value={
-                    "format": None,
-                    "name": "<name sentinel>",
-                    "<language key sentinel>": None,
-                }
-            ),
+            return_value={
+                "format": None,
+                "name": "<name sentinel>",
+                "<language key sentinel>": None,
+            },
         )
         mocker.patch(
             f"{add_copyright.__name__}._parse_args",
-            Mock(return_value={"files": ["<file sentinel>"]}),
+            return_value={"files": ["<file sentinel>"]},
         )
         mocker.patch(
             f"{add_copyright.__name__}.identify.tags_from_path",
-            Mock(return_value=["<identify tag sentinel>"]),
+            return_value=["<identify tag sentinel>"],
         )
         mocker.patch(
-            f"{add_copyright.__name__}._ensure_copyright_string", Mock(return_value=0)
+            f"{add_copyright.__name__}._ensure_copyright_string", return_value=0
         )
 
         # WHEN
@@ -538,28 +540,26 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}._read_default_configuration",
-            Mock(
-                return_value={
-                    "format": None,
-                    "name": "<name sentinel>",
-                    "<language key sentinel>": {"key_sentinel": "<value sentinel>"},
-                }
-            ),
+            return_value={
+                "format": None,
+                "name": "<name sentinel>",
+                "<language key sentinel>": {"key_sentinel": "<value sentinel>"},
+            },
         )
         mocker.patch(
             f"{add_copyright.__name__}._parse_args",
-            Mock(return_value={"files": ["<file sentinel>"]}),
+            return_value={"files": ["<file sentinel>"]},
         )
         mocker.patch(
             f"{add_copyright.__name__}.identify.tags_from_path",
-            Mock(return_value=["<identify tag sentinel>"]),
+            return_value=["<identify tag sentinel>"],
         )
         mocker.patch(
             f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
             {"<identify tag sentinel>": "<language key sentinel>"},
         )
         mock_copyright_string = mocker.patch(
-            f"{add_copyright.__name__}._ensure_copyright_string", Mock(return_value=0)
+            f"{add_copyright.__name__}._ensure_copyright_string", return_value=0
         )
 
         # WHEN
@@ -579,25 +579,23 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_copyright.__name__}._read_default_configuration",
-            Mock(
-                return_value={
-                    "format": None,
-                    "name": "<name sentinel>",
-                    "<language key sentinel>": None,
-                }
-            ),
+            return_value={
+                "format": None,
+                "name": "<name sentinel>",
+                "<language key sentinel>": None,
+            },
         )
         mocker.patch(
             f"{add_copyright.__name__}._parse_args",
-            Mock(return_value={"files": ["<file sentinel>"]}),
+            return_value={"files": ["<file sentinel>"]},
         )
         mocker.patch(
             f"{add_copyright.__name__}.identify.tags_from_path",
-            Mock(return_value=["<identify tag sentinel>"]),
+            return_value=["<identify tag sentinel>"],
         )
         mocker.patch(
             f"{add_copyright.__name__}._ensure_copyright_string",
-            Mock(side_effect=exception),
+            side_effect=exception,
         )
 
         # WHEN / THEN

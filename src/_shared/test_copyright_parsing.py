@@ -17,7 +17,7 @@ from . import copyright_parsing
 def mock_ParsedCopyrightString(mocker: MockerFixture):
     return mocker.patch(
         "src._shared.copyright_parsing.ParsedCopyrightString",
-        Mock(return_value="<mock_ParsedCopyrightString return sentinel>"),
+        return_value="<mock_ParsedCopyrightString return sentinel>",
     )
 
 
@@ -25,7 +25,7 @@ def mock_ParsedCopyrightString(mocker: MockerFixture):
 def mock_parse_copyright_string(mocker: MockerFixture):
     return mocker.patch(
         "src._shared.copyright_parsing.parse_copyright_string",
-        Mock(return_value="<mock_parse_copyright_string return sentinel>"),
+        return_value="<mock_parse_copyright_string return sentinel>",
     )
 
 

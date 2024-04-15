@@ -265,9 +265,9 @@ class TestFindCommentClashes:
     @pytest.mark.parametrize("input", [[], ["A", "B", "C"]])
     def test_no_comments(input: List[str], mocker: MockerFixture):
         # GIVEN
-        mocker.patch(
+        mocked_find_dupl = mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
-            mocked_find_dupl := Mock(return_value=[]),
+            return_value=[],
         )
 
         # WHEN
@@ -279,9 +279,9 @@ class TestFindCommentClashes:
     @staticmethod
     def test_comments(mocker: MockerFixture):
         # GIVEN
-        mocker.patch(
+        mocked_find_dupl = mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
-            mocked_find_dupl := Mock(return_value=[]),
+            return_value=[],
         )
         input = ["A", "# B", "C"]
 
@@ -296,7 +296,7 @@ class TestFindCommentClashes:
         # GIVEN
         mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
-            Mock(return_value=[("<sentinel 1>", Mock()), ("<sentinel 2>", Mock())]),
+            return_value=[("<sentinel 1>", Mock()), ("<sentinel 2>", Mock())],
         )
         input: List[str] = []
 
@@ -315,30 +315,26 @@ class TestSortContents:
             "builtins.open",
             mock_open(read_data="<line A sentinel>\n<line B sentinel>"),
         )
-        mocker.patch(
+        mocked_identify_section = mocker.patch(
             f"{sort_file_contents.__name__}._identify_sections",
-            mocked_identify_section := Mock(return_value=["<section sentinel>"]),
+            return_value=["<section sentinel>"],
         )
-        mocker.patch(
+        mocked_separate_leading_comment = mocker.patch(
             f"{sort_file_contents.__name__}._separate_leading_comment",
-            mocked_separate_leading_comment := Mock(
-                return_value=(
-                    ["<section header sentinel>"],
-                    ["<section body sentinel>"],
-                )
+            return_value=(
+                ["<section header sentinel>"],
+                ["<section body sentinel>"],
             ),
         )
-        mocker.patch(
+        mocked_sort_lines = mocker.patch(
             f"{sort_file_contents.__name__}._sort_lines",
-            mocked_sort_lines := Mock(return_value=["<section body sentinel>"]),
+            return_value=["<section body sentinel>"],
         )
-        mocker.patch(
+        mocked_find_duplicates = mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
-            mocked_find_duplicates := Mock(),
         )
-        mocker.patch(
+        mocked_find_comment_clashes = mocker.patch(
             f"{sort_file_contents.__name__}._find_comment_clashes",
-            mocked_find_comment_clashes := Mock(),
         )
 
         # WHEN
@@ -363,19 +359,19 @@ class TestSortContents:
             "builtins.open",
             mock_open(read_data="<line A sentinel>\n<line B sentinel>"),
         )
-        mocked_identify_section=mocker.patch(
+        mocked_identify_section = mocker.patch(
             f"{sort_file_contents.__name__}._identify_sections",
             return_value=["<section sentinel>"],
         )
-        mocked_separate_leading_comment=mocker.patch(
+        mocked_separate_leading_comment = mocker.patch(
             f"{sort_file_contents.__name__}._separate_leading_comment",
-            return_value=(["<section header sentinel>"], None)
+            return_value=(["<section header sentinel>"], None),
         )
-        mocked_sort_lines=mocker.patch(
+        mocked_sort_lines = mocker.patch(
             f"{sort_file_contents.__name__}._sort_lines",
             return_value=["<section body sentinel>"],
         )
-        mocked_find_duplicates=mocker.patch(
+        mocked_find_duplicates = mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
         )
         mocked_find_comment_clashes = mocker.patch(
@@ -413,11 +409,11 @@ class TestSortContents:
                 ["<section body sentinel>"],
             ),
         )
-        mocked_sort_lines=mocker.patch(
+        mocked_sort_lines = mocker.patch(
             f"{sort_file_contents.__name__}._sort_lines",
             return_value=["<altered section body sentinel>"],
         )
-        mocked_find_duplicates=mocker.patch(
+        mocked_find_duplicates = mocker.patch(
             f"{sort_file_contents.__name__}._find_duplicates",
         )
         mocked_find_comment_clashes = mocker.patch(
@@ -551,7 +547,7 @@ class TestSortContents:
             return_value=(
                 ["<section header sentinel>"],
                 ["<section body sentinel>"],
-            )
+            ),
         )
         mocked_sort_lines = mocker.patch(
             f"{sort_file_contents.__name__}._sort_lines",
@@ -563,7 +559,7 @@ class TestSortContents:
         )
         mocked_find_comment_clashes = mocker.patch(
             f"{sort_file_contents.__name__}._find_comment_clashes",
-             return_value=["<clash sentinel"],
+            return_value=["<clash sentinel"],
         )
 
         # WHEN

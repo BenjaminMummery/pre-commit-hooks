@@ -19,7 +19,7 @@ class TestGetBranchName:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}.subprocess.check_output",
-            Mock(side_effect=subprocess.CalledProcessError(0, "<cmd sentinel>")),
+            side_effect=subprocess.CalledProcessError(0, "<cmd sentinel>"),
         )
 
         # WHEN
@@ -37,7 +37,7 @@ class TestGetBranchName:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}.subprocess.check_output",
-            Mock(return_value="<branch name sentinel>"),
+            return_value="<branch name sentinel>",
         )
 
         # WHEN
@@ -51,7 +51,7 @@ class TestGetBranchName:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}.subprocess.check_output",
-            Mock(return_value="   <branch name sentinel>   "),
+            return_value="   <branch name sentinel>   ",
         )
 
         # WHEN
@@ -218,7 +218,7 @@ class TestParseArgs:
         mocked_argparse.parse_args.return_value = mocked_namespace
         mocker.patch(
             f"{add_msg_issue.__name__}.argparse.ArgumentParser",
-            Mock(return_value=mocked_argparse),
+            return_value=mocked_argparse,
         )
 
         # WHEN
@@ -241,7 +241,7 @@ class TestParseArgs:
         mocked_argparse.parse_args.return_value = mocked_namespace
         mocker.patch(
             f"{add_msg_issue.__name__}.argparse.ArgumentParser",
-            Mock(return_value=mocked_argparse),
+            return_value=mocked_argparse,
         )
 
         # WHEN / THEN
@@ -257,7 +257,7 @@ class TestParseArgs:
         mocked_argparse.parse_args.return_value = mocked_namespace
         mocker.patch(
             f"{add_msg_issue.__name__}.argparse.ArgumentParser",
-            Mock(return_value=mocked_argparse),
+            return_value=mocked_argparse,
         )
 
         # WHEN / THEN
@@ -271,20 +271,17 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}._parse_args",
-            Mock(),
         )
         mocker.patch(
             f"{add_msg_issue.__name__}._get_branch_name",
-            Mock(side_effect=BranchNameReadError),
+            side_effect=BranchNameReadError,
         )
-        mocker.patch(
+        mocked_get_issue_ids = mocker.patch(
             f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
-            mocked_get_issue_ids := Mock(),
         )
-        mocker.patch("builtins.open", mocked_open := Mock())
-        mocker.patch(
+        mocked_open = mocker.patch("builtins.open")
+        mocked_issue_in_message = mocker.patch(
             f"{add_msg_issue.__name__}._issue_is_in_message",
-            mocked_issue_in_message := Mock(),
         )
 
         # WHEN
@@ -301,17 +298,15 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}._parse_args",
-            Mock(),
         )
-        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name")
         mocker.patch(
             f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
-            Mock(return_value=[]),
+            return_value=[],
         )
-        mocker.patch("builtins.open", mocked_open := Mock())
-        mocker.patch(
+        mocked_open = mocker.patch("builtins.open")
+        mocked_issue_in_message = mocker.patch(
             f"{add_msg_issue.__name__}._issue_is_in_message",
-            mocked_issue_in_message := Mock(),
         )
 
         # WHEN
@@ -327,17 +322,16 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}._parse_args",
-            Mock(),
         )
-        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name")
         mocker.patch(
             f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
-            Mock(return_value=["<issue sentinel>"]),
+            return_value=["<issue sentinel>"],
         )
         mocker.patch("builtins.open", mock_open(read_data="<message sentinel>"))
         mocker.patch(
             f"{add_msg_issue.__name__}._issue_is_in_message",
-            Mock(return_value=True),
+            return_value=True,
         )
 
         # WHEN
@@ -351,17 +345,16 @@ class TestMain:
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}._parse_args",
-            Mock(),
         )
-        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name", Mock())
+        mocker.patch(f"{add_msg_issue.__name__}._get_branch_name")
         mocker.patch(
             f"{add_msg_issue.__name__}._get_issue_ids_from_branch_name",
-            Mock(return_value=["<issue sentinel>"]),
+            return_value=["<issue sentinel>"],
         )
         mocker.patch("builtins.open", mock_open(read_data="<message sentinel>"))
         mocker.patch(
             f"{add_msg_issue.__name__}._issue_is_in_message",
-            Mock(return_value=False),
+            return_value=False,
         )
 
         # WHEN
