@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2022 - 2023 Benjamin Mummery
+# Copyright (c) 2022 - 2024 Benjamin Mummery
 
 """
 Parse the branch name for anything resembling an issue id, and add it to the commit msg.
@@ -23,7 +23,7 @@ FALLBACK_TEMPLATE: str = "{message}\n[{issue_id}]"
 
 
 class BranchNameReadError(BaseException):
-    """Raised when the name of the curtrent git branch cannot be read."""
+    """Raised when the name of the current git branch cannot be read."""
 
     pass
 
@@ -87,7 +87,7 @@ def _issue_is_in_message(issue_id: str, message: str) -> bool:
         line.strip() for line in message.split("\n") if not line.strip().startswith("#")
     ]
     for line in lines:
-        if issue_id in line:
+        if issue_id.lower() in line.lower():
             return True
     return False
 
@@ -124,7 +124,9 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
     # Early return - if the identified subject line is a comment, and will therefore be
     # ignored by Git
     if subject.startswith("#"):
-        return FALLBACK_TEMPLATE.format(issue_id=issue_id, message=message).strip()
+        return FALLBACK_TEMPLATE.format(
+            issue_id=issue_id, message=message.strip("\n")
+        ).strip()
 
     if body.startswith("#"):
         # Depending on the template, a body starting with a comment could be appended

@@ -1,11 +1,15 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
+
+import typing
 
 import pytest
 
-from src._shared import exceptions
-from tests.conftest import assert_matching
+from conftest import assert_matching
+
+from . import exceptions
 
 
+@typing.no_type_check
 def raiser(exception: Exception):
     raise exception("<sentinel>")
 

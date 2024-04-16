@@ -12,7 +12,7 @@ exclude: |
 repos:
   # GENERAL PURPOSE  ##################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
         args: [--maxkb=500]
@@ -38,7 +38,7 @@ repos:
       - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: 3.11.0
+    rev: v3.21.3
     hooks:
       - id: commitizen
 
@@ -49,10 +49,11 @@ repos:
         args: [-w]
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.5.0
+    rev: v2.0.0
     hooks:
       - id: add-copyright
       - id: add-msg-issue
+      - id: update-copyright
       - id: sort-file-contents
         files: .gitignore
 
@@ -76,13 +77,13 @@ repos:
 
   # MARKDOWN  #########################################################################
   - repo: https://github.com/frnmst/md-toc
-    rev: 8.2.0
+    rev: 8.2.3
     hooks:
       - id: md-toc
 
   # PYTHON  ###########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
@@ -93,13 +94,13 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: pycln
         exclude: __init__.py
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         args: [--profile, black]
@@ -110,7 +111,7 @@ repos:
       - id: rm-unneeded-f-str
 
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 24.3.0
     hooks:
       - id: black
 
@@ -122,17 +123,17 @@ repos:
         additional_dependencies: [pyproject-flake8]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.0
+    rev: v1.9.0
     hooks:
       - id: mypy
         additional_dependencies: ["types-all"]
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings
-    rev: 1.5.0
+    rev: 1.7.0
     hooks:
       - id: interrogate
         args: [--config=pyproject.toml]
-        exclude: ^tests/
+        exclude: test_.*\.py|conftest.py
 
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
@@ -140,16 +141,16 @@ repos:
     - id: pydocstyle
       args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
       additional_dependencies: [tomli]
-      exclude: ^tests/
+      exclude: test_.*\.py|conftest.py
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-yaml
 
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.13.0
+    rev: 1.16.0
     hooks:
       - id: yamlfix
         exclude: .pre-commit-config.yaml

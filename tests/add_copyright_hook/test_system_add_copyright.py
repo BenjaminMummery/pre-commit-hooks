@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Benjamin Mummery
+# Copyright (c) 2022-2024 Benjamin Mummery
 
 import datetime
 import os
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pytest_git import GitRepo
 
-from tests.conftest import (
+from conftest import (
     CopyrightGlobals,
     SupportedLanguage,
     add_changed_files,

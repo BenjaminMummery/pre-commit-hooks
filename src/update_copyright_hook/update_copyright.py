@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """
 Scan source files for anything resembling a copyright string, updating dates.
@@ -40,9 +40,11 @@ def _update_copyright_dates(file: Path) -> int:
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
 
+        # Early return for no copyright string in file
         if not (copyright_string := parse_copyright_string(content, comment_markers)):
             return 0
 
+        # Early return for up to date copyright string
         if copyright_string.end_year == (
             copyright_end_year := datetime.date.today().year
         ):

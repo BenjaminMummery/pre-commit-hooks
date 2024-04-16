@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from typing import Optional, Tuple
 from unittest.mock import Mock
@@ -6,9 +6,10 @@ from unittest.mock import Mock
 import pytest
 from pytest_mock import MockerFixture
 
-from src._shared import copyright_parsing
+from conftest import assert_matching
 from src._shared.comment_mapping import COMMENT_MARKERS
-from tests.conftest import assert_matching
+
+from . import copyright_parsing
 
 
 # region: fixtures mocking all public functions, classes, and methods.
@@ -16,7 +17,7 @@ from tests.conftest import assert_matching
 def mock_ParsedCopyrightString(mocker: MockerFixture):
     return mocker.patch(
         "src._shared.copyright_parsing.ParsedCopyrightString",
-        Mock(return_value="<mock_ParsedCopyrightString return sentinel>"),
+        return_value="<mock_ParsedCopyrightString return sentinel>",
     )
 
 
@@ -24,7 +25,7 @@ def mock_ParsedCopyrightString(mocker: MockerFixture):
 def mock_parse_copyright_string(mocker: MockerFixture):
     return mocker.patch(
         "src._shared.copyright_parsing.parse_copyright_string",
-        Mock(return_value="<mock_parse_copyright_string return sentinel>"),
+        return_value="<mock_parse_copyright_string return sentinel>",
     )
 
 

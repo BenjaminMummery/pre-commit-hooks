@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """
 Check that source files contain a copyright string, and add one to files that don't.
@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
-from git import GitCommandError, Repo
+from git import GitCommandError, InvalidGitRepositoryError, Repo
 from identify import identify
 
 from src._shared import resolvers
@@ -45,13 +45,18 @@ def _get_earliest_commit_year(file: Path) -> int:
         file (Path): The path to the file to be checked
 
     Raises:
+        InvalidGitRepositoryError: when the hook is called in a directory that
+        is not a git repository.
         NoCommitsError: when the file has no commits for us to examine the blame.
 
     Returns:
         int: The year of the earliest commit on the file.
 
     """
-    repo = Repo(".")
+    try:
+        repo = Repo(".")
+    except InvalidGitRepositoryError:
+        raise
 
     try:
         blames = repo.blame(repo.head, str(file))
@@ -104,8 +109,9 @@ def _get_git_user_name() -> str:
     repo = Repo(".")
     reader = repo.config_reader()
     name = reader.get_value("user", "name")
+
     if not isinstance(name, str) or len(name) < 1:
-        raise ValueError("The git username is not configured.")  # pragma: no cover
+        raise ValueError("The git username is not configured.")
     return name
 
 
@@ -373,6 +379,8 @@ def main():
         int: 1 if files have been modified, 0 otherwise.
     """
     # Build the configuration from config files and CLI args.
+    # Fields that appear in both the configuration and CLI args use the CLI
+    # values.
     try:
         configuration = _read_default_configuration()
     except KeyError:

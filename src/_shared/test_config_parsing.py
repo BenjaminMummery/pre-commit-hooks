@@ -1,12 +1,10 @@
-# Copyright (c) 2023 Benjamin Mummery
-
-from pathlib import Path
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import pytest
 
-from src._shared import config_parsing
-from src._shared.exceptions import InvalidConfigError
-from tests.conftest import assert_matching
+from conftest import assert_matching
+
+from . import config_parsing
 
 file_content = """[tool.foo]
 option1="blah"
@@ -23,14 +21,16 @@ class TestParsing:
     @pytest.mark.parametrize(
         "tool_name, expected_options", [("foo", {"option1": "blah"})]
     )
-    def test_reads_correctly(tmp_path: Path, tool_name: str, expected_options: dict):
+    def test_reads_correctly(
+        tmp_path: config_parsing.Path, tool_name: str, expected_options: dict
+    ):
         file = tmp_path / "pyproject.toml"
         file.write_text(file_content)
 
         assert config_parsing.read_pyproject_toml(file, tool_name) == expected_options
 
     @staticmethod
-    def test_returns_empty_dict_for_missing_section(tmp_path: Path):
+    def test_returns_empty_dict_for_missing_section(tmp_path: config_parsing.Path):
         file = tmp_path / "pyproject.toml"
         file.write_text(file_content)
 
@@ -39,18 +39,18 @@ class TestParsing:
 
 class TestFailureStates:
     @staticmethod
-    def test_raises_FileNotFoundError_for_missing_file(tmp_path: Path):
+    def test_raises_FileNotFoundError_for_missing_file(tmp_path: config_parsing.Path):
         file = tmp_path / "pyproject.toml"
 
         with pytest.raises(FileNotFoundError):
             config_parsing.read_pyproject_toml(file, "tool_name")
 
     @staticmethod
-    def test_raises_InvalidConfigError_for_invalid_toml(tmp_path: Path):
+    def test_raises_InvalidConfigError_for_invalid_toml(tmp_path: config_parsing.Path):
         file = tmp_path / "pyproject.toml"
         file.write_text(invalid_file_content)
 
-        with pytest.raises(InvalidConfigError) as e:
+        with pytest.raises(config_parsing.InvalidConfigError) as e:
             config_parsing.read_pyproject_toml(file, "tool_name")
 
         assert_matching(

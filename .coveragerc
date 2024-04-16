@@ -11,3 +11,4 @@ omit =
     */.local/*
     /usr/*
     */__init__.py
+    */test_*.py

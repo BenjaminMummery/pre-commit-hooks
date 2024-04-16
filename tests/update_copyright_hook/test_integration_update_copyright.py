@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import pytest
 from freezegun import freeze_time
@@ -6,13 +6,13 @@ from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
-from src.update_copyright_hook import update_copyright
-from tests.conftest import (
+from conftest import (
     CopyrightGlobals,
     SupportedLanguage,
     add_changed_files,
     assert_matching,
 )
+from src.update_copyright_hook import update_copyright
 
 
 @pytest.mark.usefixtures("git_repo")

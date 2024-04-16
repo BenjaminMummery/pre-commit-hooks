@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 from pathlib import Path
 
@@ -8,9 +8,7 @@ from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
-from src._shared.exceptions import InvalidConfigError
-from src.add_copyright_hook import add_copyright
-from tests.conftest import (
+from conftest import (
     CopyrightGlobals,
     Globals,
     SupportedLanguage,
@@ -18,6 +16,9 @@ from tests.conftest import (
     assert_matching,
     write_config_file,
 )
+from src._shared.exceptions import InvalidConfigError
+from src.add_copyright_hook import add_copyright
+from src.add_copyright_hook.add_copyright import InvalidGitRepositoryError
 
 
 @pytest.mark.usefixtures("git_repo")
@@ -942,3 +943,59 @@ class TestFailureStates:
             assert e.exconly().startswith(
                 "ValueError: Found multiple copyright strings: "
             )
+
+
+class TestGitRepoErrors:
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    def test_not_a_git_repo(
+        language: SupportedLanguage,
+        cwd,
+        tmp_path: Path,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        files = [f"hello{language.extension}"]
+        for file in files:
+            (tmp_path / file).write_text("")
+        mocker.patch("sys.argv", ["stub_name"] + files)
+
+        # WHEN / THEN
+        with cwd(tmp_path):
+            with pytest.raises(InvalidGitRepositoryError):
+                add_copyright.main()
+
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+    def test_misconfigured_repo(
+        language: SupportedLanguage,
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        """Check that we handle missing or empty git usernames.
+        Configuring a repo for testing that _doesn't_ have a username is
+        basically impossible since it can always fall back to the global
+        config.
+
+        Args:
+            language (SupportedLanguage): _description_
+            cwd (_type_): _description_
+            git_repo (GitRepo): _description_
+            mocker (MockerFixture): _description_
+        """
+        # GIVEN
+        add_changed_files(
+            f"hello{language.extension}",
+            "",
+            git_repo,
+            mocker,
+        )
+        git_repo.run('git config user.name ""')
+
+        # WHEN / THEN
+        with cwd(git_repo.workspace):
+            with pytest.raises(ValueError) as e:
+                add_copyright.main()
+
+        assert e.exconly() == "ValueError: The git username is not configured."

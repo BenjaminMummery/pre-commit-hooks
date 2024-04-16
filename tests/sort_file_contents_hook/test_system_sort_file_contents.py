@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import os
 import subprocess
@@ -6,7 +6,7 @@ import subprocess
 import pytest
 from pytest_git import GitRepo
 
-from tests.conftest import SortFileContentsGlobals, add_changed_files, assert_matching
+from conftest import SortFileContentsGlobals, add_changed_files, assert_matching
 
 COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "sort-file-contents"]
 

@@ -44,7 +44,7 @@ test_all: test_venv test_unit test_integration test_system
 test_unit: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
-	pytest --cov=src tests/*/test_unit_*.py -x
+	pytest --cov=src src/*/test_*.py -x
 
 test_integration: test_venv
 	@. test_venv/bin/activate; \

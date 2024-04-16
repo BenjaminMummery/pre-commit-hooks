@@ -1,10 +1,8 @@
-# Copyright (c) 2023 Benjamin Mummery
-
-from pathlib import Path
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import pytest
 
-from src._shared import comment_mapping
+from . import comment_mapping
 
 
 class TestGetCommentMarkers:
@@ -35,7 +33,9 @@ class TestGetCommentMarkers:
             (".css", ("/*", "*/")),
         ],
     )
-    def test_for_supported_file_types(file_extension, expected_markers, tmp_path: Path):
+    def test_for_supported_file_types(
+        file_extension, expected_markers, tmp_path: comment_mapping.Path
+    ):
         file_path = tmp_path / f"filename{file_extension}"
         file_path.write_text("")
 
