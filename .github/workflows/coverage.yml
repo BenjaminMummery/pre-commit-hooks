@@ -9,7 +9,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  TestCoverage:
+  IntegrationTestCoverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,11 +24,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -e '.[dev]'
-      - name: Integration Test Coverage
+      - name: Test Coverage
         run: |-
-          pytest --junitxml=pytest_integration.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
-      - name: Unit Test Coverage
+          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
+      - name: Comment coverage
+        uses: coroo/pytest-coverage-commentator@v1.0.2
+  UnitTestCoverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -e '.[dev]'
+      - name: Test Coverage
         run: |-
-          pytest --junitxml=pytest_unit.xml --cov-report=term-missing --cov=src src/*/test_*.py | tee pytest-coverage.txt
+          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src src/*/test_*.py | tee pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
