@@ -298,6 +298,10 @@ class TestEnsureComment:
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
                 {"mock_key": "mock_value"},
             )
+            mocker.patch(
+                f"{add_copyright.__name__}.read_config",
+                side_effect=FileNotFoundError,
+            )
 
             # WHEN
             with cwd(tmp_path):
@@ -313,8 +317,10 @@ class TestEnsureComment:
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
                 {"mock_key": "mock_value"},
             )
-            config_file = tmp_path / "pyproject.toml"
-            config_file.write_text('[tool.add_copyright]\nname = "my name"')
+            mocker.patch(
+                f"{add_copyright.__name__}.read_config",
+                return_value=({"name": "my name"}, Mock()),
+            )
 
             # WHEN
             with cwd(tmp_path):
@@ -332,9 +338,9 @@ class TestEnsureComment:
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
                 {"mock_key": "mock_value"},
             )
-            config_file = tmp_path / "pyproject.toml"
-            config_file.write_text(
-                '[tool.add_copyright]\nname = "my name"\nflugendorf = "something"'
+            mocker.patch(
+                f"{add_copyright.__name__}.read_config",
+                return_value=({"name": "my name", "flugendorf": "something"}, Mock()),
             )
 
             # WHEN
@@ -352,9 +358,9 @@ class TestEnsureComment:
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
                 {"mock_key": "mock_value"},
             )
-            config_file = tmp_path / "pyproject.toml"
-            config_file.write_text(
-                '[tool.add_copyright.mock_value]\nformat="<format sentinel>"'
+            mocker.patch(
+                f"{add_copyright.__name__}.read_config",
+                return_value=({"mock_value": {"format": "<format sentinel>"}}, Mock()),
             )
 
             # WHEN
@@ -377,9 +383,17 @@ class TestEnsureComment:
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",
                 {"mock_key": "mock_value"},
             )
-            config_file = tmp_path / "pyproject.toml"
-            config_file.write_text(
-                '[tool.add_copyright.mock_value]\nformat="<format sentinel>"\nbadkey="something"'  # NOQA: E501
+            mocker.patch(
+                f"{add_copyright.__name__}.read_config",
+                return_value=(
+                    {
+                        "mock_value": {
+                            "format": "<format sentinel>",
+                            "badkey": "something",
+                        }
+                    },
+                    Mock(),
+                ),
             )
 
             # WHEN
