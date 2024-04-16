@@ -26,6 +26,9 @@ jobs:
           pip install -e '.[dev]'
       - name: Integration Test Coverage
         run: |-
-          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
+          pytest --junitxml=pytest_integration.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
+      - name: Unit Test Coverage
+        run: |-
+          pytest --junitxml=pytest_unit.xml --cov-report=term-missing --cov=src src/*/test_*.py | tee pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
