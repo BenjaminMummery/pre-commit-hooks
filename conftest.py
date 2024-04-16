@@ -81,7 +81,7 @@ def cwd():
     return cwd
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def git_repo(git_repo: GitRepo) -> GitRepo:
     git_repo.run("git config user.name '<git config username sentinel>'")
     return git_repo
