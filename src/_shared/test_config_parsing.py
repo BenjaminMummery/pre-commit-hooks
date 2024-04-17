@@ -8,7 +8,7 @@ from conftest import assert_matching
 from . import config_parsing
 
 toml_file_content = """[tool.foo]
-option1="blah"
+option1="blah{foo}"
 
 """
 invalid_toml_file_content = """this [is not] valid
@@ -17,7 +17,7 @@ TOML
 """
 
 cfg_file_content = """[tool.foo]
-option1=blah
+option1=blah{foo}
 
 """
 invalid_cfg_file_content = """this [is not] valid
@@ -90,7 +90,7 @@ class TestReadingPyprojectToml:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
-            "tool_name, expected_options", [("foo", {"option1": "blah"})]
+            "tool_name, expected_options", [("foo", {"option1": "blah{foo}"})]
         )
         def test_reads_correctly(
             tmp_path: config_parsing.Path, tool_name: str, expected_options: dict
@@ -143,7 +143,9 @@ class TestReadingSetupCfg:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
-            "tool_name, expected_options", [("foo", {"option1": "blah"})]
+            "tool_name, expected_options", [
+                ("foo", {"option1": "blah{foo}"})
+            ]
         )
         def test_reads_correctly(
             tmp_path: config_parsing.Path, tool_name: str, expected_options: dict

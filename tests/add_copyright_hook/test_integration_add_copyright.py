@@ -345,11 +345,14 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize("config_file, config_content", [("pyproject.toml",'[tool.add_copyright]\nname="<config file username sentinel>"\n')])
             def test_custom_name_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
+                config_file: str,
+                config_content: str,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
@@ -358,8 +361,8 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
-                    "pyproject.toml",
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                    config_file,
+                    config_content,
                 )
 
                 # WHEN
@@ -394,19 +397,27 @@ class TestCustomBehaviour:
         class TestFormat:
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize("config_file, config_content", [
+                (
+                    "pyproject.toml", 
+                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n'
+                )
+            ])
             def test_custom_format_argument_overrules_default(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
+                config_file: str,
+                config_content: str,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
-                    "pyproject.toml",
-                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
+                    config_file,
+                    config_content,
                 )
 
                 # WHEN
@@ -440,19 +451,22 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize("config_file, config_content", [("pyproject.toml",'[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n')])
             def test_custom_format_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
-                mocker: MockerFixture,
+                mocker: MockerFixture,config_file: str,
+                config_content: str,
+                
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
-                    "pyproject.toml",
-                    '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
+                    config_file,
+                    config_content,
                 )
 
                 # WHEN
@@ -489,22 +503,23 @@ class TestCustomBehaviour:
             @staticmethod
             @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
-                "config_file_content",
+                "config_file, config_content",
                 [
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                    ("pyproject.toml",'[tool.add_copyright]\nname="<config file username sentinel>"\n'),
                 ],
             )
             def test_custom_name_option_overrules_git_username(
                 capsys: CaptureFixture,
                 cwd,
-                config_file_content: str,
+                config_content: str,
+                config_file: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 write_config_file(
-                    git_repo.workspace, "pyproject.toml", config_file_content
+                    git_repo.workspace, config_file, config_content
                 )
 
                 # WHEN
@@ -541,9 +556,10 @@ class TestCustomBehaviour:
             @staticmethod
             @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
-                "config_file_content, expected_copyright_string",
+                "config_file, config_content, expected_copyright_string",
                 [
                     (
+                        "pyproject.toml",
                         '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
                         "(C) <git config username sentinel> 1312",
                     )
@@ -552,7 +568,8 @@ class TestCustomBehaviour:
             def test_custom_format_option_overrules_default_format(
                 capsys: CaptureFixture,
                 cwd,
-                config_file_content: str,
+                config_content: str,
+                config_file: str,
                 expected_copyright_string: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
@@ -560,7 +577,7 @@ class TestCustomBehaviour:
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 write_config_file(
-                    git_repo.workspace, "pyproject.toml", config_file_content
+                    git_repo.workspace, config_file, config_content
                 )
 
                 # WHEN
