@@ -41,6 +41,28 @@ class TestReadConfig:
                 config_path, "<tool name sentinel>"
             )
 
+        @staticmethod
+        def test_identifies_setup_cfg(
+            tmp_path: config_parsing.Path, cwd, mocker: MockerFixture
+        ):
+            # GIVEN
+            config_path = tmp_path / "setup.cfg"
+            config_path.write_text("")
+            mocked_read_setup_cfg = mocker.patch(
+                f"{config_parsing.__name__}._read_setup_cfg",
+                return_value="<cfg return sentinel>",
+            )
+
+            # WHEN
+            with cwd(tmp_path):
+                ret = config_parsing.read_config("<tool name sentinel>")
+
+            # THEN
+            assert ret == (mocked_read_setup_cfg.return_value, config_path)
+            mocked_read_setup_cfg.assert_called_once_with(
+                config_path, "<tool name sentinel>"
+            )
+
     class TestFailureStates:
         @staticmethod
         def test_raises_FileNotFoundError_if_there_are_no_config_files(
