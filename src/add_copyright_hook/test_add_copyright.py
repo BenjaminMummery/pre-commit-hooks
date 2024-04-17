@@ -311,7 +311,7 @@ class TestEnsureComment:
             assert ret == {"name": None, "format": None, "mock_value": None}
 
         @staticmethod
-        def test_pyproject_toml_config(cwd, tmp_path: Path, mocker: MockerFixture):
+        def test_config_file(cwd, tmp_path: Path, mocker: MockerFixture):
             # GIVEN
             mocker.patch(
                 f"{add_copyright.__name__}.LANGUAGE_TAGS_TOMLKEYS",

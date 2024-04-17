@@ -358,6 +358,7 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
+                    "pyproject.toml",
                     '[tool.add_copyright]\nname="<config file username sentinel>"\n',
                 )
 
@@ -404,6 +405,7 @@ class TestCustomBehaviour:
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
+                    "pyproject.toml",
                     '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
                 )
 
@@ -449,6 +451,7 @@ class TestCustomBehaviour:
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
+                    "pyproject.toml",
                     '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
                 )
 
@@ -500,7 +503,9 @@ class TestCustomBehaviour:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(
+                    git_repo.workspace, "pyproject.toml", config_file_content
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -554,7 +559,9 @@ class TestCustomBehaviour:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(
+                    git_repo.workspace, "pyproject.toml", config_file_content
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -607,6 +614,7 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
+                    "pyproject.toml",
                     (
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_commented}"""\n'
@@ -664,6 +672,7 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
+                    "pyproject.toml",
                     (
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_uncommented}"""\n'
@@ -720,7 +729,9 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo, mocker)
-            config_file = write_config_file(git_repo.workspace, config_file_content)
+            config_file = write_config_file(
+                git_repo.workspace, "pyproject.toml", config_file_content
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -754,6 +765,7 @@ class TestFailureStates:
             add_changed_files("hello" + language.extension, "", git_repo, mocker)
             file = write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 "[not]valid\ntoml",
             )
 
@@ -791,6 +803,7 @@ class TestFailureStates:
             add_changed_files("hello.py", "", git_repo, mocker)
             config_file = write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 config_file_content.format(language=language.toml_key),
             )
 
@@ -837,6 +850,7 @@ class TestFailureStates:
 
             write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
             )
 

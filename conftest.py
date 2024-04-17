@@ -56,8 +56,8 @@ def add_changed_files(
         return mocker.patch("sys.argv", ["stub_name"] + filenames)
 
 
-def write_config_file(path: Path, content: str) -> Path:
-    config_file = path / "pyproject.toml"
+def write_config_file(path: Path, name: str, content: str) -> Path:
+    config_file = path / name
     (config_file).write_text(content)
     return config_file
 
