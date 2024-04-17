@@ -1,6 +1,7 @@
 # Copyright (c) 2023 - 2024 Benjamin Mummery
 
 import pytest
+from pytest_mock import MockerFixture
 
 from conftest import assert_matching
 
@@ -14,6 +15,44 @@ invalid_file_content = """this [is not] valid
 TOML
 
 """
+
+
+class TestReadConfig:
+    class TestSingleConfigFile:
+        @staticmethod
+        def test_identifies_pyproject_toml(
+            tmp_path: config_parsing.Path, cwd, mocker: MockerFixture
+        ):
+            # GIVEN
+            config_path = tmp_path / "pyproject.toml"
+            config_path.write_text("")
+            mocked_read_pyproject_toml = mocker.patch(
+                f"{config_parsing.__name__}._read_pyproject_toml",
+                return_value="<toml return sentinel>",
+            )
+
+            # WHEN
+            with cwd(tmp_path):
+                ret = config_parsing.read_config("<tool name sentinel>")
+
+            # THEN
+            assert ret == (mocked_read_pyproject_toml.return_value, config_path)
+            mocked_read_pyproject_toml.assert_called_once_with(
+                config_path, "<tool name sentinel>"
+            )
+
+    class TestFailureStates:
+        @staticmethod
+        def test_raises_FileNotFoundError_if_there_are_no_config_files(
+            tmp_path: config_parsing.Path, cwd
+        ):
+            # WHEN
+            with pytest.raises(FileNotFoundError) as e:
+                with cwd(tmp_path):
+                    config_parsing.read_config("<tool name sentinel>")
+
+            # THEN
+            assert e.exconly() == "FileNotFoundError: No config file found."
 
 
 class TestReadingPyprojectToml:
