@@ -100,7 +100,7 @@ def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
     config = configparser.ConfigParser()
     try:
         config.read(setup_cfg)
-    except configparser.MissingSectionHeaderError as e:
+    except (configparser.MissingSectionHeaderError, configparser.ParsingError) as e:
         raise InvalidConfigError(f"Could not parse config file '{setup_cfg}'.") from e
 
     try:
