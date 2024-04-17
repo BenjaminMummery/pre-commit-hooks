@@ -6,7 +6,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Tuple
 
 from src._shared.exceptions import InvalidConfigError
 
@@ -27,19 +27,26 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
             name, and the value is its value.
     """
     # find config file
-    filename = "pyproject.toml"
-    filepath: Optional[Path] = None
+    filenames = ["pyproject.toml", "setup.cfg"]
+    filepaths: List[Path] = []
 
     for root, _, files in os.walk(os.getcwd()):
-        if filename in files:
-            filepath = Path(os.path.join(root, filename))
-            break
+        for filename in filenames:
+            if filename in files:
+                filepaths.append(Path(os.path.join(root, filename)))
 
-    if filepath is None:
+    if len(filepaths) == 0:
         raise FileNotFoundError("No config file found.")
 
+    if len(filepaths) > 1:  # pragma: no cover
+        raise NotImplementedError("Currently can't handle multiple config files.")
+
     # read config file
-    return _read_pyproject_toml(filepath, tool_name), filepath
+    filepath = filepaths[0]
+    if filepath.name == "pyproject.toml":
+        return _read_pyproject_toml(filepath, tool_name), filepath
+    elif filepath.name == "setup.cfg":
+        return _read_setup_cfg(filepath, tool_name), filepath
 
 
 def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
