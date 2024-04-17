@@ -143,9 +143,7 @@ class TestReadingSetupCfg:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
-            "tool_name, expected_options", [
-                ("foo", {"option1": "blah{foo}"})
-            ]
+            "tool_name, expected_options", [("foo", {"option1": "blah{foo}"})]
         )
         def test_reads_correctly(
             tmp_path: config_parsing.Path, tool_name: str, expected_options: dict
