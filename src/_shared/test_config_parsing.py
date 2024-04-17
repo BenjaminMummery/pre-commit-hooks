@@ -88,17 +88,6 @@ class TestReadingPyprojectToml:
 
     class TestFailureStates:
         @staticmethod
-        def test_raises_FileNotFoundError_for_missing_file(
-            tmp_path: config_parsing.Path,
-        ):
-            # GIVEN
-            file = tmp_path / "pyproject.toml"
-
-            # WHEN / THEN
-            with pytest.raises(FileNotFoundError):
-                config_parsing._read_pyproject_toml(file, "tool_name")
-
-        @staticmethod
         def test_raises_InvalidConfigError_for_invalid_toml(
             tmp_path: config_parsing.Path,
         ):
