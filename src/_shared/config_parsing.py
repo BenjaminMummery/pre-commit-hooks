@@ -3,6 +3,7 @@
 """Shared tools for parsing config files."""
 
 
+import configparser
 import os
 import sys
 from pathlib import Path
@@ -43,10 +44,12 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
 
     # read config file
     filepath = filepaths[0]
+    config: dict
     if filepath.name == "pyproject.toml":
-        return _read_pyproject_toml(filepath, tool_name), filepath
+        config = _read_pyproject_toml(filepath, tool_name)
     elif filepath.name == "setup.cfg":
-        return _read_setup_cfg(filepath, tool_name), filepath
+        config = _read_setup_cfg(filepath, tool_name)
+    return config, filepath
 
 
 def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
@@ -94,4 +97,15 @@ def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
         dict: A mapping of key-value pairs where the key is the config option
             name, and the value is its value.
     """
-    pass
+    config = configparser.ConfigParser()
+    try:
+        config.read(setup_cfg)
+    except configparser.MissingSectionHeaderError as e:
+        raise InvalidConfigError(f"Could not parse config file '{setup_cfg}'.") from e
+
+    try:
+        tool_config = dict(config.items(f"tool.{tool_name}"))
+    except configparser.NoSectionError:
+        return {}
+
+    return tool_config
