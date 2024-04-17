@@ -1,4 +1,4 @@
-<!--- Copyright (c) 2022 - 2023 Benjamin Mummery -->
+<!--- Copyright (c) 2022 - 2024 Benjamin Mummery -->
 
 # pre-commit-hooks
 
@@ -105,7 +105,9 @@ add-copyright [-n NAME] [-f FORMAT] [FILES]
       args: ["-n NAME", "-f FORMAT"]
 ```
 
-##### `pyproject.toml` configuration
+##### Config file configuration
+
+We currently support configuration options in `pyproject.toml` and `setup.cfg` files.
 
 ```toml
 [tool.add_copyright]
