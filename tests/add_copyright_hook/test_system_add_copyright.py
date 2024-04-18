@@ -271,8 +271,10 @@ class TestCustomBehaviour:
                     '[tool.add_copyright]\nname="<config file username sentinel>"\n',
                 ],
             )
+            @pytest.mark.parametrize("config_file", ["pyproject.toml"])
             def test_custom_name_option_overrules_git_username(
                 cwd,
+                config_file: str,
                 config_file_content: str,
                 git_repo: GitRepo,
             ):
@@ -285,7 +287,7 @@ class TestCustomBehaviour:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(git_repo.workspace, config_file, config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -325,8 +327,10 @@ class TestCustomBehaviour:
                     )
                 ],
             )
+            @pytest.mark.parametrize("config_file", ["pyproject.toml"])
             def test_custom_format_option_overrules_default_format(
                 cwd,
+                config_file: str,
                 config_file_content: str,
                 expected_copyright_string: str,
                 git_repo: GitRepo,
@@ -340,7 +344,7 @@ class TestCustomBehaviour:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(git_repo.workspace, config_file, config_file_content)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -390,7 +394,7 @@ class TestCustomBehaviour:
                         for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ]
                 )
-                write_config_file(git_repo.workspace, toml_text)
+                write_config_file(git_repo.workspace, "pyproject.toml", toml_text)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -439,7 +443,7 @@ class TestCustomBehaviour:
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
                     )
-                write_config_file(git_repo.workspace, toml_text)
+                write_config_file(git_repo.workspace, "pyproject.toml", toml_text)
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -487,7 +491,9 @@ class TestFailureStates:
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo)
-            config_file = write_config_file(git_repo.workspace, config_file_content)
+            config_file = write_config_file(
+                git_repo.workspace, "pyproject.toml", config_file_content
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -524,6 +530,7 @@ class TestFailureStates:
             add_changed_files("hello.py", "", git_repo)
             write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 config_file_content.format(language=language.toml_key),
             )
 
@@ -570,6 +577,7 @@ class TestFailureStates:
             add_changed_files(f"hello{language.extension}", "", git_repo)
             write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
             )
 
@@ -633,6 +641,7 @@ class TestFailureStates:
             )
             write_config_file(
                 git_repo.workspace,
+                "pyproject.toml",
                 "[not]valid\ntoml",
             )
 
