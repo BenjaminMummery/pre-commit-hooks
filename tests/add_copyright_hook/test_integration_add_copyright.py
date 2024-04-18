@@ -132,6 +132,51 @@ class TestDefaultBehaviour:
             )
             assert_matching("captured stderr", "expected stderr", captured.err, "")
 
+        @staticmethod
+        @freeze_time("1312-01-01")
+        @pytest.mark.parametrize("config_file", ["pyproject.toml", "setup.cfg"])
+        def test_ignores_irrelevent_config_options(
+            capsys: CaptureFixture,
+            cwd,
+            config_file: str,
+            git_repo: GitRepo,
+            git_username: str,
+            language: SupportedLanguage,
+            mocker: MockerFixture,
+        ):
+            # GIVEN
+            add_changed_files(
+                file := "hello" + language.extension, "", git_repo, mocker
+            )
+            git_repo.run(f"git config user.name '{git_username}'")
+            (git_repo.workspace / config_file).write_text("[tool.foo]\noption='value'")
+
+            # WHEN
+            with cwd(git_repo.workspace):
+                assert add_copyright.main() == 1
+
+            # THEN
+            # Construct expected outputs
+            copyright_string = language.comment_format.format(
+                content=f"Copyright (c) 1312 {git_username}"
+            )
+            expected_content = f"{copyright_string}\n"
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
+
+            # Gather actual outputs
+            with open(git_repo.workspace / file, "r") as f:
+                output_content = f.read()
+            captured = capsys.readouterr()
+
+            # Compare
+            assert_matching(
+                "output content", "expected content", output_content, expected_content
+            )
+            assert_matching(
+                "captured stdout", "expected stdout", captured.out, expected_stdout
+            )
+            assert_matching("captured stderr", "expected stderr", captured.err, "")
+
     class TestFileContentHandling:
         @staticmethod
         @freeze_time("1312-01-01")
@@ -345,11 +390,19 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "config_file",
+                [
+                    "pyproject.toml",
+                    "setup.cfg",
+                ],
+            )
             def test_custom_name_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
+                config_file: str,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
@@ -358,6 +411,7 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
+                    config_file,
                     '[tool.add_copyright]\nname="<config file username sentinel>"\n',
                 )
 
@@ -393,17 +447,23 @@ class TestCustomBehaviour:
         class TestFormat:
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "config_file",
+                ["pyproject.toml", "setup.cfg"],
+            )
             def test_custom_format_argument_overrules_default(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
+                config_file: str,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
+                    config_file,
                     '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
                 )
 
@@ -438,17 +498,20 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize("config_file", ["pyproject.toml", "setup.cfg"])
             def test_custom_format_argument_overrules_config_file(
                 capsys: CaptureFixture,
                 cwd,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
+                config_file: str,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
                 write_config_file(
                     git_repo.workspace,
+                    config_file,
                     '[tool.add_copyright]\nformat="(C) not this one {name} {year}"\n',
                 )
 
@@ -482,25 +545,39 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     class TestConfigFiles:
+        @pytest.mark.parametrize(
+            "config_file, valformat",
+            [
+                (
+                    "pyproject.toml",
+                    '"{value}"',
+                ),
+                (
+                    "setup.cfg",
+                    "{value}",
+                ),
+            ],
+        )
         class TestGlobalConfigs:
             @staticmethod
             @freeze_time("1312-01-01")
-            @pytest.mark.parametrize(
-                "config_file_content",
-                [
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
-                ],
-            )
             def test_custom_name_option_overrules_git_username(
                 capsys: CaptureFixture,
                 cwd,
-                config_file_content: str,
+                valformat: str,
+                config_file: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    "[tool.add_copyright]\nname="
+                    + valformat.format(value="<config file username sentinel>")
+                    + "\n",
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -535,26 +612,23 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
-            @pytest.mark.parametrize(
-                "config_file_content, expected_copyright_string",
-                [
-                    (
-                        '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
-                        "(C) <git config username sentinel> 1312",
-                    )
-                ],
-            )
             def test_custom_format_option_overrules_default_format(
                 capsys: CaptureFixture,
                 cwd,
-                config_file_content: str,
-                expected_copyright_string: str,
+                valformat: str,
+                config_file: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                write_config_file(git_repo.workspace, config_file_content)
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    "[tool.add_copyright]\nformat="
+                    + valformat.format(value="(C) {name} {year}")
+                    + "\n",
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
@@ -562,6 +636,7 @@ class TestCustomBehaviour:
 
                 # THEN
                 # Construct expected outputs
+                expected_copyright_string = "(C) <git config username sentinel> 1312"
                 copyright_string = f"# {expected_copyright_string}"
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
@@ -586,6 +661,15 @@ class TestCustomBehaviour:
                 assert_matching("captured stderr", "expected stderr", captured.err, "")
 
         @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+        @pytest.mark.parametrize(
+            "config_file, config_content",
+            [
+                (
+                    "pyproject.toml",
+                    '[tool.add_copyright.{key}]\nformat="""{value}"""\n',
+                ),
+            ],
+        )
         class TestPerLanguageConfigs:
             @staticmethod
             @freeze_time("1312-01-01")
@@ -594,6 +678,8 @@ class TestCustomBehaviour:
                 git_repo: GitRepo,
                 language: SupportedLanguage,
                 mocker: MockerFixture,
+                config_file: str,
+                config_content: str,
             ):
                 # GIVEN
                 add_changed_files(
@@ -607,9 +693,10 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
-                    (
-                        f"[tool.add_copyright.{language.toml_key}]\n"
-                        f'format="""{language.custom_copyright_format_commented}"""\n'
+                    config_file,
+                    config_content.format(
+                        key=language.toml_key,
+                        value=language.custom_copyright_format_commented,
                     ),
                 )
 
@@ -651,6 +738,8 @@ class TestCustomBehaviour:
                 git_repo: GitRepo,
                 language: SupportedLanguage,
                 mocker: MockerFixture,
+                config_file: str,
+                config_content: str,
             ):
                 # GIVEN
                 add_changed_files(
@@ -664,9 +753,10 @@ class TestCustomBehaviour:
                 )
                 write_config_file(
                     git_repo.workspace,
-                    (
-                        f"[tool.add_copyright.{language.toml_key}]\n"
-                        f'format="""{language.custom_copyright_format_uncommented}"""\n'
+                    config_file,
+                    config_content.format(
+                        key=language.toml_key,
+                        value=language.custom_copyright_format_uncommented,
                     ),
                 )
 
@@ -704,154 +794,233 @@ class TestCustomBehaviour:
 
 class TestFailureStates:
     class TestConfigFailures:
-        @staticmethod
-        @pytest.mark.parametrize(
-            "config_file_content",
-            [
-                '[tool.add_copyright]\nunsupported_option="should not matter"\n',
-                '[tool.add_copyright.unsupported_option]\nname="foo"\n',
-            ],
-        )
-        def test_raises_KeyError_for_unsupported_config_options(
-            cwd,
-            git_repo: GitRepo,
-            config_file_content: str,
-            mocker: MockerFixture,
-        ):
-            # GIVEN
-            add_changed_files("hello.py", "", git_repo, mocker)
-            config_file = write_config_file(git_repo.workspace, config_file_content)
-
-            # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(KeyError) as e:
-                    add_copyright.main()
-
-            # THEN
-            expected_error_string: str = (
-                'KeyError: "Unsupported option in config file '
-                + (str(Path("/private")) if "/private" in e.exconly() else "")
-                + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
-                "Supported options are: "
-                f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+        @pytest.mark.parametrize("config_file", ["pyproject.toml"])
+        class TestTomlFailures:
+            @staticmethod
+            @pytest.mark.parametrize(
+                "config_file_content",
+                [
+                    '[tool.add_copyright]\nunsupported_option="should not matter"\n',
+                    '[tool.add_copyright.unsupported_option]\nname="foo"\n',
+                ],
             )
+            def test_raises_KeyError_for_unsupported_config_options(
+                cwd,
+                git_repo: GitRepo,
+                config_file: str,
+                config_file_content: str,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files("hello.py", "", git_repo, mocker)
+                config_file = write_config_file(
+                    git_repo.workspace, config_file, config_file_content
+                )
 
-            assert_matching(
-                "Output error string",
-                "Expected error string",
-                e.exconly(),
-                expected_error_string,
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(KeyError) as e:
+                        add_copyright.main()
+
+                # THEN
+                expected_error_string: str = (
+                    'KeyError: "Unsupported option in config file '
+                    + (str(Path("/private")) if "/private" in e.exconly() else "")
+                    + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+                    "Supported options are: "
+                    f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+                )
+
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    expected_error_string,
+                )
+
+            @staticmethod
+            def test_raises_error_for_invalid_toml(
+                cwd, git_repo: GitRepo, mocker: MockerFixture, config_file: str
+            ):
+                # GIVEN
+                language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
+                add_changed_files("hello" + language.extension, "", git_repo, mocker)
+                file = write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    "[not]valid\ntoml",
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(InvalidConfigError) as e:
+                        add_copyright.main()
+
+                # THEN
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
+                    + (str(Path("/private")) if "/private" in e.exconly() else "")
+                    + f"{file}'.",
+                )
+
+            @staticmethod
+            @pytest.mark.parametrize(
+                "config_file_content",
+                [
+                    '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
+                ],
             )
+            @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+            def test_raises_KeyError_for_unsupported_language_config_options(
+                cwd,
+                config_file: str,
+                config_file_content: str,
+                git_repo: GitRepo,
+                language: SupportedLanguage,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files("hello.py", "", git_repo, mocker)
+                config_file = write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_file_content.format(language=language.toml_key),
+                )
 
-        @staticmethod
-        def test_raises_error_for_invalid_toml(
-            cwd,
-            git_repo: GitRepo,
-            mocker: MockerFixture,
-        ):
-            # GIVEN
-            language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
-            add_changed_files("hello" + language.extension, "", git_repo, mocker)
-            file = write_config_file(
-                git_repo.workspace,
-                "[not]valid\ntoml",
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(KeyError) as e:
+                        add_copyright.main()
+
+                # THEN
+                expected_error_string: str = (
+                    'KeyError: "Unsupported option in config file '
+                    + (str(Path("/private")) if "/private" in e.exconly() else "")
+                    + f"{git_repo.workspace/ config_file}: "
+                    f"'{language.toml_key}.unsupported_option'. "
+                    f"Supported options for '{language.toml_key}' are: "
+                    f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
+                )
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    expected_error_string,
+                )
+
+            @staticmethod
+            @pytest.mark.parametrize(
+                "input_format, missing_keys",
+                [
+                    ("copyright 1996 {name}", "year"),
+                    ("copyright {year} Harold Hadrada", "name"),
+                ],
             )
+            @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
+            def test_raises_KeyError_for_missing_custom_format_keys(
+                config_file: str,
+                cwd,
+                git_repo: GitRepo,
+                input_format: str,
+                language: SupportedLanguage,
+                missing_keys: str,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files("hello" + language.extension, "", git_repo, mocker)
 
-            # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(InvalidConfigError) as e:
-                    add_copyright.main()
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',  # noqa: E501
+                )
 
-            # THEN
-            assert_matching(
-                "Output error string",
-                "Expected error string",
-                e.exconly(),
-                "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
-                + (str(Path("/private")) if "/private" in e.exconly() else "")
-                + f"{file}'.",
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(KeyError) as e:
+                        add_copyright.main()
+
+                # THEN
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
+                )
+
+        @pytest.mark.parametrize("config_file", ["setup.cfg"])
+        class TestCFGFailures:
+            @staticmethod
+            @pytest.mark.parametrize(
+                "config_file_content",
+                [
+                    '[tool.add_copyright]\nunsupported_option="should not matter"\n',
+                ],
             )
+            def test_raises_KeyError_for_unsupported_config_options(
+                cwd,
+                git_repo: GitRepo,
+                config_file: str,
+                config_file_content: str,
+                mocker: MockerFixture,
+            ):
+                # GIVEN
+                add_changed_files("hello.py", "", git_repo, mocker)
+                config_file = write_config_file(
+                    git_repo.workspace, config_file, config_file_content
+                )
 
-        @staticmethod
-        @pytest.mark.parametrize(
-            "config_file_content",
-            [
-                '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
-            ],
-        )
-        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-        def test_raises_KeyError_for_unsupported_language_config_options(
-            cwd,
-            config_file_content: str,
-            git_repo: GitRepo,
-            language: SupportedLanguage,
-            mocker: MockerFixture,
-        ):
-            # GIVEN
-            add_changed_files("hello.py", "", git_repo, mocker)
-            config_file = write_config_file(
-                git_repo.workspace,
-                config_file_content.format(language=language.toml_key),
-            )
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(KeyError) as e:
+                        add_copyright.main()
 
-            # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(KeyError) as e:
-                    add_copyright.main()
+                # THEN
+                expected_error_string: str = (
+                    'KeyError: "Unsupported option in config file '
+                    + (str(Path("/private")) if "/private" in e.exconly() else "")
+                    + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+                    "Supported options are: "
+                    f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
+                )
 
-            # THEN
-            expected_error_string: str = (
-                'KeyError: "Unsupported option in config file '
-                + (str(Path("/private")) if "/private" in e.exconly() else "")
-                + f"{git_repo.workspace/ config_file}: "
-                f"'{language.toml_key}.unsupported_option'. "
-                f"Supported options for '{language.toml_key}' are: "
-                f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
-            )
-            assert_matching(
-                "Output error string",
-                "Expected error string",
-                e.exconly(),
-                expected_error_string,
-            )
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    expected_error_string,
+                )
 
-        @staticmethod
-        @pytest.mark.parametrize(
-            "input_format, missing_keys",
-            [
-                ("copyright 1996 {name}", "year"),
-                ("copyright {year} Harold Hadrada", "name"),
-            ],
-        )
-        @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
-        def test_raises_KeyError_for_missing_custom_format_keys(
-            cwd,
-            git_repo: GitRepo,
-            input_format: str,
-            language: SupportedLanguage,
-            missing_keys: str,
-            mocker: MockerFixture,
-        ):
-            # GIVEN
-            add_changed_files("hello" + language.extension, "", git_repo, mocker)
+            @staticmethod
+            def test_raises_error_for_invalid_syntax(
+                cwd, git_repo: GitRepo, mocker: MockerFixture, config_file: str
+            ):
+                # GIVEN
+                language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
+                add_changed_files("hello" + language.extension, "", git_repo, mocker)
+                file = write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    "[not]valid\ntoml",
+                )
 
-            write_config_file(
-                git_repo.workspace,
-                f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
-            )
+                # WHEN
+                with cwd(git_repo.workspace):
+                    with pytest.raises(InvalidConfigError) as e:
+                        add_copyright.main()
 
-            # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(KeyError) as e:
-                    add_copyright.main()
-
-            # THEN
-            assert_matching(
-                "Output error string",
-                "Expected error string",
-                e.exconly(),
-                f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
-            )
+                # THEN
+                assert_matching(
+                    "Output error string",
+                    "Expected error string",
+                    e.exconly(),
+                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
+                    + (str(Path("/private")) if "/private" in e.exconly() else "")
+                    + f"{file}'.",
+                )
 
     class TestInputFileFailures:
         @staticmethod
