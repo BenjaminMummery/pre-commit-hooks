@@ -266,12 +266,18 @@ class TestCustomBehaviour:
         class TestGlobalConfigs:
             @staticmethod
             @pytest.mark.parametrize(
-                "config_file_content",
+                "config_file, config_file_content",
                 [
-                    '[tool.add_copyright]\nname="<config file username sentinel>"\n',
+                    (
+                        "pyproject.toml",
+                        '[tool.add_copyright]\nname="<config file username sentinel>"\n',  # noqa: E501
+                    ),
+                    (
+                        "setup.cfg",
+                        "[tool.add_copyright]\nname=<config file username sentinel>\n",
+                    ),
                 ],
             )
-            @pytest.mark.parametrize("config_file", ["pyproject.toml"])
             def test_custom_name_option_overrules_git_username(
                 cwd,
                 config_file: str,
@@ -319,15 +325,20 @@ class TestCustomBehaviour:
 
             @staticmethod
             @pytest.mark.parametrize(
-                "config_file_content, expected_copyright_string",
+                "config_file, config_file_content, expected_copyright_string",
                 [
                     (
+                        "pyproject.toml",
                         '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
                         "(C) <git config username sentinel> {year}",
-                    )
+                    ),
+                    (
+                        "setup.cfg",
+                        "[tool.add_copyright]\nformat=(C) {name} {year}\n",
+                        "(C) <git config username sentinel> {year}",
+                    ),
                 ],
             )
-            @pytest.mark.parametrize("config_file", ["pyproject.toml"])
             def test_custom_format_option_overrules_default_format(
                 cwd,
                 config_file: str,
