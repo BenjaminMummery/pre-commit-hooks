@@ -2,6 +2,13 @@
 
 
 
+## v2.2.0 (2024-05-17)
+
+### Feature
+
+* feat: support javascript. (#70) ([`dbe596c`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/dbe596cdb8669d8a9fd122251d92f010c4cdada5))
+
+
 ## v2.1.0 (2024-04-18)
 
 ### Ci

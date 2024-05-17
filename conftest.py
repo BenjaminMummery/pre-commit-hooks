@@ -180,6 +180,14 @@ class CopyrightGlobals:
             "<!--- Copyright {name} as of {year}. -->",
             "Copyright {name} as of {year}",
         ),
+        SupportedLanguage(
+            "javascript",
+            "javascript",
+            ".js",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
     ]
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
@@ -203,6 +211,7 @@ class CopyrightGlobals:
         "c-sharp",
         "perl",
         "html",
+        "javascript",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 
