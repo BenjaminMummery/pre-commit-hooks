@@ -172,6 +172,14 @@ class CopyrightGlobals:
             "# Copyright {name} as of {year}.",
             "Copyright {name} as of {year}",
         ),
+        SupportedLanguage(
+            "html",
+            "html",
+            ".html",
+            "<!--- {content} -->",
+            "<!--- Copyright {name} as of {year}. -->",
+            "Copyright {name} as of {year}",
+        ),
     ]
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
@@ -194,6 +202,7 @@ class CopyrightGlobals:
         "cpp",
         "c-sharp",
         "perl",
+        "html",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 
