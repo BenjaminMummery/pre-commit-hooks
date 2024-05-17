@@ -133,22 +133,6 @@ class SupportedLanguage(object):
 class CopyrightGlobals:
     SUPPORTED_LANGUAGES = [
         SupportedLanguage(
-            "python",
-            "python",
-            ".py",
-            "# {content}",
-            "################################################################################\n# Copyright {name} as of {year}\n################################################################################",  # noqa: E501
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "markdown",
-            "markdown",
-            ".md",
-            "<!--- {content} -->",
-            "<!--- Copyright {name} as of {year}. -->",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
             "c++",
             "cpp",
             ".cpp",
@@ -165,14 +149,6 @@ class CopyrightGlobals:
             "Copyright {name} as of {year}",
         ),
         SupportedLanguage(
-            "perl",
-            "perl",
-            ".pl",
-            "# {content}",
-            "# Copyright {name} as of {year}.",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
             "html",
             "html",
             ".html",
@@ -186,6 +162,30 @@ class CopyrightGlobals:
             ".js",
             "// {content}",
             "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "markdown",
+            "markdown",
+            ".md",
+            "<!--- {content} -->",
+            "<!--- Copyright {name} as of {year}. -->",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "perl",
+            "perl",
+            ".pl",
+            "# {content}",
+            "# Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
+            "python",
+            "python",
+            ".py",
+            "# {content}",
+            "################################################################################\n# Copyright {name} as of {year}\n################################################################################",  # noqa: E501
             "Copyright {name} as of {year}",
         ),
     ]
@@ -205,13 +205,13 @@ class CopyrightGlobals:
     SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
         "name",
         "format",
-        "python",
-        "markdown",
         "cpp",
         "c-sharp",
-        "perl",
         "html",
         "javascript",
+        "markdown",
+        "perl",
+        "python",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 

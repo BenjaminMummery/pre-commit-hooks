@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """Mapping between coding languages and the comment markers they use."""
 
@@ -14,29 +14,29 @@ DASH_COMMENT = ("--", None)
 HTML_COMMENT = ("<!---", "-->")
 
 COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
-    "python": HASH_COMMENT,
-    "markdown": HTML_COMMENT,
-    "c++": SLASH_COMMENT,
-    "javascript": SLASH_COMMENT,
-    "java": SLASH_COMMENT,
-    "php": SLASH_COMMENT,
-    "ruby": HASH_COMMENT,
-    "sql": DASH_COMMENT,
-    "swift": SLASH_COMMENT,
-    "perl": HASH_COMMENT,
-    "typescript": SLASH_COMMENT,
-    "scala": SLASH_COMMENT,
-    "rust": SLASH_COMMENT,
-    "kotlin": SLASH_COMMENT,
-    "css": ("/*", "*/"),
-    "c#": ("/*", "*/"),
-    "html": HTML_COMMENT,
-    "matlab": ("%", None),
-    "dart": SLASH_COMMENT,
     "ada": DASH_COMMENT,
     "assembly": (";", None),
-    "lua": DASH_COMMENT,
+    "c++": SLASH_COMMENT,
+    "c#": ("/*", "*/"),
+    "css": ("/*", "*/"),
+    "dart": SLASH_COMMENT,
+    "html": HTML_COMMENT,
+    "java": SLASH_COMMENT,
+    "javascript": SLASH_COMMENT,
+    "kotlin": SLASH_COMMENT,
     "lisp": (";", None),
+    "lua": DASH_COMMENT,
+    "markdown": HTML_COMMENT,
+    "matlab": ("%", None),
+    "perl": HASH_COMMENT,
+    "php": SLASH_COMMENT,
+    "python": HASH_COMMENT,
+    "ruby": HASH_COMMENT,
+    "rust": SLASH_COMMENT,
+    "scala": SLASH_COMMENT,
+    "sql": DASH_COMMENT,
+    "swift": SLASH_COMMENT,
+    "typescript": SLASH_COMMENT,
 }
 
 
