@@ -217,6 +217,14 @@ class CopyrightGlobals:
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
+                "lua",
+                "lua",
+                ".lua",
+                "-- {content}",
+                "-- Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "markdown",
                 "markdown",
                 ".md",
