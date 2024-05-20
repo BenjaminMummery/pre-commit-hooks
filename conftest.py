@@ -217,6 +217,14 @@ class CopyrightGlobals:
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
+                "lisp",
+                "lisp",
+                ".lisp",  # TODO: also check for .lsp .l .cl .fasl
+                "; {content}",
+                "; Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "lua",
                 "lua",
                 ".lua",
