@@ -2,6 +2,19 @@
 
 
 
+## v2.3.0 (2024-05-20)
+
+### Feature
+
+* feat: support html files for add/update copyright hooks. (#86)
+
+* feat: support html files for add/update copyright hooks.
+
+* style: sort language lists.
+
+* test: set email as well as username in git workspaces. ([`be4b34d`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/be4b34d79c9f955db343a62d8a2d6025ed7c6815))
+
+
 ## v2.2.0 (2024-05-17)
 
 ### Feature
