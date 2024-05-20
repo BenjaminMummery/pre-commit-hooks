@@ -189,6 +189,14 @@ class CopyrightGlobals:
             "Copyright {name} as of {year}",
         ),
         SupportedLanguage(
+            "php",
+            "php",
+            ".PHP",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
             "python",
             "python",
             ".py",
@@ -228,6 +236,7 @@ class CopyrightGlobals:
         "javascript",
         "markdown",
         "perl",
+        "php",
         "python",
         "typescript",
     ]

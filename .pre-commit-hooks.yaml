@@ -23,6 +23,7 @@
     - javascript
     - markdown
     - perl
+    - php
     - python
     - typescript
 - id: update-copyright
@@ -41,6 +42,7 @@
     - javascript
     - markdown
     - perl
+    - php
     - python
     - typescript
 - id: sort-file-contents
