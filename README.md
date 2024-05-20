@@ -183,6 +183,7 @@ The add-copyright hook currently runs on changed source files of the following t
 | Perl       | `.pl`          | `# Copyright (c) 1969 Buzz` |
 | PHP        | `.PHP`         | `// Copyright (c) 1969 Buzz` |
 | Python     | `.py`          | `# Copyright (c) 1969 Buzz` |
+| Ruby       | `.rb`          | `# Copyright (c) 1969 Buzz` |
 | Typescript | `.ts`          | `// Copyright (c) 1969 Buzz` |
 
 

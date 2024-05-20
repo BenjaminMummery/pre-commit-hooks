@@ -205,6 +205,14 @@ class CopyrightGlobals:
             "Copyright {name} as of {year}",
         ),
         SupportedLanguage(
+            "ruby",
+            "ruby",
+            ".rb",
+            "# {content}",
+            "# Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
             "typescript",
             "typescript",
             ".ts",
@@ -238,6 +246,7 @@ class CopyrightGlobals:
         "perl",
         "php",
         "python",
+        "ruby",
         "typescript",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]

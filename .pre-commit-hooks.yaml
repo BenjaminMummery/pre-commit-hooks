@@ -25,6 +25,7 @@
     - perl
     - php
     - python
+    - ruby
     - typescript
 - id: update-copyright
   name: Update dates on copyright strings in source files
@@ -44,6 +45,7 @@
     - perl
     - php
     - python
+    - ruby
     - typescript
 - id: sort-file-contents
   name: Sort gitignore sections
