@@ -220,6 +220,14 @@ class CopyrightGlobals:
             "// Copyright {name} as of {year}.",
             "Copyright {name} as of {year}",
         ),
+        SupportedLanguage(
+            "sql",
+            "sql",
+            ".sql",
+            "-- {content}",
+            "-- Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
     ]
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
@@ -247,6 +255,7 @@ class CopyrightGlobals:
         "php",
         "python",
         "ruby",
+        "sql",
         "typescript",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]

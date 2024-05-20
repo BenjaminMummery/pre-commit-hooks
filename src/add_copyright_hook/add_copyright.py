@@ -38,6 +38,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = {
     "php": "php",
     "python": "python",
     "ruby": "ruby",
+    "sql": "sql",
     "ts": "typescript",
 }
 
