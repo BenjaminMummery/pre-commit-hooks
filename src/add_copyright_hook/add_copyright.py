@@ -28,12 +28,13 @@ TOOL_NAME = "add_copyright"
 # Mapping between the language tags as determined by identify, and how they are
 # represented in toml.
 LANGUAGE_TAGS_TOMLKEYS: dict = {
-    "python": "python",
-    "markdown": "markdown",
     "c++": "cpp",
     "c#": "c-sharp",
-    "perl": "perl",
+    "html": "html",
     "javascript": "javascript",
+    "markdown": "markdown",
+    "perl": "perl",
+    "python": "python",
 }
 
 

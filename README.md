@@ -179,6 +179,7 @@ The add-copyright hook currently runs on changed source files of the following t
 | Markdown | `.md`          | `<!--- Copyright (c) 1969 Buzz -->`
 | Perl     | `.pl`          | `# Copyright (c) 1969 Buzz`
 | Python   | `.py`          | `# Copyright (c) 1969 Buzz`
+| HTML     | `.html`        | `<!--- Copyright (c) 1969 Buzz -->` |
 
 
 

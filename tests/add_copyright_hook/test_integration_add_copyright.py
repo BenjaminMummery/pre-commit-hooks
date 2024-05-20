@@ -105,6 +105,7 @@ class TestDefaultBehaviour:
                 file := "hello" + language.extension, "", git_repo, mocker
             )
             git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run("git config user.email 'you@example.com'")
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -149,6 +150,7 @@ class TestDefaultBehaviour:
                 file := "hello" + language.extension, "", git_repo, mocker
             )
             git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run("git config user.email 'you@example.com'")
             (git_repo.workspace / config_file).write_text("[tool.foo]\noption='value'")
 
             # WHEN
@@ -196,6 +198,7 @@ class TestDefaultBehaviour:
                 mocker,
             )
             git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run("git config user.email 'you@example.com'")
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -248,6 +251,7 @@ class TestDefaultBehaviour:
                 file := "hello" + language.extension, file_content, git_repo, mocker
             )
             git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run("git config user.email 'you@example.com'")
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -306,6 +310,7 @@ class TestDefaultBehaviour:
                 mocker,
             )
             git_repo.run(f"git config user.name '{git_username}'")
+            git_repo.run("git config user.email 'you@example.com'")
             git_repo.run(f"git add {file}", check_rc=True)
             git_repo.run("git commit -m 'test commit' --no-verify", check_rc=True)
 
