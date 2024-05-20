@@ -31,6 +31,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = {
     "c++": "cpp",
     "c#": "c-sharp",
     "html": "html",
+    "java": "java",
     "javascript": "javascript",
     "markdown": "markdown",
     "perl": "perl",

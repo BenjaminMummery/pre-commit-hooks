@@ -157,6 +157,14 @@ class CopyrightGlobals:
             "Copyright {name} as of {year}",
         ),
         SupportedLanguage(
+            "java",
+            "java",
+            ".java",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
             "javascript",
             "javascript",
             ".js",
@@ -208,6 +216,7 @@ class CopyrightGlobals:
         "cpp",
         "c-sharp",
         "html",
+        "java",
         "javascript",
         "markdown",
         "perl",
