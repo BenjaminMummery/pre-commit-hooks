@@ -23,7 +23,6 @@ from src.add_copyright_hook.add_copyright import InvalidGitRepositoryError
 
 class TestMeta:
     @staticmethod
-    @pytest.mark.xfail(reason="they're not actually implemented yet.")
     def test_all_languages_are_covered():
         """
         Sanity check - make sure that every language implemented in SUPPORTED_LANGUAGES
