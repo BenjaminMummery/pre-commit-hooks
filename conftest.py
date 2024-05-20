@@ -177,6 +177,14 @@ class CopyrightGlobals:
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
+                "css",
+                "css",
+                ".css",
+                "/* {content} */",
+                "/* Copyright {name} as of {year}.*/",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "dart",
                 "dart",
                 ".dart",
