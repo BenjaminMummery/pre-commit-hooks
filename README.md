@@ -176,18 +176,22 @@ The add-copyright hook currently runs on changed source files of the following t
 |------------|----------------|---------|
 | C++        | `.cpp`         | `// Copyright (c) 1969 Buzz` |
 | C#         | `.cs`          | `/* Copyright (c) 1969 Buzz */` |
+| CSS        | `.css`         |`/* Copyright (c) 1969 Buzz */` |
+| Dart       | `.dart`        | `// Copyright (c) 1969 Buzz` |
 | HTML       | `.html`        | `<!--- Copyright (c) 1969 Buzz -->` |
 | Java       | `.java`        | `// Copyright (c) 1969 Buzz` |
 | Javascript | `.js`          | `// Copyright (c) 1969 Buzz` |
+| Kotlin     | `.kt`          | `// Copyright (c) 1969 Buzz` |
+| Lua        | `.lua`         | `-- Copyright (c) 1969 Buzz` |
 | Markdown   | `.md`          | `<!--- Copyright (c) 1969 Buzz -->` |
 | Perl       | `.pl`          | `# Copyright (c) 1969 Buzz` |
 | PHP        | `.PHP`         | `// Copyright (c) 1969 Buzz` |
 | Python     | `.py`          | `# Copyright (c) 1969 Buzz` |
 | Ruby       | `.rb`          | `# Copyright (c) 1969 Buzz` |
+| Rust       | `.rst`         | `// Copyright (c) 1969 Buzz` |
 | Scala      | `.scala`       | `// Copyright (c) 1969 Buzz` |
 | SQL        | `.sql`         | `-- Copyright (c) 1969 Buzz` |
 | Swift      | `.swift`       | `// Copyright (c) 1969 Buzz` |
-| Typescript | `.ts`          | `// Copyright (c) 1969 Buzz` |
 
 
 

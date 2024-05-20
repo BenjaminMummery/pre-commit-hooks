@@ -145,22 +145,6 @@ class CopyrightGlobals:
     SUPPORTED_LANGUAGES = sorted(
         [
             SupportedLanguage(
-                "assembly",
-                "assembly",
-                ".asm",
-                "; {content}",
-                "; Copyright {name} as of {year}.",
-                "Copyright {name} as of {year}",
-            ),
-            SupportedLanguage(
-                "ada",
-                "ada",
-                ".ada",
-                "-- {content}",
-                "-- Copyright {name} as of {year}.",
-                "Copyright {name} as of {year}",
-            ),
-            SupportedLanguage(
                 "c++",
                 "cpp",
                 ".cpp",
@@ -225,14 +209,6 @@ class CopyrightGlobals:
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
-                "lisp",
-                "lisp",
-                ".lisp",  # TODO: also check for .lsp .l .cl .fasl
-                "; {content}",
-                "; Copyright {name} as of {year}.",
-                "Copyright {name} as of {year}",
-            ),
-            SupportedLanguage(
                 "lua",
                 "lua",
                 ".lua",
@@ -246,14 +222,6 @@ class CopyrightGlobals:
                 ".md",
                 "<!--- {content} -->",
                 "<!--- Copyright {name} as of {year}. -->",
-                "Copyright {name} as of {year}",
-            ),
-            SupportedLanguage(
-                "matlab",
-                "matlab",
-                ".m",
-                "% {content} ",
-                "% Copyright {name} as of {year}.",
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
@@ -318,14 +286,6 @@ class CopyrightGlobals:
                 ".sql",
                 "-- {content}",
                 "-- Copyright {name} as of {year}.",
-                "Copyright {name} as of {year}",
-            ),
-            SupportedLanguage(
-                "typescript",
-                "typescript",
-                ".ts",
-                "// {content}",
-                "// Copyright {name} as of {year}.",
                 "Copyright {name} as of {year}",
             ),
         ]

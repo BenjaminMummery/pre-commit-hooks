@@ -16,8 +16,6 @@
   always_run: true
   stages: [commit]
   types_or:
-    - ada
-    - assembly
     - c++
     - c#
     - css
@@ -26,10 +24,8 @@
     - java
     - javascript
     - kotlin
-    - lisp
     - lua
     - markdown
-    - matlab
     - perl
     - php
     - python
@@ -38,7 +34,6 @@
     - scala
     - sql
     - swift
-    - typescript
 - id: update-copyright
   name: Update dates on copyright strings in source files
   description: Parses copyright strings in source files, updating the date to the
@@ -48,8 +43,6 @@
   always_run: true
   stages: [commit]
   types_or:
-    - ada
-    - assembly
     - c++
     - c#
     - css
@@ -58,10 +51,8 @@
     - java
     - javascript
     - kotlin
-    - lisp
     - lua
     - markdown
-    - matlab
     - perl
     - php
     - python
@@ -70,7 +61,6 @@
     - scala
     - sql
     - swift
-    - typescript
 - id: sort-file-contents
   name: Sort gitignore sections
   description: Sorts the contents of .gitignore while preserving sections.

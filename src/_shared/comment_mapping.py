@@ -14,8 +14,6 @@ DASH_COMMENT = ("--", None)
 HTML_COMMENT = ("<!---", "-->")
 
 COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
-    "ada": DASH_COMMENT,
-    "assembly": (";", None),
     "c++": SLASH_COMMENT,
     "c#": ("/*", "*/"),
     "css": ("/*", "*/"),
@@ -24,10 +22,8 @@ COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
     "java": SLASH_COMMENT,
     "javascript": SLASH_COMMENT,
     "kotlin": SLASH_COMMENT,
-    "lisp": (";", None),
     "lua": DASH_COMMENT,
     "markdown": HTML_COMMENT,
-    "matlab": ("%", None),
     "perl": HASH_COMMENT,
     "php": SLASH_COMMENT,
     "python": HASH_COMMENT,
@@ -36,7 +32,6 @@ COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
     "scala": SLASH_COMMENT,
     "sql": DASH_COMMENT,
     "swift": SLASH_COMMENT,
-    "ts": SLASH_COMMENT,
 }
 
 

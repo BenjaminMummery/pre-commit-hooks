@@ -30,8 +30,6 @@ TOOL_NAME = "add_copyright"
 LANGUAGE_TAGS_TOMLKEYS: dict = dict(
     sorted(
         {
-            "ada": "ada",
-            "assembly": "assembly",
             "c++": "cpp",
             "c#": "c-sharp",
             "css": "css",
@@ -40,10 +38,8 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
             "java": "java",
             "javascript": "javascript",
             "kotlin": "kotlin",
-            "lisp": "lisp",
             "lua": "lua",
             "markdown": "markdown",
-            "matlab": "matlab",
             "perl": "perl",
             "php": "php",
             "python": "python",
@@ -52,7 +48,6 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
             "scala": "scala",
             "sql": "sql",
             "swift": "swift",
-            "ts": "typescript",
         }.items()
     )
 )
