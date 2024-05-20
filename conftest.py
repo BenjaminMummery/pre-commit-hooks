@@ -221,6 +221,14 @@ class CopyrightGlobals:
             "Copyright {name} as of {year}",
         ),
         SupportedLanguage(
+            "swift",
+            "swift",
+            ".swift",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
+        SupportedLanguage(
             "sql",
             "sql",
             ".sql",
@@ -256,6 +264,7 @@ class CopyrightGlobals:
         "python",
         "ruby",
         "sql",
+        "swift",
         "typescript",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]

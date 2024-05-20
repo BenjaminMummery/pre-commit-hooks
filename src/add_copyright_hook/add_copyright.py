@@ -39,6 +39,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = {
     "python": "python",
     "ruby": "ruby",
     "sql": "sql",
+    "swift": "swift",
     "ts": "typescript",
 }
 

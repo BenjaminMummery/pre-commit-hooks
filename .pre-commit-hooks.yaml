@@ -27,6 +27,7 @@
     - python
     - ruby
     - sql
+    - swift
     - typescript
 - id: update-copyright
   name: Update dates on copyright strings in source files
@@ -48,6 +49,7 @@
     - python
     - ruby
     - sql
+    - swift
     - typescript
 - id: sort-file-contents
   name: Sort gitignore sections
