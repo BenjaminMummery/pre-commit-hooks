@@ -196,6 +196,14 @@ class CopyrightGlobals:
             "################################################################################\n# Copyright {name} as of {year}\n################################################################################",  # noqa: E501
             "Copyright {name} as of {year}",
         ),
+        SupportedLanguage(
+            "typescript",
+            "typescript",
+            ".ts",
+            "// {content}",
+            "// Copyright {name} as of {year}.",
+            "Copyright {name} as of {year}",
+        ),
     ]
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
@@ -221,6 +229,7 @@ class CopyrightGlobals:
         "markdown",
         "perl",
         "python",
+        "typescript",
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 

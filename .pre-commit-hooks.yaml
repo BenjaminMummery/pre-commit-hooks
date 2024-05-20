@@ -24,6 +24,7 @@
     - markdown
     - perl
     - python
+    - typescript
 - id: update-copyright
   name: Update dates on copyright strings in source files
   description: Parses copyright strings in source files, updating the date to the
@@ -41,6 +42,7 @@
     - markdown
     - perl
     - python
+    - typescript
 - id: sort-file-contents
   name: Sort gitignore sections
   description: Sorts the contents of .gitignore while preserving sections.

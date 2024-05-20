@@ -36,7 +36,7 @@ COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
     "scala": SLASH_COMMENT,
     "sql": DASH_COMMENT,
     "swift": SLASH_COMMENT,
-    "typescript": SLASH_COMMENT,
+    "ts": SLASH_COMMENT,
 }
 
 

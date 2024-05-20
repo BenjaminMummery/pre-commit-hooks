@@ -36,6 +36,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = {
     "markdown": "markdown",
     "perl": "perl",
     "python": "python",
+    "ts": "typescript",
 }
 
 

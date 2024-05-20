@@ -178,10 +178,11 @@ The add-copyright hook currently runs on changed source files of the following t
 | C#         | `.cs`          | `/* Copyright (c) 1969 Buzz */` |
 | HTML       | `.html`        | `<!--- Copyright (c) 1969 Buzz -->` |
 | Java       | `.java`        | `// Copyright (c) 1969 Buzz` |
-| Javascript | `.js`          | `<!--- Copyright (c) 1969 Buzz -->` |
+| Javascript | `.js`          | `// Copyright (c) 1969 Buzz` |
 | Markdown   | `.md`          | `<!--- Copyright (c) 1969 Buzz -->` |
 | Perl       | `.pl`          | `# Copyright (c) 1969 Buzz` |
 | Python     | `.py`          | `# Copyright (c) 1969 Buzz` |
+| Typescript | `.ts`          | `// Copyright (c) 1969 Buzz` |
 
 
 
