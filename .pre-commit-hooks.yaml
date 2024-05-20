@@ -16,6 +16,7 @@
   always_run: true
   stages: [commit]
   types_or:
+    - ada
     - c++
     - c#
     - dart
@@ -43,6 +44,7 @@
   always_run: true
   stages: [commit]
   types_or:
+    - ada
     - c++
     - c#
     - dart

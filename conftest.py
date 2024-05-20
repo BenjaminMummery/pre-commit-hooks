@@ -145,6 +145,14 @@ class CopyrightGlobals:
     SUPPORTED_LANGUAGES = sorted(
         [
             SupportedLanguage(
+                "ada",
+                "ada",
+                ".ada",
+                "-- {content}",
+                "-- Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "c++",
                 "cpp",
                 ".cpp",
