@@ -18,6 +18,7 @@
   types_or:
     - c++
     - c#
+    - dart
     - html
     - java
     - javascript
@@ -44,6 +45,7 @@
   types_or:
     - c++
     - c#
+    - dart
     - html
     - java
     - javascript
