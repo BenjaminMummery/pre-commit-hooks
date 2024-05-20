@@ -15,7 +15,25 @@
   language: python
   always_run: true
   stages: [commit]
-  types_or: [c++, c#, html, javascript, markdown, perl, python]
+  types_or:
+    - c++
+    - c#
+    - css
+    - dart
+    - html
+    - java
+    - javascript
+    - kotlin
+    - lua
+    - markdown
+    - perl
+    - php
+    - python
+    - ruby
+    - rust
+    - scala
+    - sql
+    - swift
 - id: update-copyright
   name: Update dates on copyright strings in source files
   description: Parses copyright strings in source files, updating the date to the
@@ -24,7 +42,25 @@
   language: python
   always_run: true
   stages: [commit]
-  types_or: [c++, c#, html, javascript, markdown, perl, python]
+  types_or:
+    - c++
+    - c#
+    - css
+    - dart
+    - html
+    - java
+    - javascript
+    - kotlin
+    - lua
+    - markdown
+    - perl
+    - php
+    - python
+    - ruby
+    - rust
+    - scala
+    - sql
+    - swift
 - id: sort-file-contents
   name: Sort gitignore sections
   description: Sorts the contents of .gitignore while preserving sections.

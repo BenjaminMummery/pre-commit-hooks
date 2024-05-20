@@ -128,67 +128,168 @@ class SupportedLanguage(object):
     def __str__(self):
         return self.tag
 
+    def __lt__(self, other: "SupportedLanguage") -> bool:
+        names = [self.tag, other.tag]
+        return names == sorted(names)
+
+    def __gt__(self, other: "SupportedLanguage") -> bool:
+        names = [self.tag, other.tag]
+        return names != sorted(names)
+
 
 @dataclass
 class CopyrightGlobals:
-    SUPPORTED_LANGUAGES = [
-        SupportedLanguage(
-            "c++",
-            "cpp",
-            ".cpp",
-            "// {content}",
-            "// Copyright {name} as of {year}.",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "c#",
-            "c-sharp",
-            ".cs",
-            "/* {content} */",
-            "/* Copyright {name} as of {year}.*/",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "html",
-            "html",
-            ".html",
-            "<!--- {content} -->",
-            "<!--- Copyright {name} as of {year}. -->",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "javascript",
-            "javascript",
-            ".js",
-            "// {content}",
-            "// Copyright {name} as of {year}.",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "markdown",
-            "markdown",
-            ".md",
-            "<!--- {content} -->",
-            "<!--- Copyright {name} as of {year}. -->",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "perl",
-            "perl",
-            ".pl",
-            "# {content}",
-            "# Copyright {name} as of {year}.",
-            "Copyright {name} as of {year}",
-        ),
-        SupportedLanguage(
-            "python",
-            "python",
-            ".py",
-            "# {content}",
-            "################################################################################\n# Copyright {name} as of {year}\n################################################################################",  # noqa: E501
-            "Copyright {name} as of {year}",
-        ),
-    ]
+    # List of languages we want to cover with tests.
+    # Note: we use 'sorted' so that string comparisons that list all languages will
+    # always be alphabetical.
+    SUPPORTED_LANGUAGES = sorted(
+        [
+            SupportedLanguage(
+                "c++",
+                "cpp",
+                ".cpp",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "c#",
+                "c-sharp",
+                ".cs",
+                "/* {content} */",
+                "/* Copyright {name} as of {year}.*/",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "css",
+                "css",
+                ".css",
+                "/* {content} */",
+                "/* Copyright {name} as of {year}.*/",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "dart",
+                "dart",
+                ".dart",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "html",
+                "html",
+                ".html",
+                "<!--- {content} -->",
+                "<!--- Copyright {name} as of {year}. -->",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "java",
+                "java",
+                ".java",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "javascript",
+                "javascript",
+                ".js",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "kotlin",
+                "kotlin",
+                ".kt",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "lua",
+                "lua",
+                ".lua",
+                "-- {content}",
+                "-- Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "markdown",
+                "markdown",
+                ".md",
+                "<!--- {content} -->",
+                "<!--- Copyright {name} as of {year}. -->",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "perl",
+                "perl",
+                ".pl",
+                "# {content}",
+                "# Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "php",
+                "php",
+                ".PHP",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "python",
+                "python",
+                ".py",
+                "# {content}",
+                "################################################################################\n# Copyright {name} as of {year}\n################################################################################",  # noqa: E501
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "ruby",
+                "ruby",
+                ".rb",
+                "# {content}",
+                "# Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "rust",
+                "rust",
+                ".rs",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "scala",
+                "scala",
+                ".scala",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "swift",
+                "swift",
+                ".swift",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
+                "sql",
+                "sql",
+                ".sql",
+                "-- {content}",
+                "-- Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+        ]
+    )
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
         "Copyright (c) {end_year} NAME",
@@ -202,16 +303,8 @@ class CopyrightGlobals:
             "ValueError: Copyright end year cannot be before the start year. Got 1312 and 2012 respectively.",  # noqa: E501
         )
     ]
-    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = [
-        "name",
-        "format",
-        "cpp",
-        "c-sharp",
-        "html",
-        "javascript",
-        "markdown",
-        "perl",
-        "python",
+    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = ["name", "format"] + [
+        language.toml_key for language in SUPPORTED_LANGUAGES
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
 

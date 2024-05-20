@@ -27,15 +27,30 @@ TOOL_NAME = "add_copyright"
 
 # Mapping between the language tags as determined by identify, and how they are
 # represented in toml.
-LANGUAGE_TAGS_TOMLKEYS: dict = {
-    "c++": "cpp",
-    "c#": "c-sharp",
-    "html": "html",
-    "javascript": "javascript",
-    "markdown": "markdown",
-    "perl": "perl",
-    "python": "python",
-}
+LANGUAGE_TAGS_TOMLKEYS: dict = dict(
+    sorted(
+        {
+            "c++": "cpp",
+            "c#": "c-sharp",
+            "css": "css",
+            "dart": "dart",
+            "html": "html",
+            "java": "java",
+            "javascript": "javascript",
+            "kotlin": "kotlin",
+            "lua": "lua",
+            "markdown": "markdown",
+            "perl": "perl",
+            "php": "php",
+            "python": "python",
+            "ruby": "ruby",
+            "rust": "rust",
+            "scala": "scala",
+            "sql": "sql",
+            "swift": "swift",
+        }.items()
+    )
+)
 
 
 def _get_earliest_commit_year(file: Path) -> int:

@@ -21,6 +21,20 @@ from src.add_copyright_hook import add_copyright
 from src.add_copyright_hook.add_copyright import InvalidGitRepositoryError
 
 
+class TestMeta:
+    @staticmethod
+    def test_all_languages_are_covered():
+        """
+        Sanity check - make sure that every language implemented in SUPPORTED_LANGUAGES
+        is also in the list of languages we test.
+        """
+        tested_languages = [
+            lang.toml_key for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
+        ]
+        for language in add_copyright.LANGUAGE_TAGS_TOMLKEYS.values():
+            assert language in tested_languages
+
+
 @pytest.mark.usefixtures("git_repo")
 class TestNoChanges:
     @staticmethod
