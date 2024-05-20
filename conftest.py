@@ -145,6 +145,14 @@ class CopyrightGlobals:
     SUPPORTED_LANGUAGES = sorted(
         [
             SupportedLanguage(
+                "assembly",
+                "assembly",
+                ".asm",
+                "; {content}",
+                "; Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "ada",
                 "ada",
                 ".ada",

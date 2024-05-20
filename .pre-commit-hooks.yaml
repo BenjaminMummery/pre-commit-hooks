@@ -17,6 +17,7 @@
   stages: [commit]
   types_or:
     - ada
+    - assembly
     - c++
     - c#
     - dart
@@ -45,6 +46,7 @@
   stages: [commit]
   types_or:
     - ada
+    - assembly
     - c++
     - c#
     - dart
