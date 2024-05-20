@@ -225,6 +225,14 @@ class CopyrightGlobals:
                 "Copyright {name} as of {year}",
             ),
             SupportedLanguage(
+                "scala",
+                "scala",
+                ".scala",
+                "// {content}",
+                "// Copyright {name} as of {year}.",
+                "Copyright {name} as of {year}",
+            ),
+            SupportedLanguage(
                 "swift",
                 "swift",
                 ".swift",

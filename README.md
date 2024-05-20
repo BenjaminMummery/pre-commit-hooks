@@ -184,6 +184,7 @@ The add-copyright hook currently runs on changed source files of the following t
 | PHP        | `.PHP`         | `// Copyright (c) 1969 Buzz` |
 | Python     | `.py`          | `# Copyright (c) 1969 Buzz` |
 | Ruby       | `.rb`          | `# Copyright (c) 1969 Buzz` |
+| Scala      | `.scala`       | `// Copyright (c) 1969 Buzz` |
 | SQL        | `.sql`         | `-- Copyright (c) 1969 Buzz` |
 | Swift      | `.swift`       | `// Copyright (c) 1969 Buzz` |
 | Typescript | `.ts`          | `// Copyright (c) 1969 Buzz` |
