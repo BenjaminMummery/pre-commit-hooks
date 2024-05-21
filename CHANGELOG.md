@@ -2,6 +2,13 @@
 
 
 
+## v2.3.2 (2024-05-21)
+
+### Fix
+
+* fix: when erroring out due to multiple configs, report the found configs. (#90) ([`f371632`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/f3716321ffce45fc45863c0de25c007769160697))
+
+
 ## v2.3.1 (2024-05-21)
 
 ### Fix
