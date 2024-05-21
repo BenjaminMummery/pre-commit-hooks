@@ -4,6 +4,7 @@
 
 
 import configparser
+import logging
 import os
 import sys
 from pathlib import Path
@@ -40,8 +41,10 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
         raise FileNotFoundError("No config file found.")
 
     if len(filepaths) > 1:  # pragma: no cover
-        raise NotImplementedError(
-            f"Currently can't handle multiple config files, found: {filepaths}"
+        logging.warning(
+            "Found multiple config files:\n"
+            f"{filepaths}\n"
+            f"Priority will be given to {filepaths[0]}"
         )
 
     # read config file
