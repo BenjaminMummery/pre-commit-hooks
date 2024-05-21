@@ -2,6 +2,53 @@
 
 
 
+## v2.3.1 (2024-05-21)
+
+### Fix
+
+* fix: don&#39;t error out in detached head mode. (#89) ([`e577435`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/e57743587ea9d925a1ca81e9a3c9dded4698ac49))
+
+### Unknown
+
+* Feat: support additional languages. (#87)
+
+* feat: support java source files.
+
+* feat: support typescript source files.
+
+* feat: support php source files.
+
+* feat: support ruby source files.
+
+* feat: support sql source files.
+
+* feat: support swift source files.
+
+* refactor: programatically sort language lists.
+
+* feat: support scala source files.
+
+* feat: support rust sourcefiles.
+
+* feat: support kotlin source files.
+
+* feat: support matlab source files.
+
+* feat: support dart source files.
+
+* feat: support ada source files.
+
+* feat: support assembly source files.
+
+* feat: support lua source files.
+
+* feat: support lisp source files.
+
+* feat: support css source files.
+
+* feat: remove languages not supported by pre-commit and identify. ([`95ffb51`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/95ffb517fa48371d49df243db7e266bac883d563))
+
+
 ## v2.3.0 (2024-05-20)
 
 ### Feature
