@@ -73,6 +73,22 @@ class TestNoChanges:
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
+    @staticmethod
+    def test_no_branch(
+        cwd, tmp_path: Path, mocker: MockerFixture, capsys: pytest.CaptureFixture
+    ):
+        # GIVEN
+        mocker.patch("sys.argv", ["stub_name", "stub_filepath"])
+
+        # WHEN
+        with cwd(tmp_path):
+            assert add_msg_issue.main() == 0
+
+        # THEN
+        captured = capsys.readouterr()
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
 
 @pytest.mark.parametrize("branch_name, issue", BRANCH_NAMES)
 class TestAddingMessage:
@@ -240,26 +256,6 @@ class TestAddingMessage:
 
 
 class TestFailureStates:
-    @staticmethod
-    def test_no_branch(
-        cwd, tmp_path: Path, mocker: MockerFixture, capsys: pytest.CaptureFixture
-    ):
-        # GIVEN
-        mocker.patch("sys.argv", ["stub_name", "stub_filepath"])
-
-        # WHEN
-        with cwd(tmp_path):
-            with pytest.raises(add_msg_issue.BranchNameReadError) as e:
-                add_msg_issue.main()
-
-        # THEN
-        assert_matching(
-            "captured err",
-            "expected_err",
-            e.exconly(),
-            "src.add_msg_issue_hook.add_msg_issue.BranchNameReadError: Getting branch name for add_msg_issue_hook pre-commit hook failed.",  # noqa: E501
-        )
-
     @staticmethod
     @pytest.mark.parametrize(
         "template, missing_keys",

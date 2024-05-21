@@ -267,7 +267,7 @@ class TestParseArgs:
 
 class TestMain:
     @staticmethod
-    def test_explicit_re_raise_of_BranchNameReadError(mocker: MockerFixture):
+    def test_handles_detached_HEAD(mocker: MockerFixture):
         # GIVEN
         mocker.patch(
             f"{add_msg_issue.__name__}._parse_args",
@@ -285,10 +285,10 @@ class TestMain:
         )
 
         # WHEN
-        with pytest.raises(BranchNameReadError):
-            _ = add_msg_issue.main()
+        ret = add_msg_issue.main()
 
         # THEN
+        assert ret == 0
         mocked_get_issue_ids.assert_not_called()
         mocked_open.assert_not_called()
         mocked_issue_in_message.assert_not_called()
