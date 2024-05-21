@@ -40,7 +40,9 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
         raise FileNotFoundError("No config file found.")
 
     if len(filepaths) > 1:  # pragma: no cover
-        raise NotImplementedError("Currently can't handle multiple config files.")
+        raise NotImplementedError(
+            f"Currently can't handle multiple config files, found: {filepaths}"
+        )
 
     # read config file
     filepath = filepaths[0]
