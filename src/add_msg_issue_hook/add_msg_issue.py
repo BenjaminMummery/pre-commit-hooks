@@ -193,7 +193,9 @@ def main() -> int:
     try:
         branch_name: str = _get_branch_name()
     except BranchNameReadError:
-        raise
+        # We're probably in a detached head state, so we don't want to prevent git
+        # doing whatever it's trying to do.
+        return 0
 
     issue_ids: List[str] = _get_issue_ids_from_branch_name(branch_name)
     if len(issue_ids) < 1:
