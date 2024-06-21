@@ -32,10 +32,10 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
     filenames = ["pyproject.toml", "setup.cfg"]
     filepaths: List[Path] = []
 
-    for root, _, files in os.walk(os.getcwd()):
-        for filename in filenames:
-            if filename in files:
-                filepaths.append(Path(os.path.join(root, filename)))
+    files = os.listdir(root := os.getcwd())
+    for filename in filenames:
+        if filename in files:
+            filepaths.append(Path(os.path.join(root, filename)))
 
     if len(filepaths) == 0:
         raise FileNotFoundError("No config file found.")
