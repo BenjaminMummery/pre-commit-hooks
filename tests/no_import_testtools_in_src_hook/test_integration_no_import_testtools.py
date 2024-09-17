@@ -27,16 +27,25 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
+    @pytest.mark.parametrize(
+        "file_content",
+        [
+            "import numpy",
+            "import numpy\nimport pydantic",
+            "import numpy\n# import pytest\nimport pydantic",
+        ],
+    )
     def test_changed_files_dont_import_testtools(
         capsys: pytest.CaptureFixture,
         mocker: MockerFixture,
         git_repo: GitRepo,
         cwd,
+        file_content: str,
     ):
         # GIVEN
         add_changed_files(
             file := "hello.py",
-            file_content := "import numpy\nimport pydantic\n",
+            file_content,
             git_repo,
             mocker,
         )
