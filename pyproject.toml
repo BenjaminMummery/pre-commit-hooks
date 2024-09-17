@@ -41,6 +41,7 @@ no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_test
 
 [project.optional-dependencies]
 dev = [
+    "path < 16",  # TODO: unpin if pytest-git > 1.7.0 handles the removal of isdir()
     "freezegun",
     "pre-commit",
     "pytest",
