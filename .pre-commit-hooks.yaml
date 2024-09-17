@@ -69,3 +69,11 @@
   always_run: true
   stages: [commit]
   files: ^.gitignore
+- id: no-import-testtools-in-src
+  name: Detect test tool imports in src files
+  description: Detect test tool imports outside of test files.
+  entry: no-import-testtools-in-src
+  language: python
+  always_run: true
+  stages: [commit]
+  files: ^.gitignore
