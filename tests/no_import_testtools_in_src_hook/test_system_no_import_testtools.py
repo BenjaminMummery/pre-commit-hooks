@@ -71,3 +71,27 @@ class TestNoChanges:
         assert "Detect test tool imports in src files" in process.stdout
         assert "Passed" in process.stdout, process.stdout
         assert "Passed" in process.stdout, process.stdout
+
+    @staticmethod
+    def test_changed_files_are_tests(git_repo: GitRepo, cwd):
+        """Files have been changed, but only test files."""
+        # GIVEN
+        file = "test_hello.py"
+        f = git_repo.workspace / file
+        f.write_text(f"<file {file} content sentinel>")
+        git_repo.run(f"git add {file}")
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            process: subprocess.CompletedProcess = subprocess.run(
+                COMMAND, capture_output=True, text=True
+            )
+
+        # THEN
+        assert process.returncode == 0
+        with open(git_repo.workspace / file, "r") as f:
+            content = f.read()
+        assert content == f"<file {file} content sentinel>"
+        assert "Detect test tool imports in src files" in process.stdout
+        assert "Passed" in process.stdout, process.stdout
+        assert "Passed" in process.stdout, process.stdout

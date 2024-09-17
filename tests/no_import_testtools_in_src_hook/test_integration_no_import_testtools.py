@@ -92,6 +92,38 @@ class TestNoChanges:
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
+    @staticmethod
+    def test_changed_files_are_tests(
+        capsys: pytest.CaptureFixture,
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        cwd,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "test_hello.py",
+            file_content := "import pytest\nimport unittest\n",
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert no_import_testtools_in_src.main() == 0
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
 
 class TestDetection:
     """In detection mode, the hook should list the problems, but shouldn't change the
