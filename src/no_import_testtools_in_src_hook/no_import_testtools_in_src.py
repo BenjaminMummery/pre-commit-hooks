@@ -9,9 +9,40 @@ consult the README file.
 
 
 import argparse
+import ast
+from collections import namedtuple
 from pathlib import Path
+from typing import Any, Generator, List
 
 from src._shared import resolvers
+
+Import = namedtuple("Import", ["module", "name", "alias"])
+
+
+def _get_imports(file: Path) -> Generator[Import, Any, None]:
+    """
+    Find all modules a file imports.
+
+    Args:
+        file (Path): The file to be checked.
+
+    Yields:
+        Generator[Import, None]
+    """
+    with open(file) as fh:
+        root = ast.parse(fh.read(), file)
+
+    for node in ast.iter_child_nodes(root):
+        if isinstance(node, ast.Import):
+            module: List[str] = []
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module.split(".") if node.module is not None else []
+        else:
+            continue
+
+        assert hasattr(node, "names")
+        for n in node.names:
+            yield Import(module, n.name.split("."), n.asname)
 
 
 def _check_for_imports(file: Path) -> int:
@@ -26,15 +57,13 @@ def _check_for_imports(file: Path) -> int:
     Returns:
         int: 1 if the file imports testing, 0 otherwise.
     """
-    bad_imports = []
 
-    with open(file) as f:
-        content: str = f.read()
+    bad_imports: List[str] = []
+    test_toolkits = set(["pytest", "unittest"])
+    for imp in _get_imports(file):
+        bad_imports += test_toolkits.intersection(imp.module + imp.name)
 
-    for test_toolkit in ["pytest", "unittest"]:
-        if f"import {test_toolkit}" in content:
-            bad_imports.append(test_toolkit)
-
+    # No bad imports, nothing to do.
     if len(bad_imports) == 0:
         return 0
 
