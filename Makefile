@@ -85,5 +85,5 @@ test_sort_file_contents: test_venv
 
 test_no_testtools: test_venv
 	@. test_venv/bin/activate; \
-	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'NO_TESTTOOLS' TESTS; \
 	pytest tests/no_import_testtools_in_src_hook -x
