@@ -72,7 +72,7 @@ def main():
     Returns:
         int: 1 if imports are found, 0 otherwise.
     """
-    files = _parse_args().files
+    files = [file for file in _parse_args().files if "test" not in str(file)]
 
     retv: int = 0
     for file in files:
