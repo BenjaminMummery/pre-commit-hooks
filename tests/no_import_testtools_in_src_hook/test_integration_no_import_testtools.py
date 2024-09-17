@@ -65,7 +65,7 @@ class TestNoChanges:
         git_repo: GitRepo,
         cwd,
     ):
-        #
+        # GIVEN
         files = ["hello.txt", ".gitignore", "test.yaml"]
         for file in files:
             add_changed_files(
@@ -90,4 +90,56 @@ class TestNoChanges:
             "output content", "expected content", output_content, file_content
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+class TestDetection:
+    """In detection mode, the hook should list the problems, but shouldn't change the
+    files."""
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "file_content, bad_imports",
+        [
+            ("import pytest", "pytest"),
+            ("import unittest", "unittest"),
+            ("import pytest\nimport unittest", "pytest, unittest"),
+        ],
+    )
+    def test_single_file(
+        capsys: pytest.CaptureFixture,
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        cwd,
+        file_content: str,
+        bad_imports: str,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "hello.py",
+            file_content,
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert no_import_testtools_in_src.main() == 1
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching(
+            "captured stdout",
+            "expected stdout",
+            captured.out,
+            f"{file} is not a test file, but imports {bad_imports}\n",
+        )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
