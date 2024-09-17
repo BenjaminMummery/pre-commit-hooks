@@ -31,10 +31,9 @@ def _check_for_imports(file: Path) -> int:
     with open(file) as f:
         content: str = f.read()
 
-    if "import pytest" in content:
-        bad_imports.append("pytest")
-    if "import unittest" in content:
-        bad_imports.append("unittest")
+    for test_toolkit in ["pytest", "unittest"]:
+        if f"import {test_toolkit}" in content:
+            bad_imports.append(test_toolkit)
 
     if len(bad_imports) == 0:
         return 0
