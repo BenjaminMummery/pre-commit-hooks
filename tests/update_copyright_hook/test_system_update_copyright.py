@@ -27,7 +27,7 @@ class TestNoChanges:
                 COMMAND, capture_output=True, text=True
             )
 
-        assert process.returncode == 0, process.stdout
+        assert process.returncode == 0, process.stdout + process.stderr
         assert (
             "Update dates on copyright strings in source files" in process.stdout
         ), process.stdout
@@ -50,7 +50,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
@@ -92,7 +92,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
         assert_matching(
@@ -122,7 +122,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
         assert_matching(
@@ -166,7 +166,7 @@ class TestChanges:
             )
 
         # THEN
-        assert process.returncode == 1
+        assert process.returncode == 1, process.stdout + process.stderr
         for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
             file = "hello" + language.extension
             copyright_string = language.comment_format.format(
@@ -221,7 +221,7 @@ class TestChanges:
             )
 
         # THEN
-        assert process.returncode == 1
+        assert process.returncode == 1, process.stdout + process.stderr
         for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
             file = "hello" + language.extension
             copyright_string = language.comment_format.format(
@@ -275,5 +275,5 @@ class TestFailureStates:
             )
 
         # THEN
-        assert process.returncode == 1
+        assert process.returncode == 1, process.stdout + process.stderr
         assert error_message in process.stdout

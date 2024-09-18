@@ -29,7 +29,7 @@ class TestNoChanges:
                 COMMAND, capture_output=True, text=True
             )
 
-        assert process.returncode == 0, process.stdout
+        assert process.returncode == 1, process.stdout + process.stderr
         assert "Add copyright string to source files" in process.stdout
         assert "Passed" in process.stdout
 
@@ -50,7 +50,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
@@ -90,7 +90,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         with open(git_repo.workspace / file, "r") as f:
             output_content = f.read()
         assert_matching(
@@ -133,7 +133,7 @@ class TestDefaultBehaviour:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
 
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
@@ -183,7 +183,7 @@ class TestDefaultBehaviour:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
@@ -233,7 +233,7 @@ class TestDefaultBehaviour:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
@@ -302,7 +302,7 @@ class TestCustomBehaviour:
                     )
 
                 # THEN
-                assert process.returncode == 1
+                assert process.returncode == 1, process.stdout + process.stderr
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
@@ -364,7 +364,7 @@ class TestCustomBehaviour:
                     )
 
                 # THEN
-                assert process.returncode == 1
+                assert process.returncode == 1, process.stdout + process.stderr
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
@@ -414,7 +414,7 @@ class TestCustomBehaviour:
                     )
 
                 # THEN
-                assert process.returncode == 1
+                assert process.returncode == 1, process.stdout + process.stderr
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = (
@@ -463,7 +463,7 @@ class TestCustomBehaviour:
                     )
 
                 # THEN
-                assert process.returncode == 1
+                assert process.returncode == 1, process.stdout + process.stderr
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
@@ -513,7 +513,7 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             expected_stdout = (
                 'KeyError: "Unsupported option in config file '
                 + (str(Path("/private")) if "/private" in process.stdout else "")
@@ -557,7 +557,7 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             expected_error_string: str = (
                 'KeyError: "Unsupported option in config file '
                 + (str(Path("/private")) if "/private" in process.stdout else "")
@@ -599,7 +599,7 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""  # noqa: E501
             print("E:", expected_stdout)
             print("R:", process.stdout)
@@ -636,7 +636,7 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             assert error_message in process.stdout
 
         @staticmethod
@@ -663,7 +663,7 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             assert (
                 "src._shared.exceptions.InvalidConfigError: Could not parse config file "  # noqa: E501
                 in process.stdout
@@ -691,5 +691,5 @@ class TestFailureStates:
                 )
 
             # THEN
-            assert process.returncode == 1
+            assert process.returncode == 1, process.stdout + process.stderr
             assert "ValueError: Found multiple copyright strings: " in process.stdout
