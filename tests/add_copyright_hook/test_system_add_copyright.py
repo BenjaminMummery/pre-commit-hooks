@@ -29,7 +29,7 @@ class TestNoChanges:
                 COMMAND, capture_output=True, text=True
             )
 
-        assert process.returncode == 1, process.stdout + process.stderr
+        assert process.returncode == 0, process.stdout + process.stderr
         assert "Add copyright string to source files" in process.stdout
         assert "Passed" in process.stdout
 

@@ -76,4 +76,3 @@
   language: python
   always_run: true
   stages: [commit]
-  files: ^.gitignore
