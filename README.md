@@ -15,11 +15,27 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [1.2 Usage in a vanilla hook](#12-usage-in-a-vanilla-hook)
   - [2. Hooks](#2-hooks)
     - [2.1 The `add-copyright` Hook](#21-the-add-copyright-hook)
+      - [2.1.1 Configuration](#211-configuration)
+        - [CLI Arguments](#cli-arguments)
+        - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration)
+        - [Config file configuration](#config-file-configuration)
+      - [2.1.2 Command line arguments](#212-command-line-arguments)
+        - [`pyproject.toml`](#pyprojecttoml)
+      - [2.1.3 `.add-copyright-hook-config.yaml` file.](#213-add-copyright-hook-configyaml-file)
+      - [2.1.4 Language Support.](#214-language-support)
     - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
     - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
+      - [2.3.1 Example 1: Usage when defining the commit msg from command line](#231-example-1-usage-when-defining-the-commit-msg-from-command-line)
+      - [2.3.2 Example 2: Usage when defining the commit msg from editor](#232-example-2-usage-when-defining-the-commit-msg-from-editor)
+      - [2.3.3 Defining a custom template](#233-defining-a-custom-template)
     - [2.4 The `sort-file-contents` hook](#24-the-sort-file-contents-hook)
+      - [2.4.1 Section - aware sorting](#241-section---aware-sorting)
+      - [2.4.2 Uniqueness](#242-uniqueness)
+    - [2.5 The `no-import-testtools-in-src` hook](#25-the-no-import-testtools-in-src-hook)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
+      - [3.1.1 Testing scheme](#311-testing-scheme)
+      - [3.1.2 Running Tests](#312-running-tests)
 
 <!--TOC-->
 
@@ -37,9 +53,11 @@ repos:
     rev: v1.0.0
     hooks:
     -   id: add-copyright
+    -   id: update-copyright
     -   id: add-msg-issue
     -   id: sort-file-contents
         files: .gitignore
+    -   id: no-import-testtools-in-src
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -312,6 +330,10 @@ The `-u` or `--unique` flag causes the hook to check the sorted lines for unique
 Duplicate entries within the same section will be removed automatically;
 lines that are duplicated between sections will be left in place and a warning raised to the user.
 This latter behaviour is due to us not knowing which section the line should belong to.
+
+### 2.5 The `no-import-testtools-in-src` hook
+
+This hook checks for imports of `pytest` and/or `unittest` in source files that are not test files (i.e. do not have 'test' somewhere in their path).
 
 ## 3. Development
 

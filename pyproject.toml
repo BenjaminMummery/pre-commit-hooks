@@ -37,9 +37,11 @@ add-copyright = "src.add_copyright_hook.add_copyright:main"
 add-msg-issue = "src.add_msg_issue_hook.add_msg_issue:main"
 sort-file-contents = "src.sort_file_contents_hook.sort_file_contents:main"
 update-copyright = "src.update_copyright_hook.update_copyright:main"
+no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_testtools_in_src:main"
 
 [project.optional-dependencies]
 dev = [
+    "path < 16",  # TODO: (95) unpin if pytest-git > 1.7.0 handles the removal of isdir
     "freezegun",
     "pre-commit",
     "pytest",

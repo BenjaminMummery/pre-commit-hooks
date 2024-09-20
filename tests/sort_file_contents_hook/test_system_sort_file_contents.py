@@ -20,7 +20,7 @@ class TestNoChanges:
                 COMMAND, capture_output=True, text=True
             )
 
-        assert process.returncode == 0, process.stdout
+        assert process.returncode == 0, process.stdout + process.stderr
         assert "Sort gitignore sections" in process.stdout
         assert "Passed" in process.stdout
 
@@ -41,7 +41,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
@@ -64,7 +64,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         with open(git_repo.workspace / file, "r") as f:
             content = f.read()
         assert content == file_contents
@@ -83,7 +83,7 @@ class TestNoChanges:
             )
 
         # THEN
-        assert process.returncode == 0
+        assert process.returncode == 0, process.stdout + process.stderr
         with open(git_repo.workspace / file, "r") as f:
             content = f.read()
         assert content == ""
@@ -113,7 +113,7 @@ class TestSorting:
             )
 
         # THEN
-        assert process.returncode == 1
+        assert process.returncode == 1, process.stdout + process.stderr
         with open(git_repo.workspace / filename, "r") as f:
             content = f.read()
         assert_matching(
