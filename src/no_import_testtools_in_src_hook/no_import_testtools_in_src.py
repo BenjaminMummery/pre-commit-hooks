@@ -7,9 +7,9 @@ This module is intended for use as a pre-commit hook. For more information pleas
 consult the README file.
 """
 
-
 import argparse
 import ast
+import logging
 from collections import namedtuple
 from pathlib import Path
 from typing import Any, Generator, List
@@ -17,6 +17,7 @@ from typing import Any, Generator, List
 from src._shared import resolvers
 
 Import = namedtuple("Import", ["module", "name", "alias"])
+logger = logging.getLogger(__name__)
 
 
 def _get_imports(file: Path) -> Generator[Import, Any, None]:
@@ -30,7 +31,15 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
         Generator[Import, None]
     """
     with open(file) as fh:
-        root = ast.parse(fh.read(), file)
+        try:
+            root = ast.parse(fh.read(), file)
+        except SyntaxError:
+            logging.warning(
+                f"Could not parse file {file}."
+                " We'll assume that this is fine since an unparsable file probably "
+                "won't successfully import anything anyway."
+            )
+            return
 
     for node in ast.iter_child_nodes(root):
         if isinstance(node, ast.Import):
