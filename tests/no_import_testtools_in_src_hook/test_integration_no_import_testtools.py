@@ -33,6 +33,7 @@ class TestNoChanges:
             "import numpy",
             "import numpy\nimport pydantic",
             "import numpy\n# import pytest\nimport pydantic",
+            "invalid ast",
         ],
     )
     def test_changed_files_dont_import_testtools(
@@ -145,6 +146,12 @@ class TestDetection:
             ("import pytest", "pytest"),
             ("import unittest", "unittest"),
             ("import pytest\nimport unittest", "pytest, unittest"),
+            ("import pytest as pt", "pytest"),
+            ("from pytest import mark", "pytest"),
+            (
+                "import pytest\nprint('Hello World!')\nimport unittest\n",
+                "pytest, unittest",
+            ),
         ],
     )
     def test_single_file(
