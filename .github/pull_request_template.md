@@ -4,6 +4,5 @@
 
 ## Checklist
 
-- [ ] The PR title follows semantic release rules (starts with one of `build`, `chore`, `ci`, `docs`, `feat`,`fix`, `perf`, `style`, `refactor`, `test`)
+- [ ] The PR title follows semantic release rules (starts with one of `build`, `chore`, `ci`, `docs`, `feat`,`fix`, `perf`, `style`, `refactor`, `test`). Note that this is CASE SENSITIVE!
 - [ ] All commits in this PR follow semantic release rules.
-- [ ]
