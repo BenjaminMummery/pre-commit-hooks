@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## v2.5.0 (2024-09-23)
+
+### Feature
+
+* feat: fully test no-test-imports.
+
+feat: fully test no-test-imports. ([`5e2391f`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/5e2391fe02d8dd08bbc01f7a87151d6f59497b4f))
+
+### Test
+
+* test: fully test no-test-imports. (#96) ([`07f90ca`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/07f90ca20578ff40e4740a314a99e9a3238272e7))
+
+### Unknown
+
+* Feat: add hook to detect test tool imports outside of test files. (#94)
+
+* feat: basic hook setup.
+
+* test: add null tests.
+
+* test: add tests for flagging files.
+
+* feat: detect pytest and inittest imports.
+
+* test: add tests for ignoring test files.
+
+* feat: ignore test files.
+
+* refactor: unify tratment of test toolkits.
+
+* test: add test for comented out imports.£
+
+* feat: Handle comented out imports.
+
+* test: easier testing.
+
+* docs: update README for new hook.
+
+* fix: pin path version as pytest-git doesn&#39;t like the removal of isdir
+
+* test: give more complete information when a subprocess doesn&#39;t do what we expect.
+
+* chore: tag TODO with issue number. ([`52dcec4`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/52dcec405ff3e13db57b338aa9d14b23ac338a5e))
+
 ## v2.4.0 (2024-06-21)
 
 ### Feature
