@@ -70,10 +70,6 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
             returns an object containing its information. If a match was not found,
             returns None.
     """
-    # Early return for empty input
-    if input == "":
-        return None
-
     # Regex string components
     copyright_signifier_group: str = r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)\s?"
     year_group: str = r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)\s?"
