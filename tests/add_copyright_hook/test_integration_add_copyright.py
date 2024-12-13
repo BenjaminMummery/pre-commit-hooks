@@ -907,10 +907,39 @@ class TestCustomBehaviour:
             @staticmethod
             @freeze_time("1312-01-01")
             def test_adds_copyright_to_existing_docstr(
-                language: DocstrSupportedLanguage, config_file: str, config_content: str
+                language: DocstrSupportedLanguage,
+                config_file: str,
+                config_content: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                cwd,
             ):
-                # TODO
-                pass
+                # GIVEN
+                add_changed_files(
+                    f"hello{language.extension}",
+                    '"""\nModule level docstring.\n"""',
+                    git_repo,
+                    mocker,
+                )
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_content.format(key=language.toml_key),
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    '"""\nCopyright (c) 1312 <git config username sentinel>\n\nModule level docstring.\n"""\n',
+                )
 
 
 class TestFailureStates:

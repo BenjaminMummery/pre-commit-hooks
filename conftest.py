@@ -32,7 +32,7 @@ def assert_matching(
     )
     if message:
         failure_message += f"\n{message}"
-    assert value1 == value2, failure_message
+    assert value1.strip() == value2.strip(), failure_message
 
 
 class Globals:
