@@ -76,7 +76,7 @@ def _parse_copyright_string_line(
     if input == "":
         return None
 
-    # Safety catch for if we've been fiven multiple lines.
+    # Safety catch for if we've been given multiple lines.
     assert len(input.splitlines()) == 1
 
     # Regex string components
@@ -132,7 +132,12 @@ def _parse_copyright_string_line(
     )
 
 
-def parse_copyright_string(
+def parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
+    # TODO
+    pass
+
+
+def parse_copyright_comment(
     input: str, comment_markers: Tuple[str, Optional[str]]
 ) -> Optional[ParsedCopyrightString]:
     """

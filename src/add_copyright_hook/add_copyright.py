@@ -20,7 +20,10 @@ from identify import identify
 from src._shared import resolvers
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.config_parsing import read_config
-from src._shared.copyright_parsing import parse_copyright_string
+from src._shared.copyright_parsing import (
+    parse_copyright_comment,
+    parse_copyright_docstring,
+)
 from src._shared.exceptions import NoCommitsError
 
 TOOL_NAME = "add_copyright"
@@ -182,10 +185,8 @@ def _construct_copyright_string(
     start_year: int,
     end_year: int,
     format: str,
-    comment_markers: Tuple[str, Optional[str]],
 ) -> str:
-    """
-    Construct a commented line containing the copyright information.
+    """Construct a string containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
@@ -193,19 +194,15 @@ def _construct_copyright_string(
         end_year (str): The end year of the copyright.
         format (str): The f-string into which the name and year should be
             inserted.
-        comment_markers (tuple(str, str|None)): The comment markers to be inserted
-            before and, optionally, after the copyright string.
 
-    Return:
-        str: the copyright string, with appropriate comment escapes.
+    Returns:
+        str: the copyright string.
     """
     if start_year == end_year:
         year = f"{start_year}"
     else:
         year = f"{start_year} - {end_year}"
-    commentstr = f"{format.format(year=year, name=name)}"
-    x = _ensure_comment(commentstr, comment_markers)
-    return x
+    return f"{format.format(year=year, name=name)}"
 
 
 def _ensure_comment(
@@ -262,7 +259,7 @@ def _read_default_configuration() -> dict:
             {"name" : "my name"}
             ```
     """
-    supported_langauge_subkeys = ["format"]
+    supported_langauge_subkeys = ["format", "docstr"]
     supported_toml_keys = ["name", "format"] + [
         v for v in LANGUAGE_TAGS_TOMLKEYS.values()
     ]
@@ -325,24 +322,32 @@ def _ensure_valid_format(format: str):
         )
 
 
-def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> int:
+def _ensure_copyright_string(
+    file: Path, name: Optional[str], format: str, docstr: bool = False
+) -> int:
     """
-    Ensure that the file has a docstring.
+    Ensure that the file has a copyright string.
 
     This function encompasses the heavy lifting for the hook.
 
     Args:
         file (path): the file to be checked.
+        name (optional(str)): the name of the copyright holder. If not specified, when a
+            copyright string is added, the git username will be used.
+        format (str): the format to be used when adding new copyright strings.
+        docstr (bool): if true, the copyright is expected to be part of
+            the docstring. If false, it is expected to be a comment.
 
     Raises:
         KeyError: when the format for the copyright string lacks required keys.
         ValueError: when the git username is not configured.
 
-
     Returns:
         int: 0 if the file already had a copyright string, 1 if a copyright string had
             to be added.
     """
+
+    # Early return if the format is invalid.
     try:
         _ensure_valid_format(format)
     except KeyError:
@@ -352,7 +357,11 @@ def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> in
         content: str = f.read()
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
 
-        if parse_copyright_string(content, comment_markers):
+        # Early return if the file already has copyright info, either in a comment or a
+        # docstring.
+        if parse_copyright_comment(
+            content, comment_markers
+        ) or parse_copyright_docstring(content):
             return 0
 
         print(f"Fixing file `{file}` ", end="")
@@ -370,8 +379,14 @@ def _ensure_copyright_string(file: Path, name: Optional[str], format: str) -> in
                 copyright_start_year,
                 copyright_end_year,
                 format,
-                comment_markers,
             )
+
+            if docstr:
+                new_copyright_string = f'"""\n{new_copyright_string}\n"""'
+            else:
+                new_copyright_string = _ensure_comment(
+                    new_copyright_string, comment_markers=comment_markers
+                )
         except ValueError:  # pragma: no cover
             raise
 
@@ -412,7 +427,7 @@ def main():
     for file in configuration["files"]:
         # Global configurations inherited by this file.
         kwargs: dict = {
-            "format": configuration["format"] or "Copyright (c) {year} {name}"
+            "format": configuration["format"] or "Copyright (c) {year} {name}",
         }
 
         # Extract the language-specific config options for this file. Override global

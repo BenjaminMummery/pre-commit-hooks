@@ -16,7 +16,7 @@ from typing import Optional, Tuple
 
 from src._shared import resolvers
 from src._shared.comment_mapping import get_comment_markers
-from src._shared.copyright_parsing import parse_copyright_string
+from src._shared.copyright_parsing import parse_copyright_comment
 
 REMOVED_COLOUR: str = "\033[91m"
 ADDED_COLOUR: str = "\033[92m"
@@ -41,7 +41,7 @@ def _update_copyright_dates(file: Path) -> int:
         comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
 
         # Early return for no copyright string in file
-        if not (copyright_string := parse_copyright_string(content, comment_markers)):
+        if not (copyright_string := parse_copyright_comment(content, comment_markers)):
             return 0
 
         # Early return for up to date copyright string

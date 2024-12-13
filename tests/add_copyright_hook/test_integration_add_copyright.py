@@ -97,7 +97,19 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
-    def test_files_have_docstring_copyright_info():
+    @pytest.mark.parametrize("language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string",
+        [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
+    )
+    def test_files_have_docstring_copyright_info(
+        capsys: CaptureFixture,
+        copyright_string: str,
+        cwd,
+        git_repo: GitRepo,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
         # TODO
         pass
 
@@ -871,6 +883,7 @@ class TestCustomBehaviour:
             def test_adds_copyright_to_existing_docstr(
                 language: DocstrSupportedLanguage, config_file: str, config_content: str
             ):
+                # TODO
                 pass
 
 
