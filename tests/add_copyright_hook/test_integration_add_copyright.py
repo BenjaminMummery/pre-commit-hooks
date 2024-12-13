@@ -102,6 +102,7 @@ class TestNoChanges:
         "copyright_string",
         [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
     )
+    @pytest.mark.parametrize("docstring_additional_text", ["", "\nblah", "\n\nblah"])
     def test_files_have_docstring_copyright_info(
         capsys: CaptureFixture,
         copyright_string: str,
@@ -109,9 +110,34 @@ class TestNoChanges:
         git_repo: GitRepo,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        docstring_additional_text: str,
     ):
-        # TODO
-        pass
+        # GIVEN
+        add_changed_files(
+            file := "hello" + language.extension,
+            file_content := (
+                f'"""\n{copyright_string}{docstring_additional_text}\n"""\n\ndef dummy_func():\n    pass'
+            ),
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 0
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
 # Check for every language we support
