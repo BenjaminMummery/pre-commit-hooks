@@ -40,7 +40,7 @@ class TestNoChanges:
         "copyright_string",
         [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
     )
-    def test_all_changed_files_have_current_copyright(
+    def test_all_changed_files_have_current_copyright_comment(
         capsys: CaptureFixture,
         copyright_string: str,
         cwd,
@@ -54,6 +54,48 @@ class TestNoChanges:
             file_content := (
                 language.comment_format.format(content=copyright_string)
                 + "\n\n<file content sentinel>"
+            ),
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 0
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @freeze_time("1312-01-01")
+    @pytest.mark.parametrize("language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string",
+        [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
+    )
+    def test_all_changed_files_have_current_copyright_docstring(
+        capsys: CaptureFixture,
+        copyright_string: str,
+        cwd,
+        git_repo: GitRepo,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "hello" + language.extension,
+            file_content := (
+                f'"""\n{copyright_string}\n"""\n\n<file content sentinel>'
             ),
             git_repo,
             mocker,
@@ -112,9 +154,10 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
-@pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
 class TestChanges:
+
     @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
@@ -124,7 +167,7 @@ class TestChanges:
         ],
     )
     @freeze_time("1312-01-01")
-    def test_updates_single_date_copyrights(
+    def test_updates_single_date_copyright_comments(
         capsys: CaptureFixture,
         cwd,
         expected_copyright_string: str,
@@ -173,6 +216,7 @@ class TestChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
@@ -213,6 +257,117 @@ class TestChanges:
             f"Fixing file `{file}`:\n"
             f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
             f"\033[92m  + {new_copyright_string}\033[0m\n"
+        )
+
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, expected_content
+        )
+        assert_matching(
+            "captured stdout", "expected stdout", captured.out, expected_stdout
+        )
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "input_copyright_string, expected_copyright_string",
+        [
+            ("Copyright 1066 NAME", "Copyright 1066 - 1312 NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - 1312 NAME"),
+            ("(c) 1066 NAME", "(c) 1066 - 1312 NAME"),
+        ],
+    )
+    @freeze_time("1312-01-01")
+    def test_updates_single_date_copyright_docstrings(
+        capsys: CaptureFixture,
+        cwd,
+        expected_copyright_string: str,
+        git_repo: GitRepo,
+        input_copyright_string: str,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        file_content = "def foo():\n    pass"
+        add_changed_files(
+            file := "hello" + language.extension,
+            f'"""\n{input_copyright_string}\n"""\n\n{file_content}',
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 1
+
+        # THEN
+        # Construct expected outputs
+        expected_content = f'"""\n{expected_copyright_string}\n"""\n\n{file_content}'
+        expected_stdout = (
+            f"Fixing file `{file}`:\n"
+            f"\033[91m  - {input_copyright_string}\033[0m\n"  # noqa: E501
+            f"\033[92m  + {expected_copyright_string}\033[0m\n"
+        )
+
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, expected_content
+        )
+        assert_matching(
+            "captured stdout", "expected stdout", captured.out, expected_stdout
+        )
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "input_copyright_string, expected_copyright_string",
+        [
+            ("Copyright 1066 - 1088 NAME", "Copyright 1066 - 1312 NAME"),
+            ("Copyright (c) 1066-1088 NAME", "Copyright (c) 1066-1312 NAME"),
+        ],
+    )
+    @freeze_time("1312-01-01")
+    def test_updates_multiple_date_copyrights(
+        capsys: CaptureFixture,
+        cwd,
+        expected_copyright_string: str,
+        git_repo: GitRepo,
+        input_copyright_string: str,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        file_content = "def foo():\n    pass"
+        add_changed_files(
+            file := "hello" + language.extension,
+            f'"""\n{input_copyright_string}\n"""\n\n{file_content}',
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 1
+
+        # THEN
+        # Construct expected outputs
+        expected_content = f'"""\n{expected_copyright_string}\n"""\n\n{file_content}'
+        expected_stdout = (
+            f"Fixing file `{file}`:\n"
+            f"\033[91m  - {input_copyright_string}\033[0m\n"
+            f"\033[92m  + {expected_copyright_string}\033[0m\n"
         )
 
         # Gather actual outputs

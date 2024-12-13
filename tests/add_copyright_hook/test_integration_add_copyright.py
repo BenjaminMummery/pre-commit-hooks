@@ -906,6 +906,10 @@ class TestCustomBehaviour:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "docstring_content",
+                ["Module level docstring.", "Multi\nline\ndocstring"],
+            )
             def test_adds_copyright_to_existing_docstr(
                 language: DocstrSupportedLanguage,
                 config_file: str,
@@ -913,11 +917,12 @@ class TestCustomBehaviour:
                 git_repo: GitRepo,
                 mocker: MockerFixture,
                 cwd,
+                docstring_content: str,
             ):
                 # GIVEN
                 add_changed_files(
                     f"hello{language.extension}",
-                    '"""\nModule level docstring.\n"""',
+                    f'"""\n{docstring_content}\n"""',
                     git_repo,
                     mocker,
                 )
@@ -938,7 +943,7 @@ class TestCustomBehaviour:
                     "output content",
                     "expected content",
                     output_content,
-                    '"""\nCopyright (c) 1312 <git config username sentinel>\n\nModule level docstring.\n"""\n',
+                    f'"""\nCopyright (c) 1312 <git config username sentinel>\n\n{docstring_content}\n"""\n',
                 )
 
 
