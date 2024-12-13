@@ -10,6 +10,7 @@ consult the README file.
 """
 
 import argparse
+import ast
 import datetime
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
@@ -147,7 +148,35 @@ def _has_shebang(input: str) -> bool:
     return input.startswith("#!")
 
 
-def _add_copyright_string_to_content(content: str, copyright_string: str) -> str:
+def _add_copyright_docstring_to_content(content: str, copyright_string: str) -> str:
+    """
+    Insert a copyright docstring into the appropriate place in existing content.
+
+    This method attempts to place the copyright in a module level docstring at the top
+    of the file. If a docstring doesn't exist, it will be created. If it does exist,
+    the copyright info will be added above the existing content.
+
+    Args:
+        content (str): The content to be updated.
+        copyright_string (str): The copyright string to be inserted.
+
+    Returns:
+        str: the new content.
+    """
+    # Check for an existing docstring, modifying it if it exists.
+    code = ast.parse(content)
+    for node in ast.walk(code):
+        if isinstance(node, ast.Module):
+            if docstring := ast.get_docstring(node):
+                return content.replace(docstring, f"{copyright_string}\n\n{docstring}")
+
+    # If there isn't a docstring, we need to insert it
+    # We can do this by treating it like a comment and inserting it in the same way we
+    # handle those.
+    return _add_copyright_comment_to_content(content, f'"""\n{copyright_string}\n"""')
+
+
+def _add_copyright_comment_to_content(content: str, copyright_string: str) -> str:
     """
     Insert a copyright string into the appropriate place in existing content.
 
@@ -381,9 +410,7 @@ def _ensure_copyright_string(
                 format,
             )
 
-            if docstr:
-                new_copyright_string = f'"""\n{new_copyright_string}\n"""'
-            else:
+            if not docstr:
                 new_copyright_string = _ensure_comment(
                     new_copyright_string, comment_markers=comment_markers
                 )
@@ -392,7 +419,11 @@ def _ensure_copyright_string(
 
         f.seek(0, 0)
         f.truncate()
-        f.write(_add_copyright_string_to_content(content, new_copyright_string))
+        f.write(
+            _add_copyright_docstring_to_content(content, new_copyright_string)
+            if docstr
+            else _add_copyright_comment_to_content(content, new_copyright_string)
+        )
         print(f"- added line(s):\n{new_copyright_string}")
     return 1
 
