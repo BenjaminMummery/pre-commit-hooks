@@ -10,6 +10,7 @@ from pytest_mock import MockerFixture
 
 from conftest import (
     CopyrightGlobals,
+    DocstrSupportedLanguage,
     Globals,
     SupportedLanguage,
     add_changed_files,
@@ -94,6 +95,11 @@ class TestNoChanges:
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    def test_files_have_docstring_copyright_info():
+        # TODO
+        pass
 
 
 # Check for every language we support
@@ -809,6 +815,63 @@ class TestCustomBehaviour:
                         output_content,
                         f"{copyright_string}\n",
                     )
+
+        @pytest.mark.parametrize(
+            "language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES
+        )
+        @pytest.mark.parametrize(
+            "config_file, config_content",
+            [
+                (
+                    "pyproject.toml",
+                    "[tool.add_copyright.{key}]\ndocstr=true\n",
+                ),
+            ],
+        )
+        class TestDocstring:
+            @staticmethod
+            @freeze_time("1312-01-01")
+            def test_adds_copyright_docstring(
+                language: DocstrSupportedLanguage,
+                config_file: str,
+                config_content: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                cwd,
+            ):
+                # GIVEN
+                add_changed_files(
+                    f"hello{language.extension}",
+                    "",
+                    git_repo,
+                    mocker,
+                )
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_content.format(key=language.toml_key),
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    '"""\nCopyright (c) 1312 <git config username sentinel>\n"""\n',
+                )
+
+            @staticmethod
+            @freeze_time("1312-01-01")
+            def test_adds_copyright_to_existing_docstr(
+                language: DocstrSupportedLanguage, config_file: str, config_content: str
+            ):
+                pass
 
 
 class TestFailureStates:
