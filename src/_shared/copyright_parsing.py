@@ -95,8 +95,14 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
     if match is None:
         return None
 
-    matchdict = match.groupdict()
-    start_year, end_year = _parse_years(matchdict["year"])
+    match_dict = match.groupdict()
+
+    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
+    if match_dict["year"] is None:
+        return None
+
+    # Parse year information.
+    start_year, end_year = _parse_years(match_dict["year"])
 
     return ParsedCopyrightString(
         None,
