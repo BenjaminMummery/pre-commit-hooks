@@ -151,7 +151,7 @@ def _find_comment_clashes(lines: t.List[str]) -> t.List[str]:
     """
     lines = [line.strip(" #") for line in lines]
     duplicates = _find_duplicates(lines)
-    return [dupl[0] for dupl in duplicates]
+    return [duplicate[0] for duplicate in duplicates]
 
 
 def _sort_contents(file: Path, unique: bool = False) -> int:

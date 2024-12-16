@@ -12,7 +12,7 @@ class ParsedCopyrightString:
 
     def __init__(
         self,
-        commentmarkers: Optional[Tuple[str, Optional[str]]],
+        comment_markers: Optional[Tuple[str, Optional[str]]],
         signifiers: str,
         start_year: int,
         end_year: int,
@@ -32,7 +32,7 @@ class ParsedCopyrightString:
             name (str): The name of the copyright holder.
             string (str): The full copyright string as it exists in the source file.
         """
-        self.commentmarkers: Tuple[str, Optional[str]] = commentmarkers
+        self.comment_markers: Optional[Tuple[str, Optional[str]]] = comment_markers
         self.signifiers: str = signifiers
         self.start_year: int = start_year
         self.end_year: int = end_year
@@ -47,7 +47,7 @@ class ParsedCopyrightString:
     def __repr__(self) -> str:
         return (
             "ParsedCopyrightString object with:\n"
-            f"- comment marker(s): {self.commentmarkers}\n"
+            f"- comment marker(s): {self.comment_markers}\n"
             f"- signifiers: {self.signifiers}\n"
             f"- start year: {self.start_year}\n"
             f"- end year: {self.end_year}\n"
@@ -90,6 +90,8 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
     # Search the input
     match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
+
+    # Early return for no match.
     if match is None:
         return None
 
@@ -98,10 +100,10 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
     return ParsedCopyrightString(
         None,
-        matchdict["signifiers"].strip(),
+        match_dict["signifiers"].strip(),
         start_year,
         end_year,
-        matchdict["name"].strip(),
+        match_dict["name"].strip(),
         match.group().strip(),
     )
 
@@ -132,7 +134,7 @@ def _parse_copyright_string_line(
 
     # Regex string components
     leading_comment_marker_group: str = (
-        r"(?P<leadingcommentmarker>" + re.escape(comment_markers[0]) + r")"
+        r"(?P<leading_comment_marker>" + re.escape(comment_markers[0]) + r")"
     )
     copyright_signifier_group: str = r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)\s?"
     year_group: str = r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)\s?"
@@ -157,7 +159,7 @@ def _parse_copyright_string_line(
     )
     # If there's a trailing comment marker, match that too
     if comment_markers[1]:
-        exp += r"(?P<trailingcommentmarker>" + re.escape(comment_markers[1]) + r")"
+        exp += r"(?P<trailing_comment_marker>" + re.escape(comment_markers[1]) + r")"
     # Mark the end of the string.
     exp += r"$"
 
@@ -166,19 +168,21 @@ def _parse_copyright_string_line(
     if match is None:
         return None
 
-    matchdict = match.groupdict()
-    start_year, end_year = _parse_years(matchdict["year"])
-    leading_comment = matchdict["leadingcommentmarker"].strip()
+    match_dict = match.groupdict()
+    start_year, end_year = _parse_years(match_dict["year"])
+    leading_comment = match_dict["leading_comment_marker"].strip()
     trailing_comment = (
-        None if not comment_markers[1] else matchdict["trailingcommentmarker"].strip()
+        None
+        if not comment_markers[1]
+        else match_dict["trailing_comment_marker"].strip()
     )
 
     return ParsedCopyrightString(
         (leading_comment, trailing_comment),
-        matchdict["signifiers"].strip(),
+        match_dict["signifiers"].strip(),
         start_year,
         end_year,
-        matchdict["name"].strip(),
+        match_dict["name"].strip(),
         match.group().strip(),
     )
 

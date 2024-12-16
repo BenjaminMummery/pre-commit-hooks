@@ -288,7 +288,7 @@ def _read_default_configuration() -> dict:
             {"name" : "my name"}
             ```
     """
-    supported_langauge_subkeys = ["format", "docstr"]
+    supported_language_subkeys = ["format", "docstr"]
     supported_toml_keys = ["name", "format"] + [
         v for v in LANGUAGE_TAGS_TOMLKEYS.values()
     ]
@@ -313,12 +313,12 @@ def _read_default_configuration() -> dict:
         # If the key is a supported language, check that the subkeys are supported.
         if key in LANGUAGE_TAGS_TOMLKEYS.values():
             for subkey in data[key]:
-                if subkey not in supported_langauge_subkeys:
+                if subkey not in supported_language_subkeys:
                     raise KeyError(
                         f"Unsupported option in config file {filepath}: "
                         f"'{key}.{subkey}'. "
                         f"Supported options for '{key}' are: "
-                        f"{supported_langauge_subkeys}."
+                        f"{supported_language_subkeys}."
                     )
 
         retv[key] = data[key]

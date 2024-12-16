@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """Common resolvers that are used by multiple hooks."""
 
@@ -19,7 +19,7 @@ def resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
         exist.
 
     Returns:
-        List[Path]: A list of paths coressponding to the changed files.
+        List[Path]: A list of paths corresponding to the changed files.
     """
 
     _files: t.List[Path] = [

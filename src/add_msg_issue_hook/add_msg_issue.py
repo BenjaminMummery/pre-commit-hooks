@@ -177,7 +177,7 @@ def _parse_args() -> argparse.Namespace:
         args.template.format(subject="s", body="b", issue_id="i")
     except KeyError as e:
         raise KeyError(
-            rf"Template argument '{args.template}' contained unrecognised keywords: "
+            rf"Template argument '{args.template}' contained unrecognized keywords: "
             + str(e)
             + " and cannot be used. For more information, see "
             + "https://github.com/BenjaminMummery/pre-commit-hooks"
