@@ -22,17 +22,17 @@ def mock_ParsedCopyrightString(mocker: MockerFixture):
 
 
 @pytest.fixture()
-def mock_parse_copyright_string(mocker: MockerFixture):
+def mock_parse_copyright_comment(mocker: MockerFixture):
     return mocker.patch(
-        "src._shared.copyright_parsing.parse_copyright_string",
-        return_value="<mock_parse_copyright_string return sentinel>",
+        "src._shared.copyright_parsing.parse_copyright_comment",
+        return_value="<mock_parse_copyright_comment return sentinel>",
     )
 
 
 # endregion
 
 
-@pytest.mark.usefixtures("mock_parse_copyright_string")
+@pytest.mark.usefixtures("mock_parse_copyright_comment")
 class TestParsedCopyrightString:
     @staticmethod
     def test_checks_dates():
@@ -87,7 +87,7 @@ class TestParseCopyrightString:
             mock_ParsedCopyrightString: Mock,
         ):
             # WHEN
-            ret = copyright_parsing.parse_copyright_string(
+            ret = copyright_parsing.parse_copyright_comment(
                 input_string, comment_markers
             )
 
@@ -106,7 +106,7 @@ class TestParseCopyrightString:
             comment_markers: Tuple[str, Optional[str]], input_string: str
         ):
             assert (
-                copyright_parsing.parse_copyright_string(input_string, comment_markers)
+                copyright_parsing.parse_copyright_comment(input_string, comment_markers)
                 is None
             )
 
@@ -120,7 +120,7 @@ class TestParseCopyrightString:
 
             # WHEN
             with pytest.raises(ValueError) as e:
-                copyright_parsing.parse_copyright_string(input, comment_markers)
+                copyright_parsing.parse_copyright_comment(input, comment_markers)
 
             # THEN
             assert_matching(

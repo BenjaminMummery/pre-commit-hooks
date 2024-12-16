@@ -10,6 +10,7 @@ from pytest_mock import MockerFixture
 
 from conftest import (
     CopyrightGlobals,
+    DocstrSupportedLanguage,
     Globals,
     SupportedLanguage,
     add_changed_files,
@@ -73,6 +74,49 @@ class TestNoChanges:
             file_content := (
                 language.comment_format.format(content=copyright_string)
                 + "\n\n<file content sentinel>"
+            ),
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 0
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        # Compare
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @pytest.mark.parametrize("language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES)
+    @pytest.mark.parametrize(
+        "copyright_string",
+        [s.format(end_year="1312") for s in CopyrightGlobals.VALID_COPYRIGHT_STRINGS],
+    )
+    @pytest.mark.parametrize("docstring_additional_text", ["", "\nblah", "\n\nblah"])
+    def test_files_have_docstring_copyright_info(
+        capsys: CaptureFixture,
+        copyright_string: str,
+        cwd,
+        git_repo: GitRepo,
+        language: SupportedLanguage,
+        mocker: MockerFixture,
+        docstring_additional_text: str,
+    ):
+        # GIVEN
+        add_changed_files(
+            file := "hello" + language.extension,
+            file_content := (
+                f'"""\n{copyright_string}{docstring_additional_text}\n"""\n\ndef dummy_func():\n    pass'
             ),
             git_repo,
             mocker,
@@ -809,6 +853,98 @@ class TestCustomBehaviour:
                         output_content,
                         f"{copyright_string}\n",
                     )
+
+        @pytest.mark.parametrize(
+            "language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES
+        )
+        @pytest.mark.parametrize(
+            "config_file, config_content",
+            [
+                (
+                    "pyproject.toml",
+                    "[tool.add_copyright.{key}]\ndocstr=true\n",
+                ),
+            ],
+        )
+        class TestDocstring:
+            @staticmethod
+            @freeze_time("1312-01-01")
+            def test_adds_copyright_docstring(
+                language: DocstrSupportedLanguage,
+                config_file: str,
+                config_content: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                cwd,
+            ):
+                # GIVEN
+                add_changed_files(
+                    f"hello{language.extension}",
+                    "",
+                    git_repo,
+                    mocker,
+                )
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_content.format(key=language.toml_key),
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    '"""\nCopyright (c) 1312 <git config username sentinel>\n"""\n',
+                )
+
+            @staticmethod
+            @freeze_time("1312-01-01")
+            @pytest.mark.parametrize(
+                "docstring_content",
+                ["Module level docstring.", "Multi\nline\ndocstring"],
+            )
+            def test_adds_copyright_to_existing_docstr(
+                language: DocstrSupportedLanguage,
+                config_file: str,
+                config_content: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                cwd,
+                docstring_content: str,
+            ):
+                # GIVEN
+                add_changed_files(
+                    f"hello{language.extension}",
+                    f'"""\n{docstring_content}\n"""',
+                    git_repo,
+                    mocker,
+                )
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_content.format(key=language.toml_key),
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                    output_content = f.read()
+                assert_matching(
+                    "output content",
+                    "expected content",
+                    output_content,
+                    f'"""\nCopyright (c) 1312 <git config username sentinel>\n\n{docstring_content}\n"""\n',
+                )
 
 
 class TestFailureStates:

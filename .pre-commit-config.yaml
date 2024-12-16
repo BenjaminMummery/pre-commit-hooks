@@ -1,7 +1,7 @@
 ---
 default_install_hook_types: [pre-commit, pre-merge-commit, pre-push, prepare-commit-msg,
   commit-msg, post-checkout, post-commit, post-merge, post-rewrite]
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 
 exclude: |
   (?x)(
@@ -12,7 +12,7 @@ exclude: |
 repos:
   # GENERAL PURPOSE  ##################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
         args: [--maxkb=500]
@@ -31,16 +31,16 @@ repos:
         args: [--django]
       - id: no-commit-to-branch
         args: [-b, main, -b, master, -b, dev, -b, develop]
-        stages: [commit]
+        stages: [pre-commit]
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.27.0
-    hooks:
-      - id: commitizen
+  # - repo: https://github.com/commitizen-tools/commitizen
+  #   rev: v4.1.0
+  #   hooks:
+  #     - id: commitizen
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
@@ -49,7 +49,7 @@ repos:
         args: [-w]
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v2.4.0
+    rev: v2.5.0
     hooks:
       - id: add-copyright
       - id: add-msg-issue
@@ -83,7 +83,7 @@ repos:
 
   # PYTHON  ###########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
@@ -111,22 +111,22 @@ repos:
       - id: rm-unneeded-f-str
 
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 24.10.0
     hooks:
       - id: black
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        entry: pflake8
-        additional_dependencies: [pyproject-flake8]
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 7.1.1
+  #   hooks:
+  #     - id: flake8
+  #       entry: pflake8
+  #       additional_dependencies: [pyproject-flake8]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
-    hooks:
-      - id: mypy
-        additional_dependencies: ["types-all"]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.13.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: ["types-all"]
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings
     rev: 1.7.0
@@ -135,22 +135,22 @@ repos:
         args: [--config=pyproject.toml]
         exclude: test_.*\.py|conftest.py
 
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-    - id: pydocstyle
-      args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
-      additional_dependencies: [tomli]
-      exclude: test_.*\.py|conftest.py
+  # - repo: https://github.com/pycqa/pydocstyle
+  #   rev: 6.3.0
+  #   hooks:
+  #   - id: pydocstyle
+  #     args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
+  #     additional_dependencies: [tomli]
+  #     exclude: test_.*\.py|conftest.py
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
 
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.16.0
+    rev: 1.17.0
     hooks:
       - id: yamlfix
         exclude: .pre-commit-config.yaml

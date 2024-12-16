@@ -1,7 +1,8 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023 - 2024 Benjamin Mummery
 
 """Tools for parsing copyright strings."""
 
+import ast
 import re
 from typing import Optional, Tuple
 
@@ -11,7 +12,7 @@ class ParsedCopyrightString:
 
     def __init__(
         self,
-        commentmarkers: Tuple[str, Optional[str]],
+        commentmarkers: Optional[Tuple[str, Optional[str]]],
         signifiers: str,
         start_year: int,
         end_year: int,
@@ -55,6 +56,56 @@ class ParsedCopyrightString:
         )
 
 
+def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
+    """
+    Parse a docstring into a ParsedCopyrightString object.
+
+    This method is fundamentally similar to _parse_copyright_string_line but a) handles multiple-line inputs, and b) assumes that no comment markers are used.
+
+    Args:
+        input: the string to be checked.
+
+    Returns:
+        _arsedCopyrightString or None: If a matching copyright string was found,
+            returns an object containing its information. If a match was not found,
+            returns None.
+    """
+    # Regex string components
+    copyright_signifier_group: str = r"(?P<signifiers>(copyright\s?|\(c\)\s?|©\s?)+)\s?"
+    year_group: str = r"(?P<year>(\d{4}\s?-\s?\d{4}|\d{4})+)\s?"
+    name_group: str = r"(?P<name>\D[^\n]+)\s?"
+
+    # Construct regex string
+    exp: str = (
+        # Capture the copyright signifier ((c), copyright, things of this nature)
+        copyright_signifier_group
+        + r"\s?"
+        # Capture name and year in either order
+        + r"(?:"
+        + year_group
+        + r"|"
+        + name_group
+        + r"){2}"
+    )
+
+    # Search the input
+    match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
+    if match is None:
+        return None
+
+    matchdict = match.groupdict()
+    start_year, end_year = _parse_years(matchdict["year"])
+
+    return ParsedCopyrightString(
+        None,
+        matchdict["signifiers"].strip(),
+        start_year,
+        end_year,
+        matchdict["name"].strip(),
+        match.group().strip(),
+    )
+
+
 def _parse_copyright_string_line(
     input: str, comment_markers: Tuple[str, Optional[str]]
 ) -> Optional[ParsedCopyrightString]:
@@ -76,7 +127,7 @@ def _parse_copyright_string_line(
     if input == "":
         return None
 
-    # Safety catch for if we've been fiven multiple lines.
+    # Safety catch for if we've been given multiple lines.
     assert len(input.splitlines()) == 1
 
     # Regex string components
@@ -132,11 +183,35 @@ def _parse_copyright_string_line(
     )
 
 
-def parse_copyright_string(
+def parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
+    """
+    Search through lines of content looking for docstrings containing copyright markers.
+
+    Args:
+        input (str): The content to be searched.
+
+    Returns:
+        ParsedCopyrightString|None: the parsed copyright string if one was found,
+            otherwise None.
+    """
+    try:
+        code = ast.parse(input)
+    except SyntaxError:
+        return None
+
+    for node in ast.walk(code):
+        if isinstance(node, ast.Module):
+            if docstring := ast.get_docstring(node):
+                if parsed_string := _parse_copyright_docstring(docstring):
+                    return parsed_string
+    return None
+
+
+def parse_copyright_comment(
     input: str, comment_markers: Tuple[str, Optional[str]]
 ) -> Optional[ParsedCopyrightString]:
     """
-    Search through lines of content looking for copyright markers.
+    Search through lines of content looking for copyright comments.
 
     Args:
         input (str): The content to be searched.

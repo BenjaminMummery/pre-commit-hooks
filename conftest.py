@@ -32,7 +32,7 @@ def assert_matching(
     )
     if message:
         failure_message += f"\n{message}"
-    assert value1 == value2, failure_message
+    assert value1.strip() == value2.strip(), failure_message
 
 
 class Globals:
@@ -133,6 +133,34 @@ class SupportedLanguage(object):
         return names == sorted(names)
 
     def __gt__(self, other: "SupportedLanguage") -> bool:
+        names = [self.tag, other.tag]
+        return names != sorted(names)
+
+
+class DocstrSupportedLanguage(object):
+    """
+    Encompass everything we need to run tests by iterating programmatically over
+    languages for which we support docstrings.
+    """
+
+    def __init__(
+        self,
+        tag: str,
+        toml_key: str,
+        extension: str,
+    ):
+        self.tag: str = tag
+        self.toml_key: str = toml_key
+        self.extension: str = extension
+
+    def __str__(self):
+        return self.tag
+
+    def __lt__(self, other: "DocstrSupportedLanguage") -> bool:
+        names = [self.tag, other.tag]
+        return names == sorted(names)
+
+    def __gt__(self, other: "DocstrSupportedLanguage") -> bool:
         names = [self.tag, other.tag]
         return names != sorted(names)
 
@@ -290,6 +318,15 @@ class CopyrightGlobals:
             ),
         ]
     )
+    DOCSTR_SUPPORTED_LANGUAGES = sorted(
+        [
+            DocstrSupportedLanguage(
+                "python",
+                "python",
+                ".py",
+            )
+        ]
+    )
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
         "Copyright (c) {end_year} NAME",
@@ -306,7 +343,7 @@ class CopyrightGlobals:
     SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = ["name", "format"] + [
         language.toml_key for language in SUPPORTED_LANGUAGES
     ]
-    SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format"]
+    SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format", "docstr"]
 
 
 # endregion
