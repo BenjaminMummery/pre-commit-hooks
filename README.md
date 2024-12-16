@@ -21,8 +21,8 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
         - [Config file configuration](#config-file-configuration)
       - [2.1.2 Command line arguments](#212-command-line-arguments)
         - [`pyproject.toml`](#pyprojecttoml)
-      - [2.1.3 `.add-copyright-hook-config.yaml` file.](#213-add-copyright-hook-configyaml-file)
-      - [2.1.4 Language Support.](#214-language-support)
+      - [2.1.3 `.add-copyright-hook-config.yaml` file](#213-add-copyright-hook-configyaml-file)
+      - [2.1.4 Language Support](#214-language-support)
     - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
     - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
       - [2.3.1 Example 1: Usage when defining the commit msg from command line](#231-example-1-usage-when-defining-the-commit-msg-from-command-line)
@@ -50,7 +50,7 @@ default_install_hook_types: [pre-commit, prepare-commit-msg]
 
 repos:
 -   repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v1.0.0
+    rev: ''
     hooks:
     -   id: add-copyright
     -   id: update-copyright
@@ -138,6 +138,7 @@ Behaviour for individual languages can also be configured:
 ```toml
 [tool.add_copyright.python]
 format = "FORMAT"
+docstr = true
 ```
 
 where there is a conflict between individual language settings and the global tool settings, the language settings are given authority.
@@ -176,7 +177,7 @@ format = "Property of {name} as of {year}"
 The config file can contain name and format.
 Any properties that are not set by the config file will be inferred from the current year / git user name.
 
-#### 2.1.3 `.add-copyright-hook-config.yaml` file.
+#### 2.1.3 `.add-copyright-hook-config.yaml` file
 
 If command line arguments are not specified, the hook will look for a file named `.add-copyright-hook-config.yaml` in the root of the git repo, and read the name and year from there.
 This file should be formatted as follows:
@@ -186,7 +187,7 @@ name: James T. Kirk
 format: Property of {name} as of {year}
 ```
 
-#### 2.1.4 Language Support.
+#### 2.1.4 Language Support
 
 The add-copyright hook currently runs on changed source files of the following types:
 
@@ -204,7 +205,7 @@ The add-copyright hook currently runs on changed source files of the following t
 | Markdown   | `.md`          | `<!--- Copyright (c) 1969 Buzz -->` |
 | Perl       | `.pl`          | `# Copyright (c) 1969 Buzz` |
 | PHP        | `.PHP`         | `// Copyright (c) 1969 Buzz` |
-| Python     | `.py`          | `# Copyright (c) 1969 Buzz` |
+| Python[^1] | `.py`          | `# Copyright (c) 1969 Buzz` |
 | Ruby       | `.rb`          | `# Copyright (c) 1969 Buzz` |
 | Rust       | `.rst`         | `// Copyright (c) 1969 Buzz` |
 | Scala      | `.scala`       | `// Copyright (c) 1969 Buzz` |
@@ -212,7 +213,11 @@ The add-copyright hook currently runs on changed source files of the following t
 | Swift      | `.swift`       | `// Copyright (c) 1969 Buzz` |
 
 
-
+[^1]: For python files we also support inserting copyright info into/as module-level docstrings. To enable this, insert the following lines into your `pyproject.toml` or `.add-copyright-hook-config.yaml`:
+    ```yaml
+    [tool.add-copyright.python]
+    docstr=true
+    ```
 
 ### 2.2 The `update-copyright` Hook
 
