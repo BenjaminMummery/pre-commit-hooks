@@ -49,7 +49,7 @@ def get_comment_markers(file: Path) -> Tuple[str, Optional[str]]:
         t.Tuple[str, t.Optional[str]]: The leading and trailing comment markers.
     """
     # Try to identify the file type from the extension.
-    tags = identify.tags_from_path(file)
+    tags = identify.tags_from_path(str(file))
     for tag in tags:
         try:
             return COMMENT_MARKERS[tag]

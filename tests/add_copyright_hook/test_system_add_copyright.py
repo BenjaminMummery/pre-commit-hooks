@@ -104,7 +104,7 @@ class TestNoChanges:
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
 )
-class TestDefaultBehaviour:
+class TestDefaultBehavior:
     class TestEmptyFiles:
         @staticmethod
         def test_adding_copyright_to_empty_files(
@@ -261,7 +261,7 @@ class TestDefaultBehaviour:
                 assert expected_stdout in process.stdout
 
 
-class TestCustomBehaviour:
+class TestCustomBehavior:
     class TestConfigFiles:
         class TestGlobalConfigs:
             @staticmethod

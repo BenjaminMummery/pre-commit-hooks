@@ -339,7 +339,7 @@ class TestChanges:
         ],
     )
     @freeze_time("1312-01-01")
-    def test_updates_multiple_date_copyrights(
+    def test_updates_multiple_date_copyright_docstrings(
         capsys: CaptureFixture,
         cwd,
         expected_copyright_string: str,

@@ -146,7 +146,7 @@ class TestNoChanges:
 @pytest.mark.parametrize(
     "git_username", ["<git config username sentinel>", "Taylor Swift"]
 )
-class TestDefaultBehaviour:
+class TestDefaultBehavior:
     class TestEmptyFiles:
         @staticmethod
         @freeze_time("1312-01-01")
@@ -194,7 +194,7 @@ class TestDefaultBehaviour:
         @staticmethod
         @freeze_time("1312-01-01")
         @pytest.mark.parametrize("config_file", ["pyproject.toml", "setup.cfg"])
-        def test_ignores_irrelevent_config_options(
+        def test_ignores_irrelevant_config_options(
             capsys: CaptureFixture,
             cwd,
             config_file: str,
@@ -401,7 +401,7 @@ class TestDefaultBehaviour:
             assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
-class TestCustomBehaviour:
+class TestCustomBehavior:
     class TestCLIArgs:
         """Test the args that can be passed to the hook via the "args" section of the
         .pre-commit-config.yaml entry.
@@ -609,7 +609,7 @@ class TestCustomBehaviour:
 
     class TestConfigFiles:
         @pytest.mark.parametrize(
-            "config_file, valformat",
+            "config_file, value_format",
             [
                 (
                     "pyproject.toml",
@@ -627,7 +627,7 @@ class TestCustomBehaviour:
             def test_custom_name_option_overrules_git_username(
                 capsys: CaptureFixture,
                 cwd,
-                valformat: str,
+                value_format: str,
                 config_file: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
@@ -638,7 +638,7 @@ class TestCustomBehaviour:
                     git_repo.workspace,
                     config_file,
                     "[tool.add_copyright]\nname="
-                    + valformat.format(value="<config file username sentinel>")
+                    + value_format.format(value="<config file username sentinel>")
                     + "\n",
                 )
 
@@ -678,7 +678,7 @@ class TestCustomBehaviour:
             def test_custom_format_option_overrules_default_format(
                 capsys: CaptureFixture,
                 cwd,
-                valformat: str,
+                value_format: str,
                 config_file: str,
                 git_repo: GitRepo,
                 mocker: MockerFixture,
@@ -689,7 +689,7 @@ class TestCustomBehaviour:
                     git_repo.workspace,
                     config_file,
                     "[tool.add_copyright]\nformat="
-                    + valformat.format(value="(C) {name} {year}")
+                    + value_format.format(value="(C) {name} {year}")
                     + "\n",
                 )
 
@@ -968,7 +968,7 @@ class TestFailureStates:
             ):
                 # GIVEN
                 add_changed_files("hello.py", "", git_repo, mocker)
-                config_file = write_config_file(
+                config_file_path = write_config_file(
                     git_repo.workspace, config_file, config_file_content
                 )
 
@@ -981,7 +981,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+                    + f"{git_repo.workspace/ config_file_path}: 'unsupported_option'. "
                     "Supported options are: "
                     f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
                 )
@@ -1039,7 +1039,7 @@ class TestFailureStates:
             ):
                 # GIVEN
                 add_changed_files("hello.py", "", git_repo, mocker)
-                config_file = write_config_file(
+                config_file_path = write_config_file(
                     git_repo.workspace,
                     config_file,
                     config_file_content.format(language=language.toml_key),
@@ -1054,7 +1054,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file}: "
+                    + f"{git_repo.workspace/ config_file_path}: "
                     f"'{language.toml_key}.unsupported_option'. "
                     f"Supported options for '{language.toml_key}' are: "
                     f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
@@ -1124,7 +1124,7 @@ class TestFailureStates:
             ):
                 # GIVEN
                 add_changed_files("hello.py", "", git_repo, mocker)
-                config_file = write_config_file(
+                config_file_path = write_config_file(
                     git_repo.workspace, config_file, config_file_content
                 )
 
@@ -1137,7 +1137,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file}: 'unsupported_option'. "
+                    + f"{git_repo.workspace/ config_file_path}: 'unsupported_option'. "
                     "Supported options are: "
                     f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
                 )

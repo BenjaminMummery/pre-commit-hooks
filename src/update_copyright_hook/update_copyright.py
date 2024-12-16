@@ -23,7 +23,7 @@ from src._shared.copyright_parsing import (
 
 REMOVED_COLOUR: str = "\033[91m"
 ADDED_COLOUR: str = "\033[92m"
-ENDC: str = "\033[0m"
+END_COLOUR: str = "\033[0m"
 
 
 def _update_copyright_dates(file: Path) -> int:
@@ -76,8 +76,8 @@ def _update_copyright_dates(file: Path) -> int:
         f.truncate()
         f.write(content.replace(copyright_string.string, new_copyright_string))
 
-        print(f"{REMOVED_COLOUR}  - {copyright_string.string}{ENDC}")
-        print(f"{ADDED_COLOUR}  + {new_copyright_string}{ENDC}")
+        print(f"{REMOVED_COLOUR}  - {copyright_string.string}{END_COLOUR}")
+        print(f"{ADDED_COLOUR}  + {new_copyright_string}{END_COLOUR}")
 
         return 1
 

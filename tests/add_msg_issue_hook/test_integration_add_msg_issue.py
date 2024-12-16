@@ -154,7 +154,7 @@ class TestAddingMessage:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
-    def test_populated_message_file_multisection(
+    def test_populated_message_file_multi_section(
         branch_name: str,
         cwd,
         issue: str,
@@ -324,5 +324,5 @@ class TestFailureStates:
             "captured err",
             "expected_err",
             e.exconly(),
-            f"KeyError: \"Template argument {template!r} contained unrecognised keywords: '{additional_keys[0]}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\"",  # noqa: E501
+            f"KeyError: \"Template argument {template!r} contained unrecognized keywords: '{additional_keys[0]}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\"",  # noqa: E501
         )

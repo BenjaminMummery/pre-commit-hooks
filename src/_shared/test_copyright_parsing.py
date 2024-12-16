@@ -57,7 +57,7 @@ class TestParsedCopyrightString:
 
 
 @pytest.mark.usefixtures("mock_ParsedCopyrightString")
-class TestParseCopyrightString:
+class TestParseCopyrightComment:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
@@ -129,3 +129,79 @@ class TestParseCopyrightString:
                 e.exconly(),
                 "ValueError: Found multiple copyright strings: ['<mock_ParsedCopyrightString return sentinel>', '<mock_ParsedCopyrightString return sentinel>']",  # noqa: E501,
             )
+
+
+class TestParseCopyrightDocstring:
+    class TestParsing:
+        @staticmethod
+        @pytest.mark.parametrize(
+            "input_string, expected_args",
+            [
+                (
+                    '"""\n(c) 2023 Benjamin Mummery\n"""',
+                    [
+                        "(c)",
+                        2023,
+                        2023,
+                        "Benjamin Mummery",
+                        "(c) 2023 Benjamin Mummery",
+                    ],
+                ),
+                (
+                    '"""Copyright NAME as of 1312"""',
+                    [
+                        "Copyright",
+                        1312,
+                        1312,
+                        "NAME as of",
+                        "Copyright NAME as of 1312",
+                    ],
+                ),
+                (
+                    '"""\n(c) 1312-2023 Benjamin Mummery\n"""',
+                    [
+                        "(c)",
+                        1312,
+                        2023,
+                        "Benjamin Mummery",
+                        "(c) 1312-2023 Benjamin Mummery",
+                    ],
+                ),
+                (
+                    '"""\n..  Copyright © 2020-2024 Umbrella Corp.  All rights reserved.\n    UMBRELLA CORP. CONFIDENTIAL\n    This file includes unpublished proprietary source code of Umbrella Corp.\n    The copyright notice above does not evidence any actual or intended publication\n    of such source code. Disclosure of this source code or any related proprietary\n    information is strictly prohibited without the express written permission of\n    Umbrella Corp.\n"""',
+                    [
+                        "Copyright ©",
+                        2020,
+                        2024,
+                        "Umbrella Corp.  All rights reserved.",
+                        "Copyright © 2020-2024 Umbrella Corp.  All rights reserved.",
+                    ],
+                ),
+            ],
+        )
+        def test_correctly_parses_string(
+            input_string: str,
+            expected_args: list,
+            mock_ParsedCopyrightString: Mock,
+        ):
+            # WHEN
+            ret = copyright_parsing.parse_copyright_docstring(input_string)
+
+            # THEN
+            _expected_args = [None] + expected_args
+            mock_ParsedCopyrightString.assert_called_once_with(*_expected_args)
+            assert ret == mock_ParsedCopyrightString.return_value
+
+    class TestFailureStates:
+        @staticmethod
+        @pytest.mark.parametrize(
+            "input_string",
+            ['"""Not a copyright string"""', '""""""', '"""\nfoo\n\nbar\n"""'],
+        )
+        def test_returns_none_for_no_matches(input_string: str):
+            assert copyright_parsing.parse_copyright_docstring(input_string) is None
+
+        @staticmethod
+        @pytest.mark.parametrize("input_string", ["not a valid python file."])
+        def test_returns_none_for_invalid_python_file(input_string: str):
+            assert copyright_parsing.parse_copyright_docstring(input_string) is None
