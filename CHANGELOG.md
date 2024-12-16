@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v2.6.1 (2024-12-16)
+
+### Bug Fixes
+
+- Handle module level docstrings containing copyright markers.
+  ([#100](https://github.com/BenjaminMummery/pre-commit-hooks/pull/100),
+  [`4db3e5e`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/4db3e5e4f7b02f280fb0536a4caa98e3a34425b0))
+
+* chore: pass for spelling and clarity.
+
+* test: add test for docstring copyright parsing.
+
+* fix: handle incomplete comment markers in docstrings.
+
+---------
+
+Co-authored-by: Benjamin Mummery <bmummery@psiquantum.com>
+
+
 ## v2.6.0 (2024-12-16)
 
 ### Continuous Integration
