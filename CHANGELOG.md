@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v2.6.2 (2024-12-20)
+
+### Bug Fixes
+
+- Default to flake8-friendly copyright notices.
+  ([#101](https://github.com/BenjaminMummery/pre-commit-hooks/pull/101),
+  [`e4dfe10`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/e4dfe10f485fcead0cd11059a94c7a835f60caa0))
+
+Co-authored-by: Benjamin Mummery <bmummery@psiquantum.com>
+
+
 ## v2.6.1 (2024-12-16)
 
 ### Bug Fixes
