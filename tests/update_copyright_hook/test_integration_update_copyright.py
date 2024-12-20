@@ -161,9 +161,9 @@ class TestChanges:
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
-            ("Copyright 1066 NAME", "Copyright 1066 - 1312 NAME"),
-            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - 1312 NAME"),
-            ("(c) 1066 NAME", "(c) 1066 - 1312 NAME"),
+            ("Copyright 1066 NAME", "Copyright 1066-1312 NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066-1312 NAME"),
+            ("(c) 1066 NAME", "(c) 1066-1312 NAME"),
         ],
     )
     @freeze_time("1312-01-01")
@@ -278,9 +278,9 @@ class TestChanges:
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
-            ("Copyright 1066 NAME", "Copyright 1066 - 1312 NAME"),
-            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - 1312 NAME"),
-            ("(c) 1066 NAME", "(c) 1066 - 1312 NAME"),
+            ("Copyright 1066 NAME", "Copyright 1066-1312 NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066-1312 NAME"),
+            ("(c) 1066 NAME", "(c) 1066-1312 NAME"),
         ],
     )
     @freeze_time("1312-01-01")

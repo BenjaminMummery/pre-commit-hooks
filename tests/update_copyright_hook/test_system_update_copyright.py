@@ -137,9 +137,9 @@ class TestChanges:
     @pytest.mark.parametrize(
         "input_copyright_string, expected_copyright_string",
         [
-            ("Copyright 1066 NAME", "Copyright 1066 - {year} NAME"),
-            ("Copyright (c) 1066 NAME", "Copyright (c) 1066 - {year} NAME"),
-            ("(c) 1066 NAME", "(c) 1066 - {year} NAME"),
+            ("Copyright 1066 NAME", "Copyright 1066-{year} NAME"),
+            ("Copyright (c) 1066 NAME", "Copyright (c) 1066-{year} NAME"),
+            ("(c) 1066 NAME", "(c) 1066-{year} NAME"),
         ],
     )
     def test_updates_single_date_copyrights(

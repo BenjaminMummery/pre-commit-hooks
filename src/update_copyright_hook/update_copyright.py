@@ -69,7 +69,7 @@ def _update_copyright_dates(file: Path) -> int:
             # single date in copyright string
             new_copyright_string = copyright_string.string.replace(
                 str(copyright_string.end_year),
-                f"{copyright_string.end_year} - {copyright_end_year}",
+                f"{copyright_string.end_year}-{copyright_end_year}",
             )
 
         f.seek(0, 0)
