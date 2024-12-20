@@ -379,7 +379,7 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) {Globals.THIS_YEAR} - 9999 {git_username}"
+                content=f"Copyright (c) {Globals.THIS_YEAR}-9999 {git_username}"
             )
             expected_content = f"{copyright_string}\n\n<file {file} content sentinel>\n"
             expected_stdout = (

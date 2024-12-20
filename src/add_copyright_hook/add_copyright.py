@@ -230,7 +230,7 @@ def _construct_copyright_string(
     if start_year == end_year:
         year = f"{start_year}"
     else:
-        year = f"{start_year} - {end_year}"
+        year = f"{start_year}-{end_year}"
     return f"{format.format(year=year, name=name)}"
 
 
