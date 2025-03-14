@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2025 Benjamin Mummery
 
 """
 Check that source files contain a copyright string, and add one to files that don't.
@@ -13,9 +13,11 @@ import argparse
 import ast
 import datetime
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Tuple
 
 from git import GitCommandError, InvalidGitRepositoryError, Repo
+from git.objects.commit import Commit
+from git.repo.base import BlameEntry
 from identify import identify
 
 from src._shared import resolvers
@@ -83,15 +85,32 @@ def _get_earliest_commit_year(file: Path) -> int:
     except GitCommandError as e:
         raise NoCommitsError from e
 
-    timestamps: Set[int] = set(
-        int(blame[0].committed_date) for blame in blames  # type: ignore
-    )
+    if blames is None:
+        raise NoCommitsError("No blames to parse.")
 
-    earliest_date: datetime = datetime.datetime.fromtimestamp(  # type: ignore
-        min(timestamps)
-    )
+    timestamps: list[int] = []
+    for blame in blames:
+        if blame is None:
+            continue
+        if isinstance(blame, BlameEntry):
+            timestamps += [
+                int(commit.committed_date) for commit in blame.commit.values()
+            ]
+        elif isinstance(blame, list):
+            for commit in blame:
+                if isinstance(commit, Commit):
+                    timestamps.append(int(commit.committed_date))
+                else:
+                    continue
 
-    return int(earliest_date.year)  # type: ignore
+    timestamps_set = set(timestamps)
+
+    if len(timestamps_set) < 1:
+        raise NoCommitsError("No blame timestamps found.")
+
+    earliest_date: datetime.datetime = datetime.datetime.fromtimestamp(min(timestamps))
+
+    return int(earliest_date.year)
 
 
 def _parse_args() -> dict:

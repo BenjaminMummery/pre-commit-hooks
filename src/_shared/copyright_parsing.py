@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2025 Benjamin Mummery
 
 """Tools for parsing copyright strings."""
 
@@ -171,10 +171,17 @@ def _parse_copyright_string_line(
 
     # Search the input
     match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
+
+    # Early return for no match
     if match is None:
         return None
 
     match_dict = match.groupdict()
+
+    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
+    if match_dict["year"] is None:
+        return None
+
     start_year, end_year = _parse_years(match_dict["year"])
     leading_comment = match_dict["leading_comment_marker"].strip()
     trailing_comment = (
