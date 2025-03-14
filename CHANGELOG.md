@@ -1,6 +1,23 @@
 # CHANGELOG
 
 
+## v2.6.3 (2025-03-14)
+
+### Bug Fixes
+
+- Handle empty commit lists that don't raise a GitCommandError.
+  ([#102](https://github.com/BenjaminMummery/pre-commit-hooks/pull/102),
+  [`19d0fb0`](https://github.com/BenjaminMummery/pre-commit-hooks/commit/19d0fb05b97b8d2dcd99e7f078fa2ff0149ededb))
+
+* fix: handle empty commit lists that don't raise a GitCommandError.
+
+* fix: handle incomplete matches when parsing copyright string lines.
+
+---------
+
+Co-authored-by: Benjamin Mummery <bmummery@psiquantum.com>
+
+
 ## v2.6.2 (2024-12-20)
 
 ### Bug Fixes
