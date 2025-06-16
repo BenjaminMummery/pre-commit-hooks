@@ -10,14 +10,36 @@ consult the README file.
 """
 
 import argparse
+import re
 from pathlib import Path
 
 from src._shared import resolvers
 
+DICTIONARY = {
+    "initialise": [(-2, "z")],
+    "instantiater": [(-2, "o")],
+    "parametrise": [(-2, "z")],
+    "armour": [(-2, "")],
+}
+
 
 def _americanise(file: Path) -> int:
     """Find common non-US spellings in source files and (optionally) "correct" them."""
-    return 0
+    with open(file, "r+") as f:
+        old_content: str = f.read()
+
+    new_content = old_content
+    for key in DICTIONARY:
+        while (match := re.search(key, new_content, re.IGNORECASE)) is not None:
+            for change in DICTIONARY[key]:
+                index = match.span()[1] + change[0]
+                new_content = new_content[:index] + change[1] + new_content[index + 1 :]
+    if new_content == old_content:
+        return 0
+
+    with open(file, "w") as f:
+        f.write(new_content)
+    return 1
 
 
 def _parse_args() -> argparse.Namespace:
