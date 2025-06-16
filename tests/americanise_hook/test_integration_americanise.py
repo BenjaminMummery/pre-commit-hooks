@@ -39,14 +39,16 @@ expected_reports = [
 class TestDefaultBehaviour:
     class TestNoChanges:
         @staticmethod
+        @pytest.mark.parametrize("file_content", [us_file_content, ""])
         def test_python_file(
             capsys: pytest.CaptureFixture,
             mocker: MockerFixture,
             git_repo: GitRepo,
             cwd,
+            file_content: str,
         ):
             # GIVEN
-            add_changed_files(file := "hello.py", us_file_content, git_repo, mocker)
+            add_changed_files(file := "hello.py", file_content, git_repo, mocker)
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -59,7 +61,7 @@ class TestDefaultBehaviour:
             captured = capsys.readouterr()
 
             assert_matching(
-                "output content", "expected content", output_content, us_file_content
+                "output content", "expected content", output_content, file_content
             )
             assert_matching("captured stdout", "expected stdout", captured.out, "")
             assert_matching("captured stderr", "expected stderr", captured.err, "")
