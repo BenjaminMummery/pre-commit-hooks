@@ -81,13 +81,18 @@ def _construct_dictionary(word_arg: str | None) -> dict[str | str]:
     if word_arg is None:
         return DICTIONARY
 
-    words = [word.lower().strip() for word in word_arg.split(":")]
-    if len(words) != 2:
-        raise ValueError(
-            f"Could not parse word argument '{word_arg}'. Custom word arguments should be a in the format '[incorrect_spelling]:[correct_spelling]', for example 'initialise:initialize'."
-        )
+    word_arguments = [word_arg] if isinstance(word_arg, str) else word_arg
 
-    return DICTIONARY | {words[0]: words[1]}
+    custom_dict: dict[str, str] = {}
+    for word in word_arguments:
+        map = [val.lower().strip() for val in word.split(":")]
+        if len(map) != 2:
+            raise ValueError(
+                f"Could not parse word argument '{word_arg}'. Custom word arguments should be a in the format '[incorrect_spelling]:[correct_spelling]', for example 'initialise:initialize'."
+            )
+        custom_dict[map[0]] = map[1]
+
+    return DICTIONARY | custom_dict
 
 
 def _parse_args() -> argparse.Namespace:
@@ -100,7 +105,7 @@ def _parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
-    parser.add_argument("--word", "-w", type=str, default=None)
+    parser.add_argument("--word", "-w", type=str, default=None, action="append")
 
     args = parser.parse_args()
 
