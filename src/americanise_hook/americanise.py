@@ -13,6 +13,7 @@ import argparse
 import re
 from copy import deepcopy
 from pathlib import Path
+from typing import Union
 
 from src._shared import print_diff, resolvers
 
@@ -124,7 +125,7 @@ def _americanise(file: Path, dictionary: dict[str, str]) -> int:
     return 1
 
 
-def _construct_dictionary(word_arg: str | None) -> dict[str | str]:
+def _construct_dictionary(word_arg: Union[str, None]) -> dict[str, str]:
     """Construct the dict of accepted words from the standard dict and word arguments."""
     if word_arg is None:
         return DICTIONARY

@@ -4,13 +4,14 @@
 """
 
 from difflib import ndiff
+from typing import Union
 
 REMOVED_COLOUR: str = "\033[91m"
 ADDED_COLOUR: str = "\033[92m"
 END_COLOUR: str = "\033[0m"
 
 
-def print_diff(old_line: str, new_line: str, line_number: int | None = None):
+def print_diff(old_line: str, new_line: str, line_number: Union[int, None] = None):
     """Print the old and new lines, highlighting any differences between them."""
     printline_old = ""
     printline_new = ""
