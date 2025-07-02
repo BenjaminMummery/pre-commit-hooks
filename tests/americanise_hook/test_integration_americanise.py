@@ -183,23 +183,50 @@ class TestCustom:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
-def test_inline_ignore(
-    git_repo: GitRepo, mocker: MockerFixture, cwd, capsys: pytest.CaptureFixture
-):
-    # GIVEN
-    file_content = "colour  # pragma: no americanise "
-    add_changed_files(file := "hello.py", file_content, git_repo, mocker)
+class TestInlineIgnore:
+    @staticmethod
+    def test_single_ignore(
+        git_repo: GitRepo, mocker: MockerFixture, cwd, capsys: pytest.CaptureFixture
+    ):
+        # GIVEN
+        file_content = "colour  # pragma: no americanise "
+        add_changed_files(file := "hello.py", file_content, git_repo, mocker)
 
-    # WHEN
-    with cwd(git_repo.workspace):
-        assert americanise.main() == 0
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert americanise.main() == 0
 
-    # THEN
-    # Gather actual outputs
-    with open(git_repo.workspace / file, "r") as f:
-        output_content = f.read()
-    captured = capsys.readouterr()
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
 
-    assert_matching("output content", "expected content", output_content, file_content)
-    assert_matching("captured stderr", "expected stderr", captured.err, "")
-    assert_matching("captured stdout", "expected stdout", captured.out, "")
+        assert_matching(
+            "output content", "expected content", output_content, file_content
+        )
+        assert_matching("captured stderr", "expected stderr", captured.err, "")
+        assert_matching("captured stdout", "expected stdout", captured.out, "")
+
+    @staticmethod
+    def test_mixed_ignore(
+        git_repo: GitRepo, mocker: MockerFixture, cwd, capsys: pytest.CaptureFixture
+    ):
+        # GIVEN
+        file_content = "colour  # pragma: no americanise\ncentre"
+        expected_content = "colour  # pragma: no americanise\ncenter"
+        add_changed_files(file := "hello.py", file_content, git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert americanise.main() == 1
+
+        # THEN
+        # Gather actual outputs
+        with open(git_repo.workspace / file, "r") as f:
+            output_content = f.read()
+        captured = capsys.readouterr()
+
+        assert_matching(
+            "output content", "expected content", output_content, expected_content
+        )
