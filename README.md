@@ -1,4 +1,4 @@
-<!--- Copyright (c) 2022 - 2024 Benjamin Mummery -->
+<!--- Copyright (c) 2022 - 2025 Benjamin Mummery -->
 
 # pre-commit-hooks
 
@@ -32,6 +32,8 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
       - [2.4.1 Section - aware sorting](#241-section---aware-sorting)
       - [2.4.2 Uniqueness](#242-uniqueness)
     - [2.5 The `no-import-testtools-in-src` hook](#25-the-no-import-testtools-in-src-hook)
+    - [2.6 The `americanise` hook](#26-the-americanise-hook)
+      - [Configuration](#configuration)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
       - [3.1.1 Testing scheme](#311-testing-scheme)
@@ -58,6 +60,7 @@ repos:
     -   id: sort-file-contents
         files: .gitignore
     -   id: no-import-testtools-in-src
+    -   id: americanise
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -339,6 +342,24 @@ This latter behaviour is due to us not knowing which section the line should bel
 ### 2.5 The `no-import-testtools-in-src` hook
 
 This hook checks for imports of `pytest` and/or `unittest` in source files that are not test files (i.e. do not have 'test' somewhere in their path).
+
+### 2.6 The `americanise` hook
+
+This hook checks for common non-US spellings of english words (e.g. 'initialise' rather than 'initialize') and corrects them. The hook will try to match the case of the original word, although this may be imprecise for complex case patterns when the correct spelling of the word is a different length.
+
+#### Configuration
+
+Additional words can be manually added in the `.pre-commit-config.yaml`. For example, if we want to change all instances of `absence` to `absence` and all instances of `forth` to `fourth`, the configuration would be:
+
+```yaml
+repos:
+-   repo: https://github.com/BenjaminMummery/pre-commit-hooks
+    rev: ''
+    hooks:
+    -   id: americanise
+        args: ["-w absence:absence", "-w forth:fourth"]
+```
+
 
 ## 3. Development
 
