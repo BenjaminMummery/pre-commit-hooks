@@ -77,3 +77,11 @@
   always_run: true
   stages: [commit]
   types_or: [python]
+- id: americanise
+  name: Correct non-US spellings
+  description: Detect and modify instances of UK/Canadian spelling of common words.
+  entry: americanise
+  language: python
+  always_run: true
+  stages: [commit]
+  types_or: [python]
