@@ -15,7 +15,11 @@ class Instantiater():
     def __init__(self):
         self.x = "3"
 
-armour = True
+ARMOUR = True
+
+CoLoUr = False
+
+x = deInitIalise()
 """
 
 us_file_content = """
@@ -26,13 +30,19 @@ class Instantiator():
     def __init__(self):
         self.x = "3"
 
-armor = True
+ARMOR = True
+
+CoLoR = False
+
+x = deInitIalize()
 """
 
 expected_reports_full = [
     "l1: initialise -> initialize",
     "l4: Instantiater -> Instantiator",
-    "l8: armour -> armor",
+    "l8: ARMOUR -> ARMOR",
+    "l10: CoLoUr -> CoLoR",
+    "l12: deInitIalise -> deInitIalize",
 ]
 
 
@@ -142,3 +152,8 @@ def test_multiple_custom_words(
     )
     assert_matching("captured stdout", "expected stdout", captured.out, "")
     assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+def test_inline_ignore():
+
+    pass
