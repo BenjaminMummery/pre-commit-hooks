@@ -93,7 +93,7 @@ def _copy_case(target_string: str, input_string: str) -> str:
         return output_string
 
 
-def _americanise(file: Path, dictionary: dict[str, str]) -> int:
+def _americanise(file: Path, dictionary: dict) -> int:
     """Find common non-US spellings in source files and (optionally) "correct" them."""
     with open(file, "r+") as f:
         old_content: str = f.read()
@@ -125,14 +125,14 @@ def _americanise(file: Path, dictionary: dict[str, str]) -> int:
     return 1
 
 
-def _construct_dictionary(word_arg: Union[str, None]) -> dict[str, str]:
+def _construct_dictionary(word_arg: Union[str, None]) -> dict:
     """Construct the dict of accepted words from the standard dict and word arguments."""
     if word_arg is None:
         return DICTIONARY
 
     word_arguments = [word_arg] if isinstance(word_arg, str) else word_arg
 
-    custom_dict: dict[str, str] = {}
+    custom_dict = {}
     for word in word_arguments:
         map = [val.lower().strip() for val in word.split(":")]
         if len(map) != 2:
