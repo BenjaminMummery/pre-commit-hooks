@@ -181,3 +181,25 @@ class TestCustom:
             "  line 1:\n  - sentinel text\n  + sontinal toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+def test_inline_ignore(
+    git_repo: GitRepo, mocker: MockerFixture, cwd, capsys: pytest.CaptureFixture
+):
+    # GIVEN
+    file_content = "colour  # pragma: no americanise "
+    add_changed_files(file := "hello.py", file_content, git_repo, mocker)
+
+    # WHEN
+    with cwd(git_repo.workspace):
+        assert americanise.main() == 0
+
+    # THEN
+    # Gather actual outputs
+    with open(git_repo.workspace / file, "r") as f:
+        output_content = f.read()
+    captured = capsys.readouterr()
+
+    assert_matching("output content", "expected content", output_content, file_content)
+    assert_matching("captured stderr", "expected stderr", captured.err, "")
+    assert_matching("captured stdout", "expected stdout", captured.out, "")
