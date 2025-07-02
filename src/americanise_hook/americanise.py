@@ -100,6 +100,8 @@ def _americanise(file: Path, dictionary: dict[str, str]) -> int:
     new_content = old_content.split("\n")
 
     for line_no, line in enumerate(new_content):
+        if "pragma: no americanise" in line:
+            continue
         old_line = deepcopy(line)
         for key in dictionary:
             while (match := re.search(key, line, re.IGNORECASE)) is not None:
