@@ -44,6 +44,13 @@ expected_reports_full = [
 ]
 
 
+@pytest.fixture()
+def mock_colour(mocker):
+    mocker.patch("src.americanise_hook.americanise.print_diff.REMOVED_COLOUR", "")
+    mocker.patch("src.americanise_hook.americanise.print_diff.ADDED_COLOUR", "")
+    mocker.patch("src.americanise_hook.americanise.print_diff.END_COLOUR", "")
+
+
 class TestNoChanges:
     @staticmethod
     @pytest.mark.parametrize("file_content", [us_file_content, ""])
@@ -53,6 +60,7 @@ class TestNoChanges:
         git_repo: GitRepo,
         cwd,
         file_content: str,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(file := "hello.py", file_content, git_repo, mocker)
@@ -81,11 +89,9 @@ class TestDefault:
         mocker: MockerFixture,
         git_repo: GitRepo,
         cwd,
+        mock_colour,
     ):
         # GIVEN
-        mocker.patch("src.americanise_hook.americanise.REMOVED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.ADDED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.END_COLOUR", "")
         add_changed_files(file := "hello.py", uk_file_content, git_repo, mocker)
 
         # WHEN
@@ -113,13 +119,11 @@ class TestCustom:
         mocker: MockerFixture,
         git_repo: GitRepo,
         cwd,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
         mocker.patch("sys.argv", ["stub_name", "-w", "text:toxt", file])
-        mocker.patch("src.americanise_hook.americanise.REMOVED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.ADDED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.END_COLOUR", "")
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -148,6 +152,7 @@ class TestCustom:
         mocker: MockerFixture,
         git_repo: GitRepo,
         cwd,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
@@ -155,9 +160,6 @@ class TestCustom:
             "sys.argv",
             ["stub_name", "-w", "text:toxt", "-w", "sentinel:sontinal", file],
         )
-        mocker.patch("src.americanise_hook.americanise.REMOVED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.ADDED_COLOUR", "")
-        mocker.patch("src.americanise_hook.americanise.END_COLOUR", "")
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -179,8 +181,3 @@ class TestCustom:
             "  line 1:\n  - sentinel text\n  + sontinal toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
-
-
-def test_inline_ignore():
-
-    pass

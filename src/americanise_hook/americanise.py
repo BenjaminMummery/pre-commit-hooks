@@ -14,7 +14,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 
-from src._shared import resolvers
+from src._shared import print_diff, resolvers
 
 DICTIONARY = {
     # -se -> -ize
@@ -61,10 +61,6 @@ DICTIONARY = {
     "labelled": "labeled",
     "signalling": "signaling",
 }
-
-REMOVED_COLOUR: str = "\033[91m"
-ADDED_COLOUR: str = "\033[92m"
-END_COLOUR: str = "\033[0m"
 
 
 def _copy_case(target_string: str, input_string: str) -> str:
@@ -114,26 +110,7 @@ def _americanise(file: Path, dictionary: dict[str, str]) -> int:
                 line = line[: index[0]] + new_word + line[index[1] :]
 
         if old_line != line:
-            printline_old = ""
-            printline_new = ""
-            for i in range(min_line_length := min([len(old_line), len(line)])):
-                if old_line[i] == line[i]:
-                    printline_old += old_line[i]
-                    printline_new += line[i]
-                else:
-                    printline_old += f"{REMOVED_COLOUR}{old_line[i]}{END_COLOUR}"
-                    printline_new += f"{ADDED_COLOUR}{line[i]}{END_COLOUR}"
-            if len(old_line) > min_line_length:
-                printline_old += (
-                    f"{REMOVED_COLOUR}{old_line[min_line_length:]}{END_COLOUR}"
-                )
-            elif len(line) > min_line_length:
-                printline_new += f"{ADDED_COLOUR}{line[min_line_length:]}{END_COLOUR}"
-
-            print(f"  line {line_no+1}:")
-            print(f"  - {printline_old}")
-            print(f"  + {printline_new}")
-
+            print_diff.print_diff(old_line, line, line_no + 1)
             new_content[line_no] = line
 
     if (output := "\n".join(new_content)) == old_content:

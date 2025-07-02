@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2025 Benjamin Mummery
 
 import pytest
 from freezegun import freeze_time
@@ -13,6 +13,17 @@ from conftest import (
     assert_matching,
 )
 from src.update_copyright_hook import update_copyright
+
+
+@pytest.fixture()
+def mock_colour(mocker):
+    mocker.patch(
+        "src.update_copyright_hook.update_copyright.print_diff.REMOVED_COLOUR", ""
+    )
+    mocker.patch(
+        "src.update_copyright_hook.update_copyright.print_diff.ADDED_COLOUR", ""
+    )
+    mocker.patch("src.update_copyright_hook.update_copyright.print_diff.END_COLOUR", "")
 
 
 @pytest.mark.usefixtures("git_repo")
@@ -175,6 +186,7 @@ class TestChanges:
         input_copyright_string: str,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(
@@ -197,8 +209,8 @@ class TestChanges:
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
-            f"\033[92m  + {new_copyright_string}\033[0m\n"
+            f"  - {language.comment_format.format(content=input_copyright_string)}\n"  # noqa: E501
+            f"  + {new_copyright_string}\n"
         )
 
         # Gather actual outputs
@@ -233,6 +245,7 @@ class TestChanges:
         input_copyright_string: str,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(
@@ -255,8 +268,8 @@ class TestChanges:
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
-            f"\033[92m  + {new_copyright_string}\033[0m\n"
+            f"  - {language.comment_format.format(content=input_copyright_string)}\n"  # noqa: E501
+            f"  + {new_copyright_string}\n"
         )
 
         # Gather actual outputs
@@ -292,6 +305,7 @@ class TestChanges:
         input_copyright_string: str,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        mock_colour,
     ):
         # GIVEN
         file_content = "def foo():\n    pass"
@@ -311,8 +325,8 @@ class TestChanges:
         expected_content = f'"""\n{expected_copyright_string}\n"""\n\n{file_content}'
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"\033[91m  - {input_copyright_string}\033[0m\n"  # noqa: E501
-            f"\033[92m  + {expected_copyright_string}\033[0m\n"
+            f"  - {input_copyright_string}\n"  # noqa: E501
+            f"  + {expected_copyright_string}\n"
         )
 
         # Gather actual outputs
@@ -347,6 +361,7 @@ class TestChanges:
         input_copyright_string: str,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        mock_colour,
     ):
         # GIVEN
         file_content = "def foo():\n    pass"
@@ -366,8 +381,8 @@ class TestChanges:
         expected_content = f'"""\n{expected_copyright_string}\n"""\n\n{file_content}'
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"\033[91m  - {input_copyright_string}\033[0m\n"
-            f"\033[92m  + {expected_copyright_string}\033[0m\n"
+            f"  - {input_copyright_string}\n"
+            f"  + {expected_copyright_string}\n"
         )
 
         # Gather actual outputs
@@ -398,6 +413,7 @@ class TestFailureStates:
         error_message: str,
         language: SupportedLanguage,
         mocker: MockerFixture,
+        mock_colour,
     ):
         # GIVEN
         add_changed_files(
