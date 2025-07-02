@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-versions: ['3.8', '3.9', '3.10', '3.11']
+        python-versions: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -33,10 +33,12 @@ jobs:
           pytest src/*/test_*.py
   integration_tests:
     runs-on: ubuntu-latest
+    needs: unit_tests
     strategy:
       fail-fast: true
       matrix:
-        python-versions: ['3.8', '3.9', '3.10', '3.11']
+        # no 3.11 as it's covered by the Coverage job.
+        python-versions: ['3.8', '3.9', '3.10', '3.12']
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -52,11 +54,12 @@ jobs:
         run: |
           pytest tests/*/test_integration_*.py
   system_tests:
+    needs: integration_tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        python-versions: ['3.8', '3.9', '3.10', '3.11']
+        python-versions: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2025 Benjamin Mummery
 
 """
 Scan source files for anything resembling a copyright string, updating dates.
@@ -14,16 +14,12 @@ import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
-from src._shared import resolvers
+from src._shared import print_diff, resolvers
 from src._shared.comment_mapping import get_comment_markers
 from src._shared.copyright_parsing import (
     parse_copyright_comment,
     parse_copyright_docstring,
 )
-
-REMOVED_COLOUR: str = "\033[91m"
-ADDED_COLOUR: str = "\033[92m"
-END_COLOUR: str = "\033[0m"
 
 
 def _update_copyright_dates(file: Path) -> int:
@@ -76,8 +72,7 @@ def _update_copyright_dates(file: Path) -> int:
         f.truncate()
         f.write(content.replace(copyright_string.string, new_copyright_string))
 
-        print(f"{REMOVED_COLOUR}  - {copyright_string.string}{END_COLOUR}")
-        print(f"{ADDED_COLOUR}  + {new_copyright_string}{END_COLOUR}")
+        print_diff.print_diff(copyright_string.string, new_copyright_string)
 
         return 1
 

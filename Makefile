@@ -44,7 +44,7 @@ test_all: test_venv test_unit test_integration test_system
 test_unit: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
-	pytest --cov=src/_shared src/*/test_*.py -x
+	pytest --cov=src src/*/test_*.py -x
 
 test_integration: test_venv
 	@. test_venv/bin/activate; \
@@ -61,29 +61,66 @@ test_system: test_venv
 test_shared: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SHARED' TESTS; \
-	pytest tests/shared -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	pytest src/_shared/test_* -x
+
 
 test_add_issue: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_ISSUE' TESTS; \
-	pytest tests/add_msg_issue_hook -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/add_msg_issue_hook -x --cov=src/add_msg_issue_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	echo Nothing found
 
 test_add_copyright: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'ADD_COPYRIGHT' TESTS; \
-	pytest tests/add_copyright_hook -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/add_copyright_hook -x --cov=src/add_copyright_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	pytest tests/add_copyright_hook/test_system_* -x
 
 test_update_copyright: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'UPDATE_COPYRIGHT' TESTS; \
-	pytest tests/update_copyright_hook -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/update_copyright_hook -x --cov=src/update_copyright_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	pytest tests/update_copyright_hook/test_system_* -x
 
 test_sort_file_contents: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'SORT_FILE_CONTENTS' TESTS; \
-	pytest tests/sort_file_contents_hook -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/sort_file_contents_hook/test_integration_* -x --cov=src/sort_file_contents_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	pytest tests/sort_file_contents_hook/test_system_* -x
 
 test_no_testtools: test_venv
 	@. test_venv/bin/activate; \
 	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'NO_TESTTOOLS' TESTS; \
-	pytest tests/no_import_testtools_in_src_hook -x
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/no_import_testtools_in_src_hook/test_integration_* -x --cov=src/no_import_testtools_in_src_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	pytest tests/no_import_testtools_in_src_hook/test_system_* -x
+
+test_americanise: test_venv
+	@. test_venv/bin/activate; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING 'AMERICANISE' TESTS; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" UNIT TESTS; \
+	echo Nothing found; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" INTEGRATION TESTS; \
+	pytest tests/americanise_hook/test_integration_* -x --cov=src/americanise_hook; \
+	python -c "$$PRETTYPRINT_PYSCRIPT" SYSTEM TESTS; \
+	pytest tests/americanise_hook/test_system_* -x

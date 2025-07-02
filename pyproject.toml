@@ -17,6 +17,8 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -38,6 +40,7 @@ add-msg-issue = "src.add_msg_issue_hook.add_msg_issue:main"
 sort-file-contents = "src.sort_file_contents_hook.sort_file_contents:main"
 update-copyright = "src.update_copyright_hook.update_copyright:main"
 no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_testtools_in_src:main"
+americanise = "src.americanise_hook.americanise:main"
 
 [project.optional-dependencies]
 dev = [
