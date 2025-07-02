@@ -29,71 +29,87 @@ class Instantiator():
 armor = True
 """
 
-expected_reports = [
+expected_reports_full = [
     "l1: initialise -> initialize",
     "l4: Instantiater -> Instantiator",
     "l8: armour -> armor",
 ]
 
 
-class TestDefaultBehaviour:
-    class TestNoChanges:
-        @staticmethod
-        @pytest.mark.parametrize("file_content", [us_file_content, ""])
-        def test_python_file(
-            capsys: pytest.CaptureFixture,
-            mocker: MockerFixture,
-            git_repo: GitRepo,
-            cwd,
-            file_content: str,
-        ):
-            # GIVEN
-            add_changed_files(file := "hello.py", file_content, git_repo, mocker)
+@pytest.mark.parametrize("file_content", [us_file_content, ""])
+def test_python_file(
+    capsys: pytest.CaptureFixture,
+    mocker: MockerFixture,
+    git_repo: GitRepo,
+    cwd,
+    file_content: str,
+):
+    # GIVEN
+    add_changed_files(file := "hello.py", file_content, git_repo, mocker)
 
-            # WHEN
-            with cwd(git_repo.workspace):
-                assert americanise.main() == 0
+    # WHEN
+    with cwd(git_repo.workspace):
+        assert americanise.main() == 0
 
-            # THEN
-            # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
-                output_content = f.read()
-            captured = capsys.readouterr()
+    # THEN
+    # Gather actual outputs
+    with open(git_repo.workspace / file, "r") as f:
+        output_content = f.read()
+    captured = capsys.readouterr()
 
-            assert_matching(
-                "output content", "expected content", output_content, file_content
-            )
-            assert_matching("captured stdout", "expected stdout", captured.out, "")
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
-
-    class TestChanges:
-        @staticmethod
-        def test_python_file(
-            capsys: pytest.CaptureFixture,
-            mocker: MockerFixture,
-            git_repo: GitRepo,
-            cwd,
-        ):
-            # GIVEN
-            add_changed_files(file := "hello.py", uk_file_content, git_repo, mocker)
-
-            # WHEN
-            with cwd(git_repo.workspace):
-                assert americanise.main() == 1
-
-            # THEN
-            # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
-                output_content = f.read()
-            captured = capsys.readouterr()
-
-            assert_matching(
-                "output content", "expected content", output_content, us_file_content
-            )
-            assert_matching("captured stdout", "expected stdout", captured.out, "")
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+    assert_matching("output content", "expected content", output_content, file_content)
+    assert_matching("captured stdout", "expected stdout", captured.out, "")
+    assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
-# Intentions
-# - variables and comments get renamed (toggleable)
-# - functions and classes get renamed (toggleable)
+def test_python_file_full_rename(
+    capsys: pytest.CaptureFixture,
+    mocker: MockerFixture,
+    git_repo: GitRepo,
+    cwd,
+):
+    # GIVEN
+    add_changed_files(file := "hello.py", uk_file_content, git_repo, mocker)
+
+    # WHEN
+    with cwd(git_repo.workspace):
+        assert americanise.main() == 1
+
+    # THEN
+    # Gather actual outputs
+    with open(git_repo.workspace / file, "r") as f:
+        output_content = f.read()
+    captured = capsys.readouterr()
+
+    assert_matching(
+        "output content", "expected content", output_content, us_file_content
+    )
+    assert_matching("captured stdout", "expected stdout", captured.out, "")
+    assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+def test_custom_word(
+    capsys: pytest.CaptureFixture,
+    mocker: MockerFixture,
+    git_repo: GitRepo,
+    cwd,
+):
+    # GIVEN
+    add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
+    mocker.patch("sys.argv", ["stub_name", "-w", "text:toxt", file])
+
+    # WHEN
+    with cwd(git_repo.workspace):
+        assert americanise.main() == 1
+
+    # THEN
+    # Gather actual outputs
+    with open(git_repo.workspace / file, "r") as f:
+        output_content = f.read()
+    captured = capsys.readouterr()
+
+    assert_matching(
+        "output content", "expected content", output_content, "sentinel toxt"
+    )
+    assert_matching("captured stdout", "expected stdout", captured.out, "")
+    assert_matching("captured stderr", "expected stderr", captured.err, "")
