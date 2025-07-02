@@ -113,3 +113,32 @@ def test_custom_word(
     )
     assert_matching("captured stdout", "expected stdout", captured.out, "")
     assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+
+def test_multiple_custom_words(
+    capsys: pytest.CaptureFixture,
+    mocker: MockerFixture,
+    git_repo: GitRepo,
+    cwd,
+):
+    # GIVEN
+    add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
+    mocker.patch(
+        "sys.argv", ["stub_name", "-w", "text:toxt", "-w", "sentinel:sontinal", file]
+    )
+
+    # WHEN
+    with cwd(git_repo.workspace):
+        assert americanise.main() == 1
+
+    # THEN
+    # Gather actual outputs
+    with open(git_repo.workspace / file, "r") as f:
+        output_content = f.read()
+    captured = capsys.readouterr()
+
+    assert_matching(
+        "output content", "expected content", output_content, "sontinal toxt"
+    )
+    assert_matching("captured stdout", "expected stdout", captured.out, "")
+    assert_matching("captured stderr", "expected stderr", captured.err, "")
