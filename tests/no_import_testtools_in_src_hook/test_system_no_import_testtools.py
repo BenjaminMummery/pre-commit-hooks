@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Benjamin Mummery
+# Copyright (c) 2024 - 2025 Benjamin Mummery
 
 import os
 import subprocess
@@ -24,7 +24,7 @@ class TestNoChanges:
 
     @staticmethod
     def test_changed_files_dont_import_testtools(git_repo: GitRepo, cwd):
-        """Files have been changed, but none of them are in languages we support."""
+        """Files have been changed, but none of them import testtools."""
         # GIVEN
 
         f = git_repo.workspace / "file.py"
@@ -43,7 +43,6 @@ class TestNoChanges:
             content = file.read()
         assert content == "<file content sentinel>"
         assert "Detect test tool imports in src files" in process.stdout
-        assert "Passed" in process.stdout, process.stdout
         assert "Passed" in process.stdout, process.stdout
 
     @staticmethod
@@ -69,7 +68,6 @@ class TestNoChanges:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
         assert "Detect test tool imports in src files" in process.stdout
-        assert "Passed" in process.stdout, process.stdout
         assert "Passed" in process.stdout, process.stdout
 
     @staticmethod

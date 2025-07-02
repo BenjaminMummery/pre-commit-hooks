@@ -11,6 +11,7 @@ consult the README file.
 
 import argparse
 import re
+from copy import deepcopy
 from pathlib import Path
 
 from src._shared import resolvers
@@ -61,6 +62,10 @@ DICTIONARY = {
     "signalling": "signaling",
 }
 
+REMOVED_COLOUR: str = "\033[91m"
+ADDED_COLOUR: str = "\033[92m"
+END_COLOUR: str = "\033[0m"
+
 
 def _copy_case(target_string: str, input_string: str) -> str:
     """Format the input string to match the case of the target string."""
@@ -96,21 +101,46 @@ def _americanise(file: Path, dictionary: dict[str, str]) -> int:
     with open(file, "r+") as f:
         old_content: str = f.read()
 
-    new_content = old_content
-    for key in dictionary:
-        while (match := re.search(key, new_content, re.IGNORECASE)) is not None:
-            index = match.span()
+    new_content = old_content.split("\n")
 
-            new_content = (
-                new_content[: index[0]]
-                + _copy_case(match.string[index[0] : index[1]], dictionary[key])
-                + new_content[index[1] :]
-            )
-    if new_content == old_content:
+    for line_no, line in enumerate(new_content):
+        old_line = deepcopy(line)
+        for key in dictionary:
+            while (match := re.search(key, line, re.IGNORECASE)) is not None:
+                index = match.span()
+                old_word = match.string[index[0] : index[1]]
+                new_word = _copy_case(old_word, dictionary[key])
+
+                line = line[: index[0]] + new_word + line[index[1] :]
+
+        if old_line != line:
+            printline_old = ""
+            printline_new = ""
+            for i in range(min_line_length := min([len(old_line), len(line)])):
+                if old_line[i] == line[i]:
+                    printline_old += old_line[i]
+                    printline_new += line[i]
+                else:
+                    printline_old += f"{REMOVED_COLOUR}{old_line[i]}{END_COLOUR}"
+                    printline_new += f"{ADDED_COLOUR}{line[i]}{END_COLOUR}"
+            if len(old_line) > min_line_length:
+                printline_old += (
+                    f"{REMOVED_COLOUR}{old_line[min_line_length:]}{END_COLOUR}"
+                )
+            elif len(line) > min_line_length:
+                printline_new += f"{ADDED_COLOUR}{line[min_line_length:]}{END_COLOUR}"
+
+            print(f"  line {line_no+1}:")
+            print(f"  - {printline_old}")
+            print(f"  + {printline_new}")
+
+            new_content[line_no] = line
+
+    if (output := "\n".join(new_content)) == old_content:
         return 0
 
     with open(file, "w") as f:
-        f.write(new_content)
+        f.write(output)
 
     return 1
 
