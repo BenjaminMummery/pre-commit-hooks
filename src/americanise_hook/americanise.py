@@ -141,7 +141,7 @@ def _construct_dictionary(word_arg: Union[str, None]) -> dict:
             )
         custom_dict[map[0]] = map[1]
 
-    return DICTIONARY | custom_dict
+    return {**DICTIONARY, **custom_dict}
 
 
 def _parse_args() -> argparse.Namespace:
