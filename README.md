@@ -33,7 +33,9 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
       - [2.4.2 Uniqueness](#242-uniqueness)
     - [2.5 The `no-import-testtools-in-src` hook](#25-the-no-import-testtools-in-src-hook)
     - [2.6 The `americanise` hook](#26-the-americanise-hook)
-      - [Configuration](#configuration)
+      - [2.6.1 Configuration](#261-configuration)
+        - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
+        - [Inline ignores](#inline-ignores)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
       - [3.1.1 Testing scheme](#311-testing-scheme)
@@ -347,7 +349,9 @@ This hook checks for imports of `pytest` and/or `unittest` in source files that 
 
 This hook checks for common non-US spellings of english words (e.g. 'initialise' rather than 'initialize') and corrects them. The hook will try to match the case of the original word, although this may be imprecise for complex case patterns when the correct spelling of the word is a different length.
 
-#### Configuration
+#### 2.6.1 Configuration
+
+##### `.pre-commit-config.yaml` Configuration
 
 Additional words can be manually added in the `.pre-commit-config.yaml`. For example, if we want to change all instances of `absence` to `absence` and all instances of `forth` to `fourth`, the configuration would be:
 
@@ -358,6 +362,22 @@ repos:
     hooks:
     -   id: americanise
         args: ["-w absence:absence", "-w forth:fourth"]
+```
+
+##### Inline ignores
+
+Individual instances can be excluded from this hook by marking them with an inline comment reading `pragma: no americanise`. For example:
+
+```python
+def initialise():  # pragma: no americanise
+    print("initialise")
+```
+
+will be corrected to:
+
+```python
+def initialise():  # pragma: no americanise
+    print("initialize")
 ```
 
 
