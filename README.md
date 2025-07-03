@@ -381,9 +381,11 @@ def initialise():  # pragma: no americanise
     print("initialize")
 ```
 
+
 ##### The Dictionary
 
 The default dictionary is stored in `src/americanise_hook/americanise_dictionary.py`. To add words, please open an MR on this repo.
+
 
 ## 3. Development
 
