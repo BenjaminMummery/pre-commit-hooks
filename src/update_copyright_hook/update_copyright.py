@@ -72,7 +72,7 @@ def _update_copyright_dates(file: Path) -> int:
         f.truncate()
         f.write(content.replace(copyright_string.string, new_copyright_string))
 
-        print_diff.print_diff(copyright_string.string, new_copyright_string)
+        print(print_diff.format_diff(copyright_string.string, new_copyright_string))
 
         return 1
 

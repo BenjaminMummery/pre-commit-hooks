@@ -51,6 +51,7 @@ def mock_colour(mocker):
     mocker.patch("src.americanise_hook.americanise.print_diff.END_COLOUR", "")
 
 
+@pytest.mark.parametrize("extension", [".py", ".md"], ids=["python", "markdown"])
 class TestNoChanges:
     @staticmethod
     @pytest.mark.parametrize("file_content", [us_file_content, ""])
@@ -61,9 +62,10 @@ class TestNoChanges:
         cwd,
         file_content: str,
         mock_colour,
+        extension: str,
     ):
         # GIVEN
-        add_changed_files(file := "hello.py", file_content, git_repo, mocker)
+        add_changed_files(file := f"hello{extension}", file_content, git_repo, mocker)
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -82,6 +84,7 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
+@pytest.mark.parametrize("extension", [".py", ".md"], ids=["python", "markdown"])
 class TestDefault:
     @staticmethod
     def test_python_file_full_rename(
@@ -90,9 +93,12 @@ class TestDefault:
         git_repo: GitRepo,
         cwd,
         mock_colour,
+        extension: str,
     ):
         # GIVEN
-        add_changed_files(file := "hello.py", uk_file_content, git_repo, mocker)
+        add_changed_files(
+            file := f"hello{extension}", uk_file_content, git_repo, mocker
+        )
 
         # WHEN
         with cwd(git_repo.workspace):
@@ -112,6 +118,7 @@ class TestDefault:
             assert report in captured.out
 
 
+@pytest.mark.parametrize("extension", [".py", ".md"], ids=["python", "markdown"])
 class TestCustom:
     @staticmethod
     def test_custom_word(
@@ -120,9 +127,12 @@ class TestCustom:
         git_repo: GitRepo,
         cwd,
         mock_colour,
+        extension: str,
     ):
         # GIVEN
-        add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
+        add_changed_files(
+            file := f"hello{extension}", "sentinel text", git_repo, mocker
+        )
         mocker.patch("sys.argv", ["stub_name", "-w", "text:toxt", file])
 
         # WHEN
@@ -142,7 +152,7 @@ class TestCustom:
             "captured stdout",
             "expected stdout",
             captured.out,
-            "  line 1:\n  - sentinel text\n  + sentinel toxt",
+            f"hello{extension}\n  line 1:\n  - sentinel text\n  + sentinel toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -153,9 +163,12 @@ class TestCustom:
         git_repo: GitRepo,
         cwd,
         mock_colour,
+        extension: str,
     ):
         # GIVEN
-        add_changed_files(file := "hello.py", "sentinel text", git_repo, mocker)
+        add_changed_files(
+            file := f"hello{extension}", "sentinel text", git_repo, mocker
+        )
         mocker.patch(
             "sys.argv",
             ["stub_name", "-w", "text:toxt", "-w", "sentinel:sontinal", file],
@@ -178,7 +191,7 @@ class TestCustom:
             "captured stdout",
             "expected stdout",
             captured.out,
-            "  line 1:\n  - sentinel text\n  + sontinal toxt",
+            f"hello{extension}\n  line 1:\n  - sentinel text\n  + sontinal toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
