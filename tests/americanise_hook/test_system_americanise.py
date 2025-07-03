@@ -78,10 +78,10 @@ class TestNoChanges:
     def test_no_supported_files_changed(git_repo: GitRepo, cwd):
         """Files have been changed, but none of them are in languages we support."""
         # GIVEN
-        files = [".gitignore", "test.yaml"]
+        files = ["poetry.lock"]
         for file in files:
             f = git_repo.workspace / file
-            f.write_text(f"<file {file} content sentinel>")
+            f.write_text(f"<file {file} content sentinel - armour>")
             git_repo.run(f"git add {file}")
 
         # WHEN
@@ -95,7 +95,7 @@ class TestNoChanges:
         for file in files:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
-            assert content == f"<file {file} content sentinel>"
+            assert content == f"<file {file} content sentinel - armour>"
         assert "Correct non-US spellings" in process.stdout
         assert "Passed" in process.stdout, process.stdout
 

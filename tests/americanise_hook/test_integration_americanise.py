@@ -152,7 +152,7 @@ class TestCustom:
             "captured stdout",
             "expected stdout",
             captured.out,
-            "  line 1:\n  - sentinel text\n  + sentinel toxt",
+            f"hello{extension}\n  line 1:\n  - sentinel text\n  + sentinel toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -191,7 +191,7 @@ class TestCustom:
             "captured stdout",
             "expected stdout",
             captured.out,
-            "  line 1:\n  - sentinel text\n  + sontinal toxt",
+            f"hello{extension}\n  line 1:\n  - sentinel text\n  + sontinal toxt",
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
