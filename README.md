@@ -36,6 +36,7 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
       - [2.6.1 Configuration](#261-configuration)
         - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
         - [Inline ignores](#inline-ignores)
+        - [The Dictionary](#the-dictionary)
   - [3. Development](#3-development)
     - [3.1 Testing](#31-testing)
       - [3.1.1 Testing scheme](#311-testing-scheme)
@@ -380,6 +381,9 @@ def initialise():  # pragma: no americanise
     print("initialize")
 ```
 
+##### The Dictionary
+
+The default dictionary is stored in `src/americanise_hook/americanise_dictionary.py`. To add words, please open an MR on this repo.
 
 ## 3. Development
 
