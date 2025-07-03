@@ -100,6 +100,8 @@ def _americanise(file: Path, dictionary: dict) -> int:
 
     new_content = old_content.split("\n")
 
+    diffs = []
+
     for line_no, line in enumerate(new_content):
         if "pragma: no americanise" in line:
             continue
@@ -113,7 +115,7 @@ def _americanise(file: Path, dictionary: dict) -> int:
                 line = line[: index[0]] + new_word + line[index[1] :]
 
         if old_line != line:
-            print_diff.print_diff(old_line, line, line_no + 1)
+            diffs.append(print_diff.format_diff(old_line, line, line_no + 1))
             new_content[line_no] = line
 
     if (output := "\n".join(new_content)) == old_content:
@@ -121,6 +123,10 @@ def _americanise(file: Path, dictionary: dict) -> int:
 
     with open(file, "w") as f:
         f.write(output)
+
+    print(file)
+    for diff in diffs:
+        print(diff)
 
     return 1
 
