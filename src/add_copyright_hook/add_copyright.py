@@ -73,15 +73,6 @@ def _get_earliest_commit_year(file: Path) -> int:
 
     Returns:
         int: The year of the earliest commit on the file.
-
-    Example:
-        >>> _get_earliest_commit_year("tests/examples/invalid_rst_python.py")
-        2023
-
-        >>> _get_earliest_commit_year("foo.py")
-        Traceback (most recent call last):
-        ...
-        src._shared.exceptions.NoCommitsError: File is not tracked with git
     """
     try:
         repo = Repo(".")

@@ -132,10 +132,10 @@ repos:
       - id: rm-unneeded-f-str
 
   # Lint with black
-  - repo: https://github.com/psf/black
-    rev: 26.1.0
-    hooks:
-      - id: black
+  # - repo: https://github.com/psf/black
+  #   rev: 26.1.0
+  #   hooks:
+  #     - id: black
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -166,6 +166,7 @@ repos:
       - id: ruff
         args: [--config=pyproject.toml]
       - id: ruff-format
+        args: [--config=pyproject.toml]
 
   # - repo: https://github.com/pycqa/pydocstyle
   #   rev: 6.3.0

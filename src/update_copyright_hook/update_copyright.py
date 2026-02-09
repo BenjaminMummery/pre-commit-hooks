@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """
 Scan source files for anything resembling a copyright string, updating dates.
@@ -24,7 +24,8 @@ from src._shared.copyright_parsing import (
 
 def _update_copyright_dates(file: Path) -> int:
     """
-    Ensure that if the file has a copyright string, the end date matches the current year.
+    Ensure that if the file has a copyright string, the end date matches the current
+    year.
 
     This function encompasses the heavy lifting for the hook.
 

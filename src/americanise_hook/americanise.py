@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2025 Benjamin Mummery
+# Copyright (c) 2025-2026 Benjamin Mummery
 
 """
 Check for non-US spelling in source files, and (optionally) "correct" them.
@@ -45,8 +45,12 @@ DICTIONARY = {
     "caesium": "cesium",
     # -ce -> -se
     "defence": "defense",
-    "practise": "practice",  # british uses "practice" as the noun and "practise" as the verb. US uses "practice" for both.
-    "licence": "license",  # british uses "licence" as the noun and "license" as the verb. US uses "license" for both.
+    # british uses "practice" as the noun and "practise" as the verb. US uses
+    # "practice" for both.
+    "practise": "practice",
+    # british uses "licence" as the noun and "license" as the verb. US uses "license"
+    # for both.
+    "licence": "license",
     # -ge -> -g
     "ageing": "aging",
     "acknowledgement": "acknowledgment",
@@ -88,7 +92,8 @@ def _copy_case(target_string: str, input_string: str) -> str:
                 input_string_list[i] = input_string[i].upper()
         output_string = "".join(input_string_list)
         Warning(
-            f"Could not match the case of offending word '{target_string}' - using best guess '{output_string}'."
+            f"Could not match the case of offending word '{target_string}' "
+            f"- using best guess '{output_string}'."
         )
         return output_string
 
@@ -132,7 +137,11 @@ def _americanise(file: Path, dictionary: dict) -> int:
 
 
 def _construct_dictionary(word_arg: Union[str, None]) -> dict:
-    """Construct the dict of accepted words from the standard dict and word arguments."""
+    """Construct the dict of accepted words from the standard dict and word arguments.
+
+    Args:
+        word_arg: word to be checked.
+    """
     if word_arg is None:
         return DICTIONARY
 
@@ -143,7 +152,10 @@ def _construct_dictionary(word_arg: Union[str, None]) -> dict:
         map = [val.lower().strip() for val in word.split(":")]
         if len(map) != 2:
             raise ValueError(
-                f"Could not parse word argument '{word_arg}'. Custom word arguments should be a in the format '[incorrect_spelling]:[correct_spelling]', for example 'initialise:initialize'."
+                f"Could not parse word argument '{word_arg}'. "
+                "Custom word arguments should be a in the format "
+                "'[incorrect_spelling]:[correct_spelling]', "
+                "for example 'initialise:initialize'."
             )
         custom_dict[map[0]] = map[1]
 
@@ -176,7 +188,8 @@ def main():
     """
     Entrypoint for the americanize hook.
 
-    Parses source files looking for common non-american spellings and either corrects or reports them.
+    Parses source files looking for common non-american spellings and either corrects
+    or reports them.
 
     Returns:
         int: 1 if incorrect spellings were found, 0 otherwise.
