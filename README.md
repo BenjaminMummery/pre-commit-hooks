@@ -1,5 +1,3 @@
-<!--- Copyright (c) 2022 - 2025 Benjamin Mummery -->
-
 # pre-commit-hooks
 
 A selection of quality-of-life tools for use with [pre-commit](https://github.com/pre-commit/pre-commit).
@@ -37,9 +35,10 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
         - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
         - [Inline ignores](#inline-ignores)
   - [3. Development](#3-development)
-    - [3.1 Testing](#31-testing)
-      - [3.1.1 Testing scheme](#311-testing-scheme)
-      - [3.1.2 Running Tests](#312-running-tests)
+    - [3.1 Installation](#31-installation)
+    - [3.2 Testing](#32-testing)
+      - [3.2.1 Testing scheme](#321-testing-scheme)
+      - [3.2.2 Running Tests](#322-running-tests)
 
 <!--TOC-->
 
@@ -383,9 +382,14 @@ def initialise():  # pragma: no americanise
 
 ## 3. Development
 
-### 3.1 Testing
+### 3.1 Installation
 
-#### 3.1.1 Testing scheme
+`pre-commit-hooks` is managed with [`uv`]().
+To install it, clone the repo, then run `uv sync`
+
+### 3.2 Testing
+
+#### 3.2.1 Testing scheme
 
 Tests are organised in three levels:
 1. Unit: tests for individual methods.
@@ -396,7 +400,7 @@ Tests are organised in three levels:
    Uses the `pre-commit try_repo` facility.
 
 
-#### 3.1.2 Running Tests
+#### 3.2.2 Running Tests
 
 The provided `Makefile` defines commands for running various combinations of tests:
 
