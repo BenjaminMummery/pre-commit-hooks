@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """
 Check that source files contain a copyright string, and add one to files that don't.
@@ -61,7 +61,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
 
 def _get_earliest_commit_year(file: Path) -> int:
     """
-    Get the years of the earliest and latest commits made to the specified file.
+    Get the years of the earliest commit made to the specified file.
 
     Args:
         file (Path): The path to the file to be checked
@@ -74,6 +74,14 @@ def _get_earliest_commit_year(file: Path) -> int:
     Returns:
         int: The year of the earliest commit on the file.
 
+    Example:
+        >>> _get_earliest_commit_year("tests/examples/invalid_rst_python.py")
+        2023
+
+        >>> _get_earliest_commit_year("foo.py")
+        Traceback (most recent call last):
+        ...
+        src._shared.exceptions.NoCommitsError: File is not tracked with git
     """
     try:
         repo = Repo(".")
@@ -83,15 +91,15 @@ def _get_earliest_commit_year(file: Path) -> int:
     try:
         blames = repo.blame(repo.head, str(file))
     except GitCommandError as e:
-        raise NoCommitsError from e
+        raise NoCommitsError("File is not tracked with git") from e
 
     if blames is None:
-        raise NoCommitsError("No blames to parse.")
+        raise NoCommitsError("No blames to parse.")  # pragma: no cover
 
     timestamps: list[int] = []
     for blame in blames:
         if blame is None:
-            continue
+            continue  # pragma: no cover
         if isinstance(blame, BlameEntry):
             timestamps += [
                 int(commit.committed_date) for commit in blame.commit.values()
@@ -106,7 +114,7 @@ def _get_earliest_commit_year(file: Path) -> int:
     timestamps_set = set(timestamps)
 
     if len(timestamps_set) < 1:
-        raise NoCommitsError("No blame timestamps found.")
+        raise NoCommitsError("No blame timestamps found.")  # pragma: no cover
 
     earliest_date: datetime.datetime = datetime.datetime.fromtimestamp(min(timestamps))
 
@@ -122,6 +130,8 @@ def _parse_args() -> dict:
         - files (list of Path): the paths to each changed file relevant to this hook.
         - name (str, None): the configured name to add to the copyright
         - format (str, None): the format that the copyright string should follow.
+
+
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--name", type=str, default=None)
@@ -275,9 +285,9 @@ def _ensure_comment(
         if comment_markers[1] and not line.endswith(comment_markers[1]):
             newline = f"{newline} {comment_markers[1]}"
         outlines[i] = newline
-    assert (
-        len(outlines) > 0
-    ), "Unknown error in `_ensure_comment()`: generated no lines."
+    assert len(outlines) > 0, (
+        "Unknown error in `_ensure_comment()`: generated no lines."
+    )
     if len(outlines) == 1:
         return outlines[0]
     else:
@@ -312,7 +322,7 @@ def _read_default_configuration() -> dict:
         v for v in LANGUAGE_TAGS_TOMLKEYS.values()
     ]
 
-    retv = dict([(key, None) for key in supported_toml_keys])
+    retv = {key: None for key in supported_toml_keys}
 
     # read data from config file
     try:
@@ -394,7 +404,6 @@ def _ensure_copyright_string(
         int: 0 if the file already had a copyright string, 1 if a copyright string had
             to be added.
     """
-
     # Early return if the format is invalid.
     try:
         _ensure_valid_format(format)
