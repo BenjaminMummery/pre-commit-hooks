@@ -64,7 +64,7 @@ repos:
 
   # update the uv lock
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: '0.9.30'
+    rev: '0.10.0'
     hooks:
       - id: uv-lock
 
@@ -107,7 +107,7 @@ repos:
       - id: requirements-txt-fixer
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: ''
+    rev: 'v3.21.2'
     hooks:
       - id: pyupgrade
 
@@ -131,18 +131,11 @@ repos:
     hooks:
       - id: rm-unneeded-f-str
 
-  # # Lint with black
-  # - repo: https://github.com/psf/black
-  #   rev: 26.1.0
-  #   hooks:
-  #     - id: black
-
-  # - repo: https://github.com/PyCQA/flake8
-  #   rev: 7.1.1
-  #   hooks:
-  #     - id: flake8
-  #       entry: pflake8
-  #       additional_dependencies: [pyproject-flake8]
+  # Lint with black
+  - repo: https://github.com/psf/black
+    rev: 26.1.0
+    hooks:
+      - id: black
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
