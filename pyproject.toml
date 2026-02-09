@@ -1,7 +1,8 @@
+# PROJECT SETUP ###############################################################
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
 
 [project]
 name = "pre-commit-hooks"
@@ -61,6 +62,23 @@ find = {}
 [tool.distutils.bdist_wheel]
 universal = true
 
+# TESTING #####################################################################
+[tool.pytest]
+addopts = [
+    "--doctest-modules",
+    "--doctest-continue-on-failure",
+    "--cov-fail-under=80",
+    "--strict-markers",
+]
+doctest_optionflags = [
+    "NORMALIZE_WHITESPACE",
+    "ELLIPSIS"
+]
+
+
+# LINTING AND CHECKING ########################################################
+
+# Static Type Checking
 [tool.mypy]
 exclude = "tests/"
 warn_unused_configs = true
@@ -70,21 +88,45 @@ check_untyped_defs = true
 module="tests.*"
 ignore_errors = true
 
-[tool.pytest.ini_options]
-addopts = "--strict-markers"
-
+# Docstrings
 [tool.interrogate]
 ignore-init-method = true
 fail-under = 100
 verbose = 2
 ignore_magic = true
 
+[tool.pydocstyle]
+convention="google"
+add-ignore=["D205", "D212", "D415", "D105"]
+ignore-decorators="property|model_validator"
+
+# Linting
 [tool.flake8]
 ignore = ["E203", "W503"]
 max-line-length = 88
 style="google"
 count = true
 arg-type-hints-in-docstring = true
+
+[tool.ruff]
+fix=true
+exclude = ["tests", "conftest.py"]
+lint.select = [
+    "B", # flake8 bugbears
+    "E",
+    "E701",
+    "F",  # pyflakes rules
+    "Q",  # flake8 quotes
+]
+line-length = 88
+show-fixes = true
+unsafe-fixes=true
+
+[tool.ruff.format]
+line-ending = "lf"
+
+
+# RELEASE #####################################################################
 
 [tool.semantic_release]
 assets = []
@@ -139,25 +181,3 @@ env = "GH_TOKEN"
 [tool.semantic_release.publish]
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
-
-[tool.pydocstyle]
-convention="google"
-add-ignore=["D205", "D212", "D415", "D105"]
-ignore-decorators="property|model_validator"
-
-[tool.ruff]
-fix=true
-exclude = ["tests", "conftest.py"]
-lint.select = [
-    "B", # flake8 bugbears
-    "E",
-    "E701",
-    "F",  # pyflakes rules
-    "Q",  # flake8 quotes
-]
-line-length = 120
-show-fixes = true
-unsafe-fixes=true
-
-[tool.ruff.format]
-line-ending = "lf"
