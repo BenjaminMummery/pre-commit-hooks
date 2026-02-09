@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """Mapping between coding languages and the comment markers they use."""
 
@@ -47,6 +47,12 @@ def get_comment_markers(file: Path) -> Tuple[str, Optional[str]]:
 
     Returns:
         t.Tuple[str, t.Optional[str]]: The leading and trailing comment markers.
+
+    Examples:
+        >>> get_comment_markers("conftest.py")
+        ('#', None)
+        >>> get_comment_markers("README.md")
+        ('<!---', '-->')
     """
     # Try to identify the file type from the extension.
     tags = identify.tags_from_path(str(file))

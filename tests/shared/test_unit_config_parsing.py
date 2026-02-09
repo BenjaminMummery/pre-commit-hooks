@@ -1,11 +1,10 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 import pytest
 from pytest_mock import MockerFixture
 
 from conftest import assert_matching
-
-from . import config_parsing
+from src._shared import config_parsing
 
 toml_file_content = """[tool.foo]
 option1="blah{foo}"

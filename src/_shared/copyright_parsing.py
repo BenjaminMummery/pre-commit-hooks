@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """Tools for parsing copyright strings."""
 
@@ -31,6 +31,28 @@ class ParsedCopyrightString:
             end_year (int): The later year attached to the copyright.
             name (str): The name of the copyright holder.
             string (str): The full copyright string as it exists in the source file.
+
+        Examples:
+            >>> my_parsed_str = ParsedCopyrightString(
+            ...     "#",
+            ...     signifiers="(C)",
+            ...     start_year=1900,
+            ...     end_year=2168,
+            ...     name="Lord Ruthven",
+            ...     string="# (C) 1900-2168 Lord Ruthven"
+            ... )
+            >>> my_parsed_str.comment_markers
+            '#'
+            >>> my_parsed_str.signifiers
+            '(C)'
+            >>> my_parsed_str.start_year
+            1900
+            >>> my_parsed_str.end_year
+            2168
+            >>> my_parsed_str.name
+            'Lord Ruthven'
+            >>> my_parsed_str.string
+            '# (C) 1900-2168 Lord Ruthven'
         """
         self.comment_markers: Optional[Tuple[str, Optional[str]]] = comment_markers
         self.signifiers: str = signifiers
@@ -60,7 +82,8 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
     """
     Parse a docstring into a ParsedCopyrightString object.
 
-    This method is fundamentally similar to _parse_copyright_string_line but a) handles multiple-line inputs, and b) assumes that no comment markers are used.
+    This method is fundamentally similar to _parse_copyright_string_line but a) handles
+    multiple-line inputs, and b) assumes that no comment markers are used.
 
     Args:
         input: the string to be checked.
@@ -97,7 +120,8 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
     match_dict = match.groupdict()
 
-    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
+    # Early return for an incomplete match (i.e. we found a passing reference to
+    # copyright, not a marker.)
     if match_dict["year"] is None:
         return None
 
@@ -172,14 +196,9 @@ def _parse_copyright_string_line(
     # Search the input
     match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
 
-    # Early return for no match
-    if match is None:
-        return None
-
-    match_dict = match.groupdict()
-
-    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
-    if match_dict["year"] is None:
+    # Early return for no match or incomplete match (i.e. we found a passing reference
+    # to copyright, not a marker.)
+    if match is None or (match_dict := match.groupdict())["year"] is None:
         return None
 
     start_year, end_year = _parse_years(match_dict["year"])
@@ -241,6 +260,53 @@ def parse_copyright_comment(
     Returns:
         ParsedCopyrightString|None: the parsed copyright string if one was found,
             otherwise None.
+
+    Examples:
+        Python comment
+        >>> parse_copyright_comment(
+        ...     '# Copyright © 2020-2024 Umbrella Corp',
+        ...     ("#", None)
+        ... )
+        ParsedCopyrightString object with:
+        - comment marker(s): ('#', None)
+        - signifiers: Copyright ©
+        - start year: 2020
+        - end year: 2024
+        - name: Umbrella Corp
+        - string: # Copyright © 2020-2024 Umbrella Corp
+
+        Markdown comment
+        >>> parse_copyright_comment(
+        ...     '<!--- Copyright NAME as of 1312 -->',
+        ...     ("<!---", "-->"),
+        ... )
+        ParsedCopyrightString object with:
+        - comment marker(s): ('<!---', '-->')
+        - signifiers: Copyright
+        - start year: 1312
+        - end year: 1312
+        - name: NAME as of
+        - string: <!--- Copyright NAME as of 1312 -->
+
+        Python comment with range
+        >>> parse_copyright_comment(
+        ...     "# (c) 1312-2023 Benjamin Mummery",
+        ...     ("#", None)
+        ... )
+        ParsedCopyrightString object with:
+        - comment marker(s): ('#', None)
+        - signifiers: (c)
+        - start year: 1312
+        - end year: 2023
+        - name: Benjamin Mummery
+        - string: # (c) 1312-2023 Benjamin Mummery
+
+        Comment that mentions copyright but isn't a copyright marker returns nothing.
+        >>> parse_copyright_comment(
+        ...     "# consider inserting copyright here.",
+        ...     ("#", None)
+        ... )
+
     """
     copyright_strings = []
     for line in input.splitlines():

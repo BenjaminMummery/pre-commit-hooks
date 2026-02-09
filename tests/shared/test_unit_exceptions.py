@@ -1,12 +1,11 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 import typing
 
 import pytest
 
 from conftest import assert_matching
-
-from . import exceptions
+from src._shared import exceptions
 
 
 @typing.no_type_check

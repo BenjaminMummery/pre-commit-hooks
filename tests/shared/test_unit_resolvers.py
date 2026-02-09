@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 from pathlib import Path
 
 import pytest
 
-from . import resolvers
+from src._shared import resolvers
 
 
 class TestResolveFiles:

@@ -104,9 +104,12 @@ repos:
       - id: check-builtin-literals
       - id: check-docstring-first
       - id: debug-statements
-      - id: fix-encoding-pragma
-        args: [--remove]
       - id: requirements-txt-fixer
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: ''
+    hooks:
+      - id: pyupgrade
 
   # Remove unused imports
   - repo: https://github.com/hadialqattan/pycln
