@@ -140,3 +140,24 @@ env = "GH_TOKEN"
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
 
+[tool.pydocstyle]
+convention="google"
+add-ignore=["D205", "D212", "D415", "D105"]
+ignore-decorators="property|model_validator"
+
+[tool.ruff]
+fix=true
+exclude = ["tests", "conftest.py"]
+lint.select = [
+    "B", # flake8 bugbears
+    "E",
+    "E701",
+    "F",  # pyflakes rules
+    "Q",  # flake8 quotes
+]
+line-length = 120
+show-fixes = true
+unsafe-fixes=true
+
+[tool.ruff.format]
+line-ending = "lf"
