@@ -51,7 +51,7 @@ update-copyright = "src.update_copyright_hook.update_copyright:main"
 no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_testtools_in_src:main"
 americanise = "src.americanise_hook.americanise:main"
 
-########## BUILD SYSTEM CONFIGURATION ##########
+########## BUILD SYSTEM CONFIGURATION ##################################################
 
 [build-system]
 requires = ["setuptools"]
@@ -66,7 +66,16 @@ find = {}
 [tool.distutils.bdist_wheel]
 universal = true
 
-########## LINTING AND FORMATTING TOOLS ##########
+########## TESTING TOOL CONFIGURATION ##################################################
+
+# [tool.pytest.ini_options]
+[tool.pytest]
+addopts = [
+    "--doctest-modules",
+    "--strict-markers"
+]
+
+########## LINTING AND FORMATTING TOOL CONFIGURATION ###################################
 
 [tool.mypy]
 exclude = "tests/"
@@ -76,9 +85,6 @@ check_untyped_defs = true
 [[tool.mypy.overrides]]
 module="tests.*"
 ignore_errors = true
-
-[tool.pytest.ini_options]
-addopts = "--strict-markers"
 
 [tool.interrogate]
 ignore-init-method = true

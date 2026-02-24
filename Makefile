@@ -31,7 +31,7 @@ test_all: test_unit test_integration test_system
 # TESTING BY LEVEL
 test_unit:
 	uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
-	uv run pytest --cov=src src/*/test_*.py -x
+	uv run pytest --cov=src src/ -x
 
 test_integration:
 	uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
