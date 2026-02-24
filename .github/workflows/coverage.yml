@@ -12,20 +12,21 @@ jobs:
   IntegrationTestCoverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
-          pip install -e '.[dev]'
-      - name: Test Coverage
+          version: 0.10.4
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: pyproject.toml
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+      - name: Integration Test Coverage
         run: |-
-          pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
+          uv run pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
