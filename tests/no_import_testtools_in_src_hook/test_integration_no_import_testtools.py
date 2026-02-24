@@ -1,6 +1,6 @@
-# Copyright (c) 2024 Benjamin Mummery
-
+# Copyright (c) 2024-2026 Benjamin Mummery
 import pytest
+
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
@@ -57,13 +57,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -91,13 +94,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -123,13 +129,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -176,13 +185,16 @@ class TestDetection:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching(
             "captured stdout",

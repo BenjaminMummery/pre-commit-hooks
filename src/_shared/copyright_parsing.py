@@ -1,9 +1,9 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """Tools for parsing copyright strings."""
 
 import ast
 import re
+
 from typing import Optional, Tuple
 
 
@@ -23,16 +23,21 @@ class ParsedCopyrightString:
         Construct ParsedCopyrightString.
 
         Arguments:
-            commentmarkers (tuple(str, str|None)): The character(s) that denote that
+            comment_markers: The character(s) that denote that
                 the line is a comment.
-            signifiers (str): The string that indicates that this comment relates to
+            signifiers: The string that indicates that this comment relates to
                 copyright.
-            start_year (int): The earlier year attached to the copyright.
-            end_year (int): The later year attached to the copyright.
-            name (str): The name of the copyright holder.
-            string (str): The full copyright string as it exists in the source file.
+            start_year: The earlier year attached to the copyright.
+            end_year: The later year attached to the copyright.
+            name: The name of the copyright holder.
+            string: The full copyright string as it exists in the source file.
         """
-        self.comment_markers: Optional[Tuple[str, Optional[str]]] = comment_markers
+        self.comment_markers: Optional[
+            Tuple[
+                str,
+                Optional[str],
+            ]
+        ] = comment_markers
         self.signifiers: str = signifiers
         self.start_year: int = start_year
         self.end_year: int = end_year
@@ -41,7 +46,7 @@ class ParsedCopyrightString:
         if not self.end_year >= self.start_year:
             raise ValueError(
                 "Copyright end year cannot be before the start year. "
-                f"Got {self.end_year} and {self.start_year} respectively."
+                f"Got {self.end_year} and {self.start_year} respectively.",
             )
 
     def __repr__(self) -> str:
@@ -115,7 +120,8 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
 
 def _parse_copyright_string_line(
-    input: str, comment_markers: Tuple[str, Optional[str]]
+    input: str,
+    comment_markers: Tuple[str, Optional[str]],
 ) -> Optional[ParsedCopyrightString]:
     """
     Check if the input string is a copyright comment.
@@ -225,7 +231,8 @@ def parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
 
 def parse_copyright_comment(
-    input: str, comment_markers: Tuple[str, Optional[str]]
+    input: str,
+    comment_markers: Tuple[str, Optional[str]],
 ) -> Optional[ParsedCopyrightString]:
     """
     Search through lines of content looking for copyright comments.
@@ -249,7 +256,9 @@ def parse_copyright_comment(
     if len(copyright_strings) == 0:
         return None
     if len(copyright_strings) > 1:
-        raise ValueError(f"Found multiple copyright strings: {copyright_strings}")
+        raise ValueError(
+            f"Found multiple copyright strings: {copyright_strings}",
+        )
     return copyright_strings[0]
 
 
@@ -267,7 +276,10 @@ def _parse_years(year: str) -> Tuple[int, int]:
     Raises:
         SyntaxError: When the year string cannot be parsed.
     """
-    match = re.match(r"^(?P<start_year>(\d{4}))\s*-\s*(?P<end_year>(\d{4}))", year)
+    match = re.match(
+        r"^(?P<start_year>(\d{4}))\s*-\s*(?P<end_year>(\d{4}))",
+        year,
+    )
     if match:
         return (
             int(match.groupdict()["start_year"]),
@@ -278,4 +290,6 @@ def _parse_years(year: str) -> Tuple[int, int]:
     if match:
         return (int(match.groupdict()["year"]), int(match.groupdict()["year"]))
 
-    raise SyntaxError(f"Could not interpret year value '{year}'.")  # pragma: no cover
+    raise SyntaxError(
+        f"Could not interpret year value '{year}'.",
+    )  # pragma: no cover

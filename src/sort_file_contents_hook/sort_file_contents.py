@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """
 Sort file contents while preserving section structure.
 
@@ -13,6 +11,7 @@ import argparse
 import collections
 import itertools
 import typing as t
+
 from pathlib import Path
 
 from src._shared import resolvers
@@ -156,7 +155,7 @@ def _find_comment_clashes(lines: t.List[str]) -> t.List[str]:
 
 def _sort_contents(file: Path, unique: bool = False) -> int:
     """Sort the contents of the file."""
-    with open(file, "r") as file_obj:
+    with open(file) as file_obj:
         lines: t.List[str] = [line.strip("\n") for line in list(file_obj)]
 
     # Identify sections
@@ -166,7 +165,9 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
     section_headers: t.List[t.Optional[t.List[str]]] = [None for _ in sections]
     section_contents: t.List[t.Optional[t.List[str]]] = [None for _ in sections]
     for i, section in enumerate(sections):
-        section_headers[i], section_contents[i] = _separate_leading_comment(section)
+        section_headers[i], section_contents[i] = _separate_leading_comment(
+            section,
+        )
 
     # Sort each section
     sections_changed: bool = False
@@ -189,9 +190,9 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
         duplicates: t.List[t.Tuple[str, int]] = _find_duplicates(
             list(
                 itertools.chain.from_iterable(
-                    [contents for contents in section_contents if contents is not None]
-                )
-            )
+                    [contents for contents in section_contents if contents is not None],
+                ),
+            ),
         )
         if len(duplicates) > 0:
             err_msg = (
@@ -205,9 +206,9 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
         comment_clashes: t.List[str] = _find_comment_clashes(
             list(
                 itertools.chain.from_iterable(
-                    [contents for contents in section_contents if contents is not None]
-                )
-            )
+                    [contents for contents in section_contents if contents is not None],
+                ),
+            ),
         )
         if len(comment_clashes) > 0:
             err_msg = (
@@ -231,9 +232,9 @@ def _sort_contents(file: Path, unique: bool = False) -> int:
                         (header or []) + (contents or [])
                         for header, contents in zip(section_headers, section_contents)
                     ]
-                ]
+                ],
             )
-            + "\n"
+            + "\n",
         )
     print(f"Sorting file '{file}'")
     return 1

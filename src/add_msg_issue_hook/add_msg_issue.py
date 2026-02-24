@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2022 - 2024 Benjamin Mummery
+# Copyright (c) 2022 - 2026 Benjamin Mummery
 
 """
 Parse the branch name for anything resembling an issue id, and add it to the commit msg.
@@ -12,6 +12,7 @@ consult the README file.
 import argparse
 import re
 import subprocess
+
 from typing import List
 
 # The default template to use when the commit message has a subject line and body. Can
@@ -41,11 +42,12 @@ def _get_branch_name() -> str:
     branch: str = ""
     try:
         branch = subprocess.check_output(
-            ["git", "symbolic-ref", "--short", "HEAD"], universal_newlines=True
+            ["git", "symbolic-ref", "--short", "HEAD"],
+            universal_newlines=True,
         ).strip()
     except subprocess.CalledProcessError as e:
         raise BranchNameReadError(
-            "Getting branch name for add_msg_issue_hook pre-commit hook failed."
+            "Getting branch name for add_msg_issue_hook pre-commit hook failed.",
         ) from e
     return branch
 
@@ -125,7 +127,8 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
     # ignored by Git
     if subject.startswith("#"):
         return FALLBACK_TEMPLATE.format(
-            issue_id=issue_id, message=message.strip("\n")
+            issue_id=issue_id,
+            message=message.strip("\n"),
         ).strip()
 
     if body.startswith("#"):
@@ -170,7 +173,7 @@ def _parse_args() -> argparse.Namespace:
                 rf"Template argument '{args.template}' did not contain the required "
                 f"keyword '{keyword}' and cannot be used. "
                 "For more information, see "
-                "https://github.com/BenjaminMummery/pre-commit-hooks"
+                "https://github.com/BenjaminMummery/pre-commit-hooks",
             )
 
     try:
@@ -180,7 +183,7 @@ def _parse_args() -> argparse.Namespace:
             rf"Template argument '{args.template}' contained unrecognized keywords: "
             + str(e)
             + " and cannot be used. For more information, see "
-            + "https://github.com/BenjaminMummery/pre-commit-hooks"
+            + "https://github.com/BenjaminMummery/pre-commit-hooks",
         ) from e
 
     return args

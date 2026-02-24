@@ -1,11 +1,9 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
+########## PROJECT SETUP ##########
 [project]
-name="pre_commit_hooks"
+name = "pre-commit-hooks"
+dynamic = ["version"]
 authors=[
-    {name = "Benjamin Mummery", email="benjamin.mummery@zapatacomputing.com"}
+    {name = "Benjamin Mummery", email="benjamin.mummery13@gmail.com"}
 ]
 description = "A selection of quality-of-life tools for use with pre-commit."
 readme = "README.md"
@@ -22,17 +20,29 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dynamic = ["version"]
 dependencies = [
-    "gitpython >= 3.1.31",
-    "pyyaml >= 5.4.1",
-    "identify >= 2.5.24",
-    "restructuredtext_lint >= 1.4.0",
-    "tomli"
+    "gitpython>=3.1.46",
+    "identify>=2.6.1",
+    "path>=17.0.0",
+    "pyyaml>=6.0.3",
+    "restructuredtext-lint>=2.0.2",
+    "tomli>=2.4.0",
 ]
 
-[tool.setuptools.dynamic]
-version = {attr = "src.__version__"}
+[dependency-groups]
+dev = [
+    "flake8>=5.0.4",
+    "python-semantic-release>=10.5.3",
+    {include-group = "test"},
+]
+test = [
+    "freezegun>=1.5.5",
+    "pre-commit>=3.5.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+    "pytest-git>=1.8.0",
+    "pytest-mock>=3.14.1",
+]
 
 [project.scripts]
 add-copyright = "src.add_copyright_hook.add_copyright:main"
@@ -42,24 +52,31 @@ update-copyright = "src.update_copyright_hook.update_copyright:main"
 no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_testtools_in_src:main"
 americanise = "src.americanise_hook.americanise:main"
 
-[project.optional-dependencies]
-dev = [
-    "path < 16",  # TODO: (95) unpin if pytest-git > 1.7.0 handles the removal of isdir
-    "freezegun",
-    "pre-commit",
-    "pytest",
-    "pytest-cov",
-    "pytest-git",
-    "pytest-mock",
-    "python-semantic-release",
-    "restructuredtext_lint",
-]
+########## BUILD SYSTEM CONFIGURATION ##################################################
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "src.__version__"}
 
 [tool.setuptools.packages]
 find = {}
 
 [tool.distutils.bdist_wheel]
 universal = true
+
+########## TESTING TOOL CONFIGURATION ##################################################
+
+# [tool.pytest.ini_options]
+[tool.pytest]
+addopts = [
+    "--doctest-modules",
+    "--strict-markers"
+]
+
+########## LINTING AND FORMATTING TOOL CONFIGURATION ###################################
 
 [tool.mypy]
 exclude = "tests/"
@@ -70,21 +87,32 @@ check_untyped_defs = true
 module="tests.*"
 ignore_errors = true
 
-[tool.pytest.ini_options]
-addopts = "--strict-markers"
-
 [tool.interrogate]
 ignore-init-method = true
 fail-under = 100
 verbose = 2
 ignore_magic = true
 
-[tool.flake8]
-ignore = ["E203", "W503"]
-max-line-length = 88
-style="google"
-count = true
-arg-type-hints-in-docstring = true
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["F", "I"]
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+# force_single_line = "true"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+########## RELEASE TOOLS ##########
 
 [tool.semantic_release]
 assets = []

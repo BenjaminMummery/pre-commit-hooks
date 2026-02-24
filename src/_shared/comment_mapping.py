@@ -1,8 +1,8 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """Mapping between coding languages and the comment markers they use."""
 
 import os
+
 from pathlib import Path
 from typing import Mapping, Optional, Tuple
 
@@ -58,5 +58,5 @@ def get_comment_markers(file: Path) -> Tuple[str, Optional[str]]:
 
     raise NotImplementedError(
         f"The file extension '{os.path.splitext(file)[1]}' is not currently supported. "
-        f"File has tags: {tags}"
+        f"File has tags: {tags}",
     )

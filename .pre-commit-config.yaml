@@ -6,67 +6,90 @@ default_stages: [pre-commit, pre-push]
 exclude: |
   (?x)(
     setup.py|
-    pyproject.toml
+    pyproject.toml|
+    CHANGELOG.md|
+    pull_request_template.md
   )
 
 repos:
   # GENERAL PURPOSE  ##################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: [--maxkb=500]
       - id: check-case-conflict
+      - id: check-executables-have-shebangs
       - id: check-merge-conflict
         args: [--assume-in-merge]
+      - id: check-shebang-scripts-are-executable
       - id: check-symlinks
       - id: check-vcs-permalinks
       - id: destroyed-symlinks
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
-      - id: forbid-new-submodules
+      - id: forbid-submodules
       - id: mixed-line-ending
       - id: name-tests-test
-        args: [--django]
+        args: [--pytest-test-first]
       - id: no-commit-to-branch
         args: [-b, main, -b, master, -b, dev, -b, develop]
         stages: [pre-commit]
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
-      - id: check-executables-have-shebangs
-      - id: check-shebang-scripts-are-executable
 
-  # - repo: https://github.com/commitizen-tools/commitizen
-  #   rev: v4.1.0
-  #   hooks:
-  #     - id: commitizen
+  - repo: https://github.com/pre-commit/sync-pre-commit-deps
+    rev: v0.0.3
+    hooks:
+      - id: sync-pre-commit-deps
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: 'v1.10.0'
+    hooks:
+      - id: text-unicode-replacement-char
+
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.5.0
+    hooks:
+      - id: yesqa
+
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v4.0.0
+    hooks:
+      - id: add-trailing-comma
+
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: v3.2.0
+    hooks:
+      - id: setup-cfg-fmt
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.8
+    hooks:
+      - id: commitizen
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args: [-w]
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v2.6.0
+    rev: v2.8.0
     hooks:
       - id: add-copyright
+        exclude: CHANGELOG.md
       - id: add-msg-issue
       - id: update-copyright
       - id: sort-file-contents
         files: .gitignore
 
   # C++ ###############################################################################
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: 'v1.3.5'
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: 'v21.1.8'
     hooks:
       - id: clang-format
-        args: [-i]
-      # - id: clang-tidy
-      #   args: [--fix-errors]
-      - id: cppcheck
-      - id: cpplint
 
   # CMAKE  ############################################################################
   - repo: https://github.com/cheshirekow/cmake-format-precommit
@@ -83,50 +106,55 @@ repos:
 
   # PYTHON  ###########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
       - id: check-docstring-first
       - id: debug-statements
-      - id: fix-encoding-pragma
-        args: [--remove]
       - id: requirements-txt-fixer
 
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: 'v1.10.0'
+    hooks:
+      - id: python-use-type-annotations
+      - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+      - id: python-check-mock-methods
+      - id: python-no-eval
+      - id: python-no-log-warn
+      - id: python-use-type-annotations
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+      - id: pyupgrade
+
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.4.0
+    rev: v2.6.0
     hooks:
       - id: pycln
         exclude: __init__.py
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile, black]
 
   - repo: https://github.com/dannysepler/rm_unneeded_f_str
     rev: v0.2.0
     hooks:
       - id: rm-unneeded-f-str
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
     hooks:
-      - id: black
+      - id: ruff-check
+        args: [
+          --fix,
+          --config=pyproject.toml,
+        ]
+      - id: ruff-format
 
-  # - repo: https://github.com/PyCQA/flake8
-  #   rev: 7.1.1
-  #   hooks:
-  #     - id: flake8
-  #       entry: pflake8
-  #       additional_dependencies: [pyproject-flake8]
-
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.13.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies: ["types-all"]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings
     rev: 1.7.0
@@ -135,22 +163,81 @@ repos:
         args: [--config=pyproject.toml]
         exclude: test_.*\.py|conftest.py
 
-  # - repo: https://github.com/pycqa/pydocstyle
-  #   rev: 6.3.0
-  #   hooks:
-  #   - id: pydocstyle
-  #     args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
-  #     additional_dependencies: [tomli]
-  #     exclude: test_.*\.py|conftest.py
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+    - id: pydocstyle
+      args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
+      additional_dependencies: [tomli]
+      exclude: test_.*\.py|conftest.py
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
+      - id: sort-simple-yaml
+        exclude: .pre-commit-config.yaml
 
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.17.0
+    rev: 1.19.1
     hooks:
       - id: yamlfix
         exclude: .pre-commit-config.yaml
+
+  # RST  ###############################################################################
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: 'v1.10.0'
+    hooks:
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+
+  # CSS  ###############################################################################
+  - repo: https://github.com/pre-commit/mirrors-csslint
+    rev: 'v1.0.5'
+    hooks:
+      - id: csslint
+
+  # JAVASCRIPT  ########################################################################
+  - repo: https://github.com/pre-commit/mirrors-fixmyjs
+    rev: 'v2.0.0'
+    hooks:
+      - id: fixmyjs
+
+  - repo: https://github.com/pre-commit/mirrors-jshint
+    rev: 'v2.13.6'
+    hooks:
+      - id: jshint
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: 'v10.0.2'
+    hooks:
+    -   id: eslint
+
+  # JSON  ##############################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: pretty-format-json
+        args: [
+          --autofix,
+          --indent 4,
+        ]
+
+  # TOML  ##############################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-toml
+
+  # XML  ###############################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-xml

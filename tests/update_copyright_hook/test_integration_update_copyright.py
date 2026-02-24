@@ -1,6 +1,6 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import pytest
+
 from freezegun import freeze_time
 from pytest import CaptureFixture
 from pytest_git import GitRepo
@@ -18,12 +18,17 @@ from src.update_copyright_hook import update_copyright
 @pytest.fixture()
 def mock_colour(mocker):
     mocker.patch(
-        "src.update_copyright_hook.update_copyright.print_diff.REMOVED_COLOUR", ""
+        "src.update_copyright_hook.update_copyright.print_diff.REMOVED_COLOUR",
+        "",
     )
     mocker.patch(
-        "src.update_copyright_hook.update_copyright.print_diff.ADDED_COLOUR", ""
+        "src.update_copyright_hook.update_copyright.print_diff.ADDED_COLOUR",
+        "",
     )
-    mocker.patch("src.update_copyright_hook.update_copyright.print_diff.END_COLOUR", "")
+    mocker.patch(
+        "src.update_copyright_hook.update_copyright.print_diff.END_COLOUR",
+        "",
+    )
 
 
 @pytest.mark.usefixtures("git_repo")
@@ -76,13 +81,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -118,13 +126,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -153,20 +164,22 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
 
 class TestChanges:
-
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
@@ -204,7 +217,7 @@ class TestChanges:
         # THEN
         # Construct expected outputs
         new_copyright_string = language.comment_format.format(
-            content=expected_copyright_string
+            content=expected_copyright_string,
         )
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
@@ -214,16 +227,22 @@ class TestChanges:
         )
 
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, expected_content
+            "output content",
+            "expected content",
+            output_content,
+            expected_content,
         )
         assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
+            "captured stdout",
+            "expected stdout",
+            captured.out,
+            expected_stdout,
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -263,7 +282,7 @@ class TestChanges:
         # THEN
         # Construct expected outputs
         new_copyright_string = language.comment_format.format(
-            content=expected_copyright_string
+            content=expected_copyright_string,
         )
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
@@ -273,16 +292,22 @@ class TestChanges:
         )
 
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, expected_content
+            "output content",
+            "expected content",
+            output_content,
+            expected_content,
         )
         assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
+            "captured stdout",
+            "expected stdout",
+            captured.out,
+            expected_stdout,
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -325,21 +350,27 @@ class TestChanges:
         expected_content = f'"""\n{expected_copyright_string}\n"""\n\n{file_content}'
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"  - {input_copyright_string}\n"  # noqa: E501
+            f"  - {input_copyright_string}\n"
             f"  + {expected_copyright_string}\n"
         )
 
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, expected_content
+            "output content",
+            "expected content",
+            output_content,
+            expected_content,
         )
         assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
+            "captured stdout",
+            "expected stdout",
+            captured.out,
+            expected_stdout,
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -386,16 +417,22 @@ class TestChanges:
         )
 
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, expected_content
+            "output content",
+            "expected content",
+            output_content,
+            expected_content,
         )
         assert_matching(
-            "captured stdout", "expected stdout", captured.out, expected_stdout
+            "captured stdout",
+            "expected stdout",
+            captured.out,
+            expected_stdout,
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
@@ -404,7 +441,8 @@ class TestFailureStates:
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
-        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
+        "copyright_string, error_message",
+        CopyrightGlobals.INVALID_COPYRIGHT_STRINGS,
     )
     def test_raises_error_for_invalid_copyright_string(
         cwd,
@@ -433,7 +471,10 @@ class TestFailureStates:
 
         # THEN
         assert_matching(
-            "Output error string", "Expected error string", e.exconly(), error_message
+            "Output error string",
+            "Expected error string",
+            e.exconly(),
+            error_message,
         )
 
     @staticmethod
@@ -456,5 +497,5 @@ class TestFailureStates:
 
         # THEN
         assert e.exconly().startswith(
-            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
+            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",  # noqa: E501
         )
