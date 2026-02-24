@@ -12,7 +12,7 @@ exclude: |
 repos:
   # GENERAL PURPOSE  ##################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: [--maxkb=500]
@@ -37,19 +37,19 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
-  # - repo: https://github.com/commitizen-tools/commitizen
-  #   rev: v4.1.0
-  #   hooks:
-  #     - id: commitizen
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.8
+    hooks:
+      - id: commitizen
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args: [-w]
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v2.6.0
+    rev: v2.8.0
     hooks:
       - id: add-copyright
       - id: add-msg-issue
@@ -83,24 +83,23 @@ repos:
 
   # PYTHON  ###########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
       - id: check-docstring-first
       - id: debug-statements
-      - id: fix-encoding-pragma
         args: [--remove]
       - id: requirements-txt-fixer
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.4.0
+    rev: v2.6.0
     hooks:
       - id: pycln
         exclude: __init__.py
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+    rev: 8.0.0
     hooks:
       - id: isort
         args: [--profile, black]
@@ -110,23 +109,17 @@ repos:
     hooks:
       - id: rm-unneeded-f-str
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
     hooks:
-      - id: black
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
 
-  # - repo: https://github.com/PyCQA/flake8
-  #   rev: 7.1.1
-  #   hooks:
-  #     - id: flake8
-  #       entry: pflake8
-  #       additional_dependencies: [pyproject-flake8]
-
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.13.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies: ["types-all"]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.19.1'  # Use the sha / tag you want to point at
+    hooks:
+      - id: mypy
 
   - repo: https://github.com/econchick/interrogate # flags up missing docstrings
     rev: 1.7.0
@@ -135,22 +128,22 @@ repos:
         args: [--config=pyproject.toml]
         exclude: test_.*\.py|conftest.py
 
-  # - repo: https://github.com/pycqa/pydocstyle
-  #   rev: 6.3.0
-  #   hooks:
-  #   - id: pydocstyle
-  #     args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
-  #     additional_dependencies: [tomli]
-  #     exclude: test_.*\.py|conftest.py
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+    - id: pydocstyle
+      args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
+      additional_dependencies: [tomli]
+      exclude: test_.*\.py|conftest.py
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
 
   - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.17.0
+    rev: 1.19.1
     hooks:
       - id: yamlfix
         exclude: .pre-commit-config.yaml
