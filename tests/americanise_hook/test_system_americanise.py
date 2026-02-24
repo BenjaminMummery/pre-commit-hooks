@@ -1,5 +1,4 @@
-# Copyright (c) 2025 Benjamin Mummery
-
+# Copyright (c) 2025-2026 Benjamin Mummery
 import os
 import subprocess
 
@@ -42,7 +41,9 @@ class TestNoChanges:
         """No files have been changed, nothing to check."""
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
@@ -61,14 +62,16 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in ["file.py", "file.md"]:
             f = git_repo.workspace / file
-            with open(f, "r") as file:
+            with open(f) as file:
                 content = file.read()
         assert content == "<file content sentinel>"
         assert "Correct non-US spellings" in process.stdout
@@ -87,13 +90,15 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel - armour>"
         assert "Correct non-US spellings" in process.stdout
@@ -113,14 +118,16 @@ class TestChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 1, process.stdout + process.stderr
         for file in ["file.py", "file.md", "file.txt"]:
             f = git_repo.workspace / file
-            with open(f, "r") as file:
+            with open(f) as file:
                 content = file.read()
             assert content == us_file_content, file
         assert "Correct non-US spellings" in process.stdout

@@ -1,5 +1,4 @@
-# Copyright (c) 2025 Benjamin Mummery
-
+# Copyright (c) 2025-2026 Benjamin Mummery
 from conftest import assert_matching
 
 from . import print_diff
@@ -14,8 +13,7 @@ def test_print_diff():
     )
 
 
-def test_print_diff_with_line_no(capsys):
-    captured = capsys.readouterr()
+def test_print_diff_with_line_no():
     assert_matching(
         "output",
         "expected output",

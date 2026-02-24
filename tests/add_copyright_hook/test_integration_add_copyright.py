@@ -1,8 +1,8 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-
 from pathlib import Path
 
 import pytest
+
 from freezegun import freeze_time
 from pytest import CaptureFixture
 from pytest_git import GitRepo
@@ -85,13 +85,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -128,13 +131,16 @@ class TestNoChanges:
 
         # THEN
         # Gather actual outputs
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         captured = capsys.readouterr()
 
         # Compare
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -144,7 +150,8 @@ class TestNoChanges:
 @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
 # Check multiple usernames to confirm they get read in correctly.
 @pytest.mark.parametrize(
-    "git_username", ["<git config username sentinel>", "Taylor Swift"]
+    "git_username",
+    ["<git config username sentinel>", "Taylor Swift"],
 )
 class TestDefaultBehavior:
     class TestEmptyFiles:
@@ -160,7 +167,10 @@ class TestDefaultBehavior:
         ):
             # GIVEN
             add_changed_files(
-                file := "hello" + language.extension, "", git_repo, mocker
+                file := "hello" + language.extension,
+                "",
+                git_repo,
+                mocker,
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -172,24 +182,35 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1312 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = f"{copyright_string}\n"
             expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
 
             # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
             captured = capsys.readouterr()
 
             # Compare
             assert_matching(
-                "output content", "expected content", output_content, expected_content
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
             )
             assert_matching(
-                "captured stdout", "expected stdout", captured.out, expected_stdout
+                "captured stdout",
+                "expected stdout",
+                captured.out,
+                expected_stdout,
             )
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+            assert_matching(
+                "captured stderr",
+                "expected stderr",
+                captured.err,
+                "",
+            )
 
         @staticmethod
         @freeze_time("1312-01-01")
@@ -205,7 +226,10 @@ class TestDefaultBehavior:
         ):
             # GIVEN
             add_changed_files(
-                file := "hello" + language.extension, "", git_repo, mocker
+                file := "hello" + language.extension,
+                "",
+                git_repo,
+                mocker,
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -218,24 +242,35 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1312 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = f"{copyright_string}\n"
             expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
 
             # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
             captured = capsys.readouterr()
 
             # Compare
             assert_matching(
-                "output content", "expected content", output_content, expected_content
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
             )
             assert_matching(
-                "captured stdout", "expected stdout", captured.out, expected_stdout
+                "captured stdout",
+                "expected stdout",
+                captured.out,
+                expected_stdout,
             )
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+            assert_matching(
+                "captured stderr",
+                "expected stderr",
+                captured.err,
+                "",
+            )
 
     class TestFileContentHandling:
         @staticmethod
@@ -265,7 +300,7 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1312 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = (
                 copyright_string + f"\n\n<file {file} content sentinel>\n"
@@ -273,18 +308,29 @@ class TestDefaultBehavior:
             expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
 
             # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
             captured = capsys.readouterr()
 
             # Compare
             assert_matching(
-                "output content", "expected content", output_content, expected_content
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
             )
             assert_matching(
-                "captured stdout", "expected stdout", captured.out, expected_stdout
+                "captured stdout",
+                "expected stdout",
+                captured.out,
+                expected_stdout,
             )
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+            assert_matching(
+                "captured stderr",
+                "expected stderr",
+                captured.err,
+                "",
+            )
 
         @staticmethod
         @freeze_time("1312-01-01")
@@ -306,7 +352,10 @@ class TestDefaultBehavior:
         ):
             # GIVEN
             add_changed_files(
-                file := "hello" + language.extension, file_content, git_repo, mocker
+                file := "hello" + language.extension,
+                file_content,
+                git_repo,
+                mocker,
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -318,7 +367,7 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) 1312 {git_username}"
+                content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = (
                 "#!/usr/bin/env python3\n"
@@ -332,18 +381,29 @@ class TestDefaultBehavior:
             )
 
             # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
             captured = capsys.readouterr()
 
             # Compare
             assert_matching(
-                "output content", "expected content", output_content, expected_content
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
             )
             assert_matching(
-                "captured stdout", "expected stdout", captured.out, expected_stdout
+                "captured stdout",
+                "expected stdout",
+                captured.out,
+                expected_stdout,
             )
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+            assert_matching(
+                "captured stderr",
+                "expected stderr",
+                captured.err,
+                "",
+            )
 
     class TestDateHandling:
         @staticmethod
@@ -370,7 +430,10 @@ class TestDefaultBehavior:
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
             git_repo.run(f"git add {file}", check_rc=True)
-            git_repo.run("git commit -m 'test commit' --no-verify", check_rc=True)
+            git_repo.run(
+                "git commit -m 'test commit' --no-verify",
+                check_rc=True,
+            )
 
             # WHEN
             with cwd(git_repo.workspace):
@@ -379,7 +442,7 @@ class TestDefaultBehavior:
             # THEN
             # Construct expected outputs
             copyright_string = language.comment_format.format(
-                content=f"Copyright (c) {Globals.THIS_YEAR}-9999 {git_username}"
+                content=f"Copyright (c) {Globals.THIS_YEAR}-9999 {git_username}",
             )
             expected_content = f"{copyright_string}\n\n<file {file} content sentinel>\n"
             expected_stdout = (
@@ -387,18 +450,29 @@ class TestDefaultBehavior:
             )
 
             # Gather actual outputs
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
             captured = capsys.readouterr()
 
             # Compare
             assert_matching(
-                "output content", "expected content", output_content, expected_content
+                "output content",
+                "expected content",
+                output_content,
+                expected_content,
             )
             assert_matching(
-                "captured stdout", "expected stdout", captured.out, expected_stdout
+                "captured stdout",
+                "expected stdout",
+                captured.out,
+                expected_stdout,
             )
-            assert_matching("captured stderr", "expected stderr", captured.err, "")
+            assert_matching(
+                "captured stderr",
+                "expected stderr",
+                captured.err,
+                "",
+            )
 
 
 class TestCustomBehavior:
@@ -419,7 +493,8 @@ class TestCustomBehavior:
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch(
-                    "sys.argv", ["stub_name", "-n", "<arg name sentinel>", file]
+                    "sys.argv",
+                    ["stub_name", "-n", "<arg name sentinel>", file],
                 )
 
                 # WHEN
@@ -435,7 +510,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -447,9 +522,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
             @staticmethod
             @freeze_time("1312-01-01")
@@ -470,7 +553,8 @@ class TestCustomBehavior:
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch(
-                    "sys.argv", ["stub_name", "-n", "<arg name sentinel>", file]
+                    "sys.argv",
+                    ["stub_name", "-n", "<arg name sentinel>", file],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -491,7 +575,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -503,9 +587,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
         class TestFormat:
             @staticmethod
@@ -523,7 +615,10 @@ class TestCustomBehavior:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
+                mocker.patch(
+                    "sys.argv",
+                    ["stub_name", "-f", "(C) {name} {year}", file],
+                )
                 write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -543,7 +638,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -555,9 +650,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
             @staticmethod
             @freeze_time("1312-01-01")
@@ -571,7 +674,10 @@ class TestCustomBehavior:
             ):
                 # GIVEN
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
-                mocker.patch("sys.argv", ["stub_name", "-f", "(C) {name} {year}", file])
+                mocker.patch(
+                    "sys.argv",
+                    ["stub_name", "-f", "(C) {name} {year}", file],
+                )
                 write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -591,7 +697,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -603,9 +709,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
     class TestConfigFiles:
         @pytest.mark.parametrize(
@@ -657,7 +771,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -669,9 +783,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
             @staticmethod
             @freeze_time("1312-01-01")
@@ -707,7 +829,7 @@ class TestCustomBehavior:
                 )
 
                 # Gather actual outputs
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
                 captured = capsys.readouterr()
 
@@ -719,9 +841,17 @@ class TestCustomBehavior:
                     expected_content,
                 )
                 assert_matching(
-                    "captured stdout", "expected stdout", captured.out, expected_stdout
+                    "captured stdout",
+                    "expected stdout",
+                    captured.out,
+                    expected_stdout,
                 )
-                assert_matching("captured stderr", "expected stderr", captured.err, "")
+                assert_matching(
+                    "captured stderr",
+                    "expected stderr",
+                    captured.err,
+                    "",
+                )
 
         @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
         @pytest.mark.parametrize(
@@ -774,18 +904,20 @@ class TestCustomBehavior:
                         # for, then we should see a copyright with that formatting.
                         copyright_string = (
                             language.custom_copyright_format_commented.format(
-                                name="<git config username sentinel>", year="1312"
+                                name="<git config username sentinel>",
+                                year="1312",
                             )
                         )
                     else:
                         # Otherwise we expect the default copyright format.
                         copyright_string = lang.comment_format.format(
                             content="Copyright (c) {year} {name}".format(
-                                name="<git config username sentinel>", year="1312"
-                            )
+                                name="<git config username sentinel>",
+                                year="1312",
+                            ),
                         )
 
-                    with open(git_repo.workspace / f"hello{lang.extension}", "r") as f:
+                    with open(git_repo.workspace / f"hello{lang.extension}") as f:
                         output_content = f.read()
                     assert_matching(
                         "output content",
@@ -834,18 +966,20 @@ class TestCustomBehavior:
                         # for, then we should see a copyright with that formatting.
                         copyright_string = language.comment_format.format(
                             content=language.custom_copyright_format_uncommented.format(
-                                name="<git config username sentinel>", year="1312"
-                            )
+                                name="<git config username sentinel>",
+                                year="1312",
+                            ),
                         )
                     else:
                         # Otherwise we expect the default copyright format.
                         copyright_string = lang.comment_format.format(
                             content="Copyright (c) {year} {name}".format(
-                                name="<git config username sentinel>", year="1312"
-                            )
+                                name="<git config username sentinel>",
+                                year="1312",
+                            ),
                         )
 
-                    with open(git_repo.workspace / f"hello{lang.extension}", "r") as f:
+                    with open(git_repo.workspace / f"hello{lang.extension}") as f:
                         output_content = f.read()
                     assert_matching(
                         "output content",
@@ -855,7 +989,8 @@ class TestCustomBehavior:
                     )
 
         @pytest.mark.parametrize(
-            "language", CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES
+            "language",
+            CopyrightGlobals.DOCSTR_SUPPORTED_LANGUAGES,
         )
         @pytest.mark.parametrize(
             "config_file, config_content",
@@ -895,7 +1030,7 @@ class TestCustomBehavior:
                     assert add_copyright.main() == 1
 
                 # THEN
-                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                with open(git_repo.workspace / f"hello{language.extension}") as f:
                     output_content = f.read()
                 assert_matching(
                     "output content",
@@ -937,7 +1072,7 @@ class TestCustomBehavior:
                     assert add_copyright.main() == 1
 
                 # THEN
-                with open(git_repo.workspace / f"hello{language.extension}", "r") as f:
+                with open(git_repo.workspace / f"hello{language.extension}") as f:
                     output_content = f.read()
                 assert_matching(
                     "output content",
@@ -969,7 +1104,9 @@ class TestFailureStates:
                 # GIVEN
                 add_changed_files("hello.py", "", git_repo, mocker)
                 config_file_path = write_config_file(
-                    git_repo.workspace, config_file, config_file_content
+                    git_repo.workspace,
+                    config_file,
+                    config_file_content,
                 )
 
                 # WHEN
@@ -995,11 +1132,19 @@ class TestFailureStates:
 
             @staticmethod
             def test_raises_error_for_invalid_toml(
-                cwd, git_repo: GitRepo, mocker: MockerFixture, config_file: str
+                cwd,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                config_file: str,
             ):
                 # GIVEN
                 language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
-                add_changed_files("hello" + language.extension, "", git_repo, mocker)
+                add_changed_files(
+                    "hello" + language.extension,
+                    "",
+                    git_repo,
+                    mocker,
+                )
                 file = write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -1085,7 +1230,12 @@ class TestFailureStates:
                 mocker: MockerFixture,
             ):
                 # GIVEN
-                add_changed_files("hello" + language.extension, "", git_repo, mocker)
+                add_changed_files(
+                    "hello" + language.extension,
+                    "",
+                    git_repo,
+                    mocker,
+                )
 
                 write_config_file(
                     git_repo.workspace,
@@ -1125,7 +1275,9 @@ class TestFailureStates:
                 # GIVEN
                 add_changed_files("hello.py", "", git_repo, mocker)
                 config_file_path = write_config_file(
-                    git_repo.workspace, config_file, config_file_content
+                    git_repo.workspace,
+                    config_file,
+                    config_file_content,
                 )
 
                 # WHEN
@@ -1151,11 +1303,19 @@ class TestFailureStates:
 
             @staticmethod
             def test_raises_error_for_invalid_syntax(
-                cwd, git_repo: GitRepo, mocker: MockerFixture, config_file: str
+                cwd,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                config_file: str,
             ):
                 # GIVEN
                 language = CopyrightGlobals.SUPPORTED_LANGUAGES[0]
-                add_changed_files("hello" + language.extension, "", git_repo, mocker)
+                add_changed_files(
+                    "hello" + language.extension,
+                    "",
+                    git_repo,
+                    mocker,
+                )
                 file = write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -1236,7 +1396,7 @@ class TestFailureStates:
 
             # THEN
             assert e.exconly().startswith(
-                "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {"  # noqa: E501
+                "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",  # noqa: E501
             )
 
         @staticmethod
@@ -1249,7 +1409,7 @@ class TestFailureStates:
         ):
             # GIVEN
             copyright_string = language.comment_format.format(
-                content="Copyright 1312 NAME"
+                content="Copyright 1312 NAME",
             )
             add_changed_files(
                 f"hello{language.extension}",
@@ -1265,7 +1425,7 @@ class TestFailureStates:
 
             # THEN
             assert e.exconly().startswith(
-                "ValueError: Found multiple copyright strings: "
+                "ValueError: Found multiple copyright strings: ",
             )
 
 

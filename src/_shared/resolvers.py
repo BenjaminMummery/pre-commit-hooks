@@ -1,9 +1,9 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """Common resolvers that are used by multiple hooks."""
 
 import os
 import typing as t
+
 from pathlib import Path
 
 

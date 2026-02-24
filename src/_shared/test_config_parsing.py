@@ -1,6 +1,6 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import pytest
+
 from pytest_mock import MockerFixture
 
 from conftest import assert_matching
@@ -30,7 +30,9 @@ class TestReadConfig:
     class TestSingleConfigFile:
         @staticmethod
         def test_identifies_pyproject_toml(
-            tmp_path: config_parsing.Path, cwd, mocker: MockerFixture
+            tmp_path: config_parsing.Path,
+            cwd,
+            mocker: MockerFixture,
         ):
             # GIVEN
             config_path = tmp_path / "pyproject.toml"
@@ -45,14 +47,20 @@ class TestReadConfig:
                 ret = config_parsing.read_config("<tool name sentinel>")
 
             # THEN
-            assert ret == (mocked_read_pyproject_toml.return_value, config_path)
+            assert ret == (
+                mocked_read_pyproject_toml.return_value,
+                config_path,
+            )
             mocked_read_pyproject_toml.assert_called_once_with(
-                config_path, "<tool name sentinel>"
+                config_path,
+                "<tool name sentinel>",
             )
 
         @staticmethod
         def test_identifies_setup_cfg(
-            tmp_path: config_parsing.Path, cwd, mocker: MockerFixture
+            tmp_path: config_parsing.Path,
+            cwd,
+            mocker: MockerFixture,
         ):
             # GIVEN
             config_path = tmp_path / "setup.cfg"
@@ -69,13 +77,15 @@ class TestReadConfig:
             # THEN
             assert ret == (mocked_read_setup_cfg.return_value, config_path)
             mocked_read_setup_cfg.assert_called_once_with(
-                config_path, "<tool name sentinel>"
+                config_path,
+                "<tool name sentinel>",
             )
 
     class TestFailureStates:
         @staticmethod
         def test_raises_FileNotFoundError_if_there_are_no_config_files(
-            tmp_path: config_parsing.Path, cwd
+            tmp_path: config_parsing.Path,
+            cwd,
         ):
             # WHEN
             with pytest.raises(FileNotFoundError) as e:
@@ -90,10 +100,13 @@ class TestReadingPyprojectToml:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
-            "tool_name, expected_options", [("foo", {"option1": "blah{foo}"})]
+            "tool_name, expected_options",
+            [("foo", {"option1": "blah{foo}"})],
         )
         def test_reads_correctly(
-            tmp_path: config_parsing.Path, tool_name: str, expected_options: dict
+            tmp_path: config_parsing.Path,
+            tool_name: str,
+            expected_options: dict,
         ):
             # GIVEN
             file = tmp_path / "pyproject.toml"
@@ -143,10 +156,13 @@ class TestReadingSetupCfg:
     class TestParsing:
         @staticmethod
         @pytest.mark.parametrize(
-            "tool_name, expected_options", [("foo", {"option1": "blah{foo}"})]
+            "tool_name, expected_options",
+            [("foo", {"option1": "blah{foo}"})],
         )
         def test_reads_correctly(
-            tmp_path: config_parsing.Path, tool_name: str, expected_options: dict
+            tmp_path: config_parsing.Path,
+            tool_name: str,
+            expected_options: dict,
         ):
             # GIVEN
             file = tmp_path / "setup.cfg"

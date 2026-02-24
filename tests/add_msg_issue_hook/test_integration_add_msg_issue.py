@@ -1,9 +1,9 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-
 from pathlib import Path
 from typing import List
 
 import pytest
+
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
@@ -56,7 +56,7 @@ class TestNoChanges:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            file_content := f"Some message that includes the {issue}"
+            file_content := f"Some message that includes the {issue}",
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -68,14 +68,22 @@ class TestNoChanges:
         with open(file) as f:
             content = f.read()
 
-        assert_matching("output content", "expected content", content, file_content)
+        assert_matching(
+            "output content",
+            "expected content",
+            content,
+            file_content,
+        )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
     def test_no_branch(
-        cwd, tmp_path: Path, mocker: MockerFixture, capsys: pytest.CaptureFixture
+        cwd,
+        tmp_path: Path,
+        mocker: MockerFixture,
+        capsys: pytest.CaptureFixture,
     ):
         # GIVEN
         mocker.patch("sys.argv", ["stub_name", "stub_filepath"])
@@ -115,7 +123,12 @@ class TestAddingMessage:
         with open(file) as f:
             content = f.read()
 
-        assert_matching("output content", "expected content", content, f"[{issue}]")
+        assert_matching(
+            "output content",
+            "expected content",
+            content,
+            f"[{issue}]",
+        )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -133,7 +146,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            "<msg file content sentinel>"
+            "<msg file content sentinel>",
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -147,7 +160,10 @@ class TestAddingMessage:
 
         expected_file_content = f"<msg file content sentinel>\n\n[{issue}]"
         assert_matching(
-            "output content", "expected content", content, expected_file_content
+            "output content",
+            "expected content",
+            content,
+            expected_file_content,
         )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
@@ -166,7 +182,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            "<summary line sentinel>\n\n<body sentinel>"
+            "<summary line sentinel>\n\n<body sentinel>",
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -180,7 +196,10 @@ class TestAddingMessage:
 
         expected_file_content = f"<summary line sentinel>\n\n[{issue}]\n<body sentinel>"
         assert_matching(
-            "output content", "expected content", content, expected_file_content
+            "output content",
+            "expected content",
+            content,
+            expected_file_content,
         )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
@@ -199,7 +218,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            file_content := "# <summary line sentinel>\n\n<body sentinel>"
+            file_content := "# <summary line sentinel>\n\n<body sentinel>",
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -213,7 +232,10 @@ class TestAddingMessage:
 
         expected_file_content = f"{file_content}\n[{issue}]"
         assert_matching(
-            "output content", "expected content", content, expected_file_content
+            "output content",
+            "expected content",
+            content,
+            expected_file_content,
         )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
@@ -232,7 +254,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            "<summary line sentinel>\n\n# <body sentinel>"
+            "<summary line sentinel>\n\n# <body sentinel>",
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -248,7 +270,10 @@ class TestAddingMessage:
             f"<summary line sentinel>\n\n[{issue}]\n\n# <body sentinel>"
         )
         assert_matching(
-            "output content", "expected content", content, expected_file_content
+            "output content",
+            "expected content",
+            content,
+            expected_file_content,
         )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
@@ -278,7 +303,15 @@ class TestFailureStates:
         capsys: pytest.CaptureFixture,
     ):
         # GIVEN
-        mocker.patch("sys.argv", ["stub_name", "-t", f"{template}", "stub_filepath"])
+        mocker.patch(
+            "sys.argv",
+            [
+                "stub_name",
+                "-t",
+                f"{template}",
+                "stub_filepath",
+            ],
+        )
 
         # WHEN
         with cwd(tmp_path):
@@ -301,7 +334,8 @@ class TestFailureStates:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "template, additional_keys", [("{subject}\n{issue_id}\n{body}\n{foo}", ["foo"])]
+        "template, additional_keys",
+        [("{subject}\n{issue_id}\n{body}\n{foo}", ["foo"])],
     )
     def test_additional_key_in_template(
         cwd,
@@ -312,7 +346,15 @@ class TestFailureStates:
         capsys: pytest.CaptureFixture,
     ):
         # GIVEN
-        mocker.patch("sys.argv", ["stub_name", "-t", f"{template}", "stub_filepath"])
+        mocker.patch(
+            "sys.argv",
+            [
+                "stub_name",
+                "-t",
+                f"{template}",
+                "stub_filepath",
+            ],
+        )
 
         # WHEN
         with cwd(tmp_path):

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-
 """
 Check that source files contain a copyright string, and add one to files that don't.
 
@@ -12,6 +10,7 @@ consult the README file.
 import argparse
 import ast
 import datetime
+
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -54,8 +53,8 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
             "scala": "scala",
             "sql": "sql",
             "swift": "swift",
-        }.items()
-    )
+        }.items(),
+    ),
 )
 
 
@@ -108,7 +107,9 @@ def _get_earliest_commit_year(file: Path) -> int:
     if len(timestamps_set) < 1:
         raise NoCommitsError("No blame timestamps found.")
 
-    earliest_date: datetime.datetime = datetime.datetime.fromtimestamp(min(timestamps))
+    earliest_date: datetime.datetime = datetime.datetime.fromtimestamp(
+        min(timestamps),
+    )
 
     return int(earliest_date.year)
 
@@ -255,7 +256,8 @@ def _construct_copyright_string(
 
 
 def _ensure_comment(
-    copyright_string: str, comment_markers: Tuple[str, Optional[str]]
+    copyright_string: str,
+    comment_markers: Tuple[str, Optional[str]],
 ) -> str:
     """
     Ensure that the string passed in is properly comment escaped.
@@ -313,7 +315,7 @@ def _read_default_configuration() -> dict:
         v for v in LANGUAGE_TAGS_TOMLKEYS.values()
     ]
 
-    retv = dict([(key, None) for key in supported_toml_keys])
+    retv = {key: None for key in supported_toml_keys}
 
     # read data from config file
     try:
@@ -327,7 +329,7 @@ def _read_default_configuration() -> dict:
         if key not in supported_toml_keys:
             raise KeyError(
                 f"Unsupported option in config file {filepath}: '{key}'. "
-                f"Supported options are: {supported_toml_keys}."
+                f"Supported options are: {supported_toml_keys}.",
             )
 
         # If the key is a supported language, check that the subkeys are supported.
@@ -338,7 +340,7 @@ def _read_default_configuration() -> dict:
                         f"Unsupported option in config file {filepath}: "
                         f"'{key}.{subkey}'. "
                         f"Supported options for '{key}' are: "
-                        f"{supported_language_subkeys}."
+                        f"{supported_language_subkeys}.",
                     )
 
         retv[key] = data[key]
@@ -367,12 +369,15 @@ def _ensure_valid_format(format: str):
     if len(missing_keys) > 0:
         raise KeyError(
             f"The format string '{format}' is missing the following required keys: "
-            f"{missing_keys}"
+            f"{missing_keys}",
         )
 
 
 def _ensure_copyright_string(
-    file: Path, name: Optional[str], format: str, docstr: bool = False
+    file: Path,
+    name: Optional[str],
+    format: str,
+    docstr: bool = False,
 ) -> int:
     """
     Ensure that the file has a copyright string.
@@ -409,7 +414,8 @@ def _ensure_copyright_string(
         # Early return if the file already has copyright info, either in a comment or a
         # docstring.
         if parse_copyright_comment(
-            content, comment_markers
+            content,
+            comment_markers,
         ) or parse_copyright_docstring(content):
             return 0
 
@@ -432,7 +438,8 @@ def _ensure_copyright_string(
 
             if not docstr:
                 new_copyright_string = _ensure_comment(
-                    new_copyright_string, comment_markers=comment_markers
+                    new_copyright_string,
+                    comment_markers=comment_markers,
                 )
         except ValueError:  # pragma: no cover
             raise
@@ -442,7 +449,7 @@ def _ensure_copyright_string(
         f.write(
             _add_copyright_docstring_to_content(content, new_copyright_string)
             if docstr
-            else _add_copyright_comment_to_content(content, new_copyright_string)
+            else _add_copyright_comment_to_content(content, new_copyright_string),
         )
         print(f"- added line(s):\n{new_copyright_string}")
     return 1
@@ -494,7 +501,9 @@ def main():
         # Ensure that the file has copyright.
         try:
             retv |= _ensure_copyright_string(
-                Path(file), name=configuration["name"], **kwargs
+                Path(file),
+                name=configuration["name"],
+                **kwargs,
             )
         except (KeyError, ValueError):
             raise

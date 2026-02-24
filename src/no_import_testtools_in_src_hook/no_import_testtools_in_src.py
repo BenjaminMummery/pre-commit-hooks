@@ -1,5 +1,4 @@
-# Copyright (c) 2024 Benjamin Mummery
-
+# Copyright (c) 2024-2026 Benjamin Mummery
 """
 Scan source files that aren't tests for test-specific imports (pytest, unittest, etc).
 
@@ -10,6 +9,7 @@ consult the README file.
 import argparse
 import ast
 import logging
+
 from collections import namedtuple
 from pathlib import Path
 from typing import Any, Generator, List
@@ -37,7 +37,7 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
             logging.warning(
                 f"Could not parse file {file}."
                 " We'll assume that this is fine since an unparsable file probably "
-                "won't successfully import anything anyway."
+                "won't successfully import anything anyway.",
             )
             return
 
@@ -68,7 +68,7 @@ def _check_for_imports(file: Path) -> int:
     """
 
     bad_imports: List[str] = []
-    test_toolkits = set(["pytest", "unittest"])
+    test_toolkits = {"pytest", "unittest"}
     for imp in _get_imports(file):
         bad_imports += test_toolkits.intersection(imp.module + imp.name)
 

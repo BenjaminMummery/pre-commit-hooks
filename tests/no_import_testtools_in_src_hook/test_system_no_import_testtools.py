@@ -1,11 +1,15 @@
 # Copyright (c) 2024 - 2026 Benjamin Mummery
-
 import os
 import subprocess
 
 from pytest_git import GitRepo
 
-COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "no-import-testtools-in-src"]
+COMMAND = [
+    "pre-commit",
+    "try-repo",
+    f"{os.getcwd()}",
+    "no-import-testtools-in-src",
+]
 
 
 class TestNoChanges:
@@ -14,7 +18,9 @@ class TestNoChanges:
         """No files have been changed, nothing to check."""
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
@@ -33,12 +39,14 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(f, "r") as file:
+        with open(f) as file:
             content = file.read()
         assert content == "<file content sentinel>"
         assert "Detect test tool imports in src files" in process.stdout
@@ -57,13 +65,15 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
         assert "Detect test tool imports in src files" in process.stdout
@@ -81,12 +91,14 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             content = f.read()
         assert content == f"<file {file} content sentinel>"
         assert "Detect test tool imports in src files" in process.stdout

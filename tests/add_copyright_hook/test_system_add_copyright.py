@@ -1,11 +1,12 @@
-# Copyright (c) 2022-2024 Benjamin Mummery
-
+# Copyright (c) 2022-2026 Benjamin Mummery
 import datetime
 import os
 import subprocess
+
 from pathlib import Path
 
 import pytest
+
 from pytest_git import GitRepo
 
 from conftest import (
@@ -26,7 +27,9 @@ class TestNoChanges:
         """No files have been changed, nothing to check."""
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
@@ -46,13 +49,15 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
         assert "Add copyright string to source files" in process.stdout
@@ -86,15 +91,20 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert "Add copyright string to source files" in process.stdout
         assert "Passed" in process.stdout
@@ -102,7 +112,8 @@ class TestNoChanges:
 
 # Check multiple usernames to confirm they get read in correctly.
 @pytest.mark.parametrize(
-    "git_username", ["<git config username sentinel>", "Taylor Swift"]
+    "git_username",
+    ["<git config username sentinel>", "Taylor Swift"],
 )
 class TestDefaultBehavior:
     class TestEmptyFiles:
@@ -129,7 +140,9 @@ class TestDefaultBehavior:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -138,13 +151,13 @@ class TestDefaultBehavior:
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
-                    content=f"Copyright (c) {THIS_YEAR} {git_username}"
+                    content=f"Copyright (c) {THIS_YEAR} {git_username}",
                 )
                 expected_content = f"{copyright_string}\n"
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                 )
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
 
                 assert_matching(
@@ -179,7 +192,9 @@ class TestDefaultBehavior:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -187,7 +202,7 @@ class TestDefaultBehavior:
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
-                    content=f"Copyright (c) {THIS_YEAR} {git_username}"
+                    content=f"Copyright (c) {THIS_YEAR} {git_username}",
                 )
                 expected_content = (
                     copyright_string + f"\n\n<file {file} content sentinel>\n"
@@ -195,7 +210,7 @@ class TestDefaultBehavior:
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                 )
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
 
                 assert_matching(
@@ -229,7 +244,9 @@ class TestDefaultBehavior:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -237,7 +254,7 @@ class TestDefaultBehavior:
             for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                 file = "hello" + language.extension
                 copyright_string = language.comment_format.format(
-                    content=f"Copyright (c) {THIS_YEAR} {git_username}"
+                    content=f"Copyright (c) {THIS_YEAR} {git_username}",
                 )
                 expected_content = (
                     "#!/usr/bin/env python3\n"
@@ -249,7 +266,7 @@ class TestDefaultBehavior:
                 expected_stdout = (
                     f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                 )
-                with open(git_repo.workspace / file, "r") as f:
+                with open(git_repo.workspace / file) as f:
                     output_content = f.read()
 
                 assert_matching(
@@ -293,12 +310,18 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file, config_file_content)
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_file_content,
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
                     process: subprocess.CompletedProcess = subprocess.run(
-                        COMMAND, capture_output=True, text=True
+                        COMMAND,
+                        capture_output=True,
+                        text=True,
                     )
 
                 # THEN
@@ -306,13 +329,13 @@ class TestCustomBehavior:
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
-                        content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>"  # noqa: E501
+                        content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>",  # noqa: E501
                     )
                     expected_content = f"{copyright_string}\n"
                     expected_stdout = (
                         f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                     )
-                    with open(git_repo.workspace / file, "r") as f:
+                    with open(git_repo.workspace / file) as f:
                         output_content = f.read()
 
                     assert_matching(
@@ -355,12 +378,18 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                 )
-                write_config_file(git_repo.workspace, config_file, config_file_content)
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_file_content,
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
                     process: subprocess.CompletedProcess = subprocess.run(
-                        COMMAND, capture_output=True, text=True
+                        COMMAND,
+                        capture_output=True,
+                        text=True,
                     )
 
                 # THEN
@@ -368,14 +397,16 @@ class TestCustomBehavior:
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
-                        content=expected_copyright_string.format(year=THIS_YEAR)
+                        content=expected_copyright_string.format(
+                            year=THIS_YEAR,
+                        ),
                     )
                     expected_content = f"{copyright_string}\n"
                     expected_stdout = (
                         f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                     )
 
-                    with open(git_repo.workspace / file, "r") as f:
+                    with open(git_repo.workspace / file) as f:
                         output_content = f.read()
 
                     assert_matching(
@@ -403,14 +434,20 @@ class TestCustomBehavior:
                     [
                         f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'  # noqa: E501
                         for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
-                    ]
+                    ],
                 )
-                write_config_file(git_repo.workspace, "pyproject.toml", toml_text)
+                write_config_file(
+                    git_repo.workspace,
+                    "pyproject.toml",
+                    toml_text,
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
                     process: subprocess.CompletedProcess = subprocess.run(
-                        COMMAND, capture_output=True, text=True
+                        COMMAND,
+                        capture_output=True,
+                        text=True,
                     )
 
                 # THEN
@@ -419,14 +456,15 @@ class TestCustomBehavior:
                     file = "hello" + language.extension
                     copyright_string = (
                         language.custom_copyright_format_commented.format(
-                            name="<git config username sentinel>", year=THIS_YEAR
+                            name="<git config username sentinel>",
+                            year=THIS_YEAR,
                         )
                     )
                     expected_content = f"{copyright_string}\n"
                     expected_stdout = (
                         f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                     )
-                    with open(git_repo.workspace / file, "r") as f:
+                    with open(git_repo.workspace / file) as f:
                         output_content = f.read()
 
                     assert_matching(
@@ -454,12 +492,18 @@ class TestCustomBehavior:
                         f"[tool.add_copyright.{language.toml_key}]\n"
                         f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
                     )
-                write_config_file(git_repo.workspace, "pyproject.toml", toml_text)
+                write_config_file(
+                    git_repo.workspace,
+                    "pyproject.toml",
+                    toml_text,
+                )
 
                 # WHEN
                 with cwd(git_repo.workspace):
                     process: subprocess.CompletedProcess = subprocess.run(
-                        COMMAND, capture_output=True, text=True
+                        COMMAND,
+                        capture_output=True,
+                        text=True,
                     )
 
                 # THEN
@@ -468,14 +512,15 @@ class TestCustomBehavior:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
                         content=language.custom_copyright_format_uncommented.format(
-                            name="<git config username sentinel>", year=THIS_YEAR
-                        )
+                            name="<git config username sentinel>",
+                            year=THIS_YEAR,
+                        ),
                     )
                     expected_content = f"{copyright_string}\n"
                     expected_stdout = (
                         f"Fixing file `{file}` - added line(s):\n{copyright_string}\n"
                     )
-                    with open(git_repo.workspace / file, "r") as f:
+                    with open(git_repo.workspace / file) as f:
                         output_content = f.read()
 
                     assert_matching(
@@ -498,18 +543,24 @@ class TestFailureStates:
             ],
         )
         def test_unsupported_config_options(
-            cwd, config_file_content: str, git_repo: GitRepo
+            cwd,
+            config_file_content: str,
+            git_repo: GitRepo,
         ):
             # GIVEN
             add_changed_files("hello.py", "", git_repo)
             config_file = write_config_file(
-                git_repo.workspace, "pyproject.toml", config_file_content
+                git_repo.workspace,
+                "pyproject.toml",
+                config_file_content,
             )
 
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -553,7 +604,9 @@ class TestFailureStates:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -595,7 +648,9 @@ class TestFailureStates:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -632,7 +687,9 @@ class TestFailureStates:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -659,7 +716,9 @@ class TestFailureStates:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN
@@ -687,7 +746,9 @@ class TestFailureStates:
             # WHEN
             with cwd(git_repo.workspace):
                 process: subprocess.CompletedProcess = subprocess.run(
-                    COMMAND, capture_output=True, text=True
+                    COMMAND,
+                    capture_output=True,
+                    text=True,
                 )
 
             # THEN

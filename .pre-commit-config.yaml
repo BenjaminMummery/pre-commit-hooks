@@ -6,7 +6,9 @@ default_stages: [pre-commit, pre-push]
 exclude: |
   (?x)(
     setup.py|
-    pyproject.toml
+    pyproject.toml|
+    CHANGELOG.md|
+    pull_request_template.md
   )
 
 repos:
@@ -25,7 +27,6 @@ repos:
       - id: check-vcs-permalinks
       - id: destroyed-symlinks
       - id: detect-private-key
-      - id: double-quote-string-fixer
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: forbid-submodules
@@ -129,11 +130,6 @@ repos:
     hooks:
       - id: pyupgrade
 
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.16.0
-    hooks:
-      - id: reorder-python-imports
-
   - repo: https://github.com/hadialqattan/pycln
     rev: v2.6.0
     hooks:
@@ -166,11 +162,6 @@ repos:
       - id: interrogate
         args: [--config=pyproject.toml]
         exclude: test_.*\.py|conftest.py
-
-  - repo: https://github.com/hhatto/autopep8
-    rev: v2.3.2  # select the tag or revision you want, or run `pre-commit autoupdate`
-    hooks:
-    -   id: autopep8
 
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
