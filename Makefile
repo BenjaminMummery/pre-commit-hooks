@@ -23,20 +23,20 @@ install:
 
 # GENERAL TESTING
 test: test_unit test_integration
-	uv run python -c "$$PRETTYPRINT_PYSCRIPT"
+	@uv run python -c "$$PRETTYPRINT_PYSCRIPT"
 
 test_all: test_unit test_integration test_system
-	uv run python -c "$$PRETTYPRINT_PYSCRIPT"
+	@uv run python -c "$$PRETTYPRINT_PYSCRIPT"
 
 # TESTING BY LEVEL
 test_unit:
-	uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
+	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
 	uv run pytest --cov=src src/ -x
 
 test_integration:
-	uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
+	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
 	uv run pytest --cov=src tests/*/test_integration_*.py -x
 
 test_system:
-	uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
+	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
 	uv run pytest tests/*/test_system_*.py -x
