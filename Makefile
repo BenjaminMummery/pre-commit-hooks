@@ -43,4 +43,4 @@ test_system:
 
 # RUNNING PRE-COMMIT HOOKS
 lint:
-	@SKIP=add-copyright uv run pre-commit run --all-files
+	@SKIP=update-copyright uv run pre-commit run --all-files

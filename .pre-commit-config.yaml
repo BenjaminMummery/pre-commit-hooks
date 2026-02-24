@@ -98,7 +98,7 @@ repos:
       # Append jira issue from the branch name to the commit
       - id: add-msg-issue
       # Update existing copyright markers.
-      # - id: update-copyright
+      - id: update-copyright
       # Sort the .gitignore file (respects sections)
       - id: sort-file-contents
         files: .gitignore
