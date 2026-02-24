@@ -31,7 +31,7 @@ test_all: test_unit test_integration test_system
 # TESTING BY LEVEL
 test_unit:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
-	uv run pytest src/ -x
+	uv run pytest src/ -x --cov-fail-under=0
 
 test_integration:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
@@ -39,7 +39,7 @@ test_integration:
 
 test_system:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
-	uv run pytest tests/*/test_system_*.py -x
+	uv run pytest tests/*/test_system_*.py -x --cov-fail-under=0
 
 # RUNNING PRE-COMMIT HOOKS
 lint:

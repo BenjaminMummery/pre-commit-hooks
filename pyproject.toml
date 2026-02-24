@@ -69,13 +69,12 @@ universal = true
 
 ########## TESTING TOOL CONFIGURATION ##################################################
 
-# [tool.pytest.ini_options]
 [tool.pytest]
 addopts = [
     "--doctest-modules",
     "--strict-markers",
     "--cov=src",
-    "--cov-fail-under=38",
+    "--cov-fail-under=80",
 ]
 
 ########## LINTING AND FORMATTING TOOL CONFIGURATION ###################################
