@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import datetime
 import os
 import subprocess
 
 import pytest
+
 from pytest_git import GitRepo
 
 from conftest import (
@@ -24,13 +24,15 @@ class TestNoChanges:
         """No files have been changed, nothing to check."""
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
-        assert (
-            "Update dates on copyright strings in source files" in process.stdout
-        ), process.stdout
+        assert "Update dates on copyright strings in source files" in process.stdout, (
+            process.stdout
+        )
         assert "Passed" in process.stdout
 
     @staticmethod
@@ -46,18 +48,20 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
-        assert (
-            "Update dates on copyright strings in source files" in process.stdout
-        ), process.stdout
+        assert "Update dates on copyright strings in source files" in process.stdout, (
+            process.stdout
+        )
         assert "Passed" in process.stdout, process.stdout
 
     @staticmethod
@@ -88,15 +92,20 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert "Update dates on copyright strings in source files" in process.stdout
         assert "Passed" in process.stdout
@@ -118,15 +127,20 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             output_content = f.read()
         assert_matching(
-            "output content", "expected content", output_content, file_content
+            "output content",
+            "expected content",
+            output_content,
+            file_content,
         )
         assert "Update dates on copyright strings in source files" in process.stdout
         assert "Passed" in process.stdout
@@ -163,7 +177,9 @@ class TestChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
@@ -171,15 +187,15 @@ class TestChanges:
         for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
             file = "hello" + language.extension
             copyright_string = language.comment_format.format(
-                content=expected_copyright_string.format(year=THIS_YEAR)
+                content=expected_copyright_string.format(year=THIS_YEAR),
             )
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
 
             assert_matching(
@@ -219,7 +235,9 @@ class TestChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
@@ -227,15 +245,15 @@ class TestChanges:
         for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
             file = "hello" + language.extension
             copyright_string = language.comment_format.format(
-                content=expected_copyright_string.format(year=THIS_YEAR)
+                content=expected_copyright_string.format(year=THIS_YEAR),
             )
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 output_content = f.read()
 
             assert_matching(
@@ -251,7 +269,8 @@ class TestFailureStates:
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
-        "copyright_string, error_message", CopyrightGlobals.INVALID_COPYRIGHT_STRINGS
+        "copyright_string, error_message",
+        CopyrightGlobals.INVALID_COPYRIGHT_STRINGS,
     )
     def test_raises_error_for_invalid_copyright_string(
         cwd,
@@ -273,7 +292,9 @@ class TestFailureStates:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN

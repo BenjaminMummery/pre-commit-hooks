@@ -1,7 +1,6 @@
-# Copyright (c) 2025 Benjamin Mummery
+# Copyright (c) 2025-2026 Benjamin Mummery
 
-"""The underlying dictionary for the Americanise hook.
-"""
+"""The underlying dictionary for the Americanise hook."""
 
 DICTIONARY = {
     # -se -> -ize
@@ -31,8 +30,10 @@ DICTIONARY = {
     "caesium": "cesium",
     # -ce -> -se
     "defence": "defense",
-    "practise": "practice",  # british uses "practice" as the noun and "practise" as the verb. US uses "practice" for both.
-    "licence": "license",  # british uses "licence" as the noun and "license" as the verb. US uses "license" for both.
+    # british uses "practice" as the noun and "practise" as the verb. US uses "practice" for both.
+    "practise": "practice",
+    # british uses "licence" as the noun and "license" as the verb. US uses "license" for both.
+    "licence": "license",
     # -ge -> -g
     "ageing": "aging",
     "acknowledgement": "acknowledgment",

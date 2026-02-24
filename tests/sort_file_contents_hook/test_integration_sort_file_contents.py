@@ -1,6 +1,6 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import pytest
+
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
@@ -32,7 +32,8 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "file_contents", SortFileContentsGlobals.SORTED_FILE_CONTENTS
+        "file_contents",
+        SortFileContentsGlobals.SORTED_FILE_CONTENTS,
     )
     def test_all_changed_files_are_sorted(
         capsys: CaptureFixture,
@@ -49,10 +50,13 @@ class TestNoChanges:
             assert sort_file_contents.main() == 0
 
         # THEN
-        with open(git_repo.workspace / ".gitignore", "r") as f:
+        with open(git_repo.workspace / ".gitignore") as f:
             content = f.read()
         assert_matching(
-            "output file contents", "expected file contents", content, file_contents
+            "output file contents",
+            "expected file contents",
+            content,
+            file_contents,
         )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
@@ -73,9 +77,14 @@ class TestNoChanges:
             assert sort_file_contents.main() == 0
 
         # THEN
-        with open(git_repo.workspace / ".gitignore", "r") as f:
+        with open(git_repo.workspace / ".gitignore") as f:
             content = f.read()
-        assert_matching("output file contents", "expected file contents", content, "")
+        assert_matching(
+            "output file contents",
+            "expected file contents",
+            content,
+            "",
+        )
         captured = capsys.readouterr()
         assert_matching("captured stdout", "expected stdout", captured.out, "")
         assert_matching("captured stderr", "expected stderr", captured.err, "")
@@ -85,7 +94,8 @@ class TestNoChanges:
 class TestSorting:
     @staticmethod
     @pytest.mark.parametrize(
-        "unsorted, sorted, description", SortFileContentsGlobals.UNSORTED_FILE_CONTENTS
+        "unsorted, sorted, description",
+        SortFileContentsGlobals.UNSORTED_FILE_CONTENTS,
     )
     def test_default_file_sorting(
         capsys: CaptureFixture,
@@ -104,7 +114,7 @@ class TestSorting:
             assert sort_file_contents.main() == 1
 
         # THEN
-        with open(git_repo.workspace / filename, "r") as f:
+        with open(git_repo.workspace / filename) as f:
             content = f.read()
         assert_matching(
             "output file contents",
@@ -121,7 +131,11 @@ class TestSorting:
             f"Sorting file '{filename}'\n",
         )
         assert_matching(
-            "captured stderr", "expected stderr", captured.err, "", message=description
+            "captured stderr",
+            "expected stderr",
+            captured.err,
+            "",
+            message=description,
         )
 
     @staticmethod
@@ -149,7 +163,7 @@ class TestSorting:
             assert sort_file_contents.main() == 1
 
         # THEN
-        with open(git_repo.workspace / filename, "r") as f:
+        with open(git_repo.workspace / filename) as f:
             content = f.read()
         assert_matching(
             "output file contents",
@@ -167,7 +181,11 @@ class TestSorting:
             message=description,
         )
         assert_matching(
-            "captured stderr", "expected stderr", captured.err, "", message=description
+            "captured stderr",
+            "expected stderr",
+            captured.err,
+            "",
+            message=description,
         )
 
 
@@ -197,10 +215,13 @@ class TestFailureStates:
                 sort_file_contents.main()
 
         # THEN
-        with open(git_repo.workspace / filename, "r") as f:
+        with open(git_repo.workspace / filename) as f:
             content = f.read()
         assert_matching(
-            "output file contents", "expected file contents", content, unsorted
+            "output file contents",
+            "expected file contents",
+            content,
+            unsorted,
         )
         assert_matching(
             "Captured error message",
@@ -235,10 +256,13 @@ class TestFailureStates:
                 sort_file_contents.main()
 
         # THEN
-        with open(git_repo.workspace / filename, "r") as f:
+        with open(git_repo.workspace / filename) as f:
             content = f.read()
         assert_matching(
-            "output file contents", "expected file contents", content, unsorted
+            "output file contents",
+            "expected file contents",
+            content,
+            unsorted,
         )
         assert_matching(
             "Captured error message",
@@ -255,7 +279,13 @@ class TestFailureStates:
         git_repo: GitRepo,
     ):
         # GIVEN
-        mocker.patch("sys.argv", ["stub_name", filename := "file_does_not_exist"])
+        mocker.patch(
+            "sys.argv",
+            [
+                "stub_name",
+                filename := "file_does_not_exist",
+            ],
+        )
 
         # WHEN
         with cwd(git_repo.workspace):

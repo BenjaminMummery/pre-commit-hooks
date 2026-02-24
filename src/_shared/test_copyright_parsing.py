@@ -1,9 +1,9 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 from typing import Optional, Tuple
 from unittest.mock import Mock
 
 import pytest
+
 from pytest_mock import MockerFixture
 
 from conftest import assert_matching
@@ -88,7 +88,8 @@ class TestParseCopyrightComment:
         ):
             # WHEN
             ret = copyright_parsing.parse_copyright_comment(
-                input_string, comment_markers
+                input_string,
+                comment_markers,
             )
 
             # THEN
@@ -100,13 +101,18 @@ class TestParseCopyrightComment:
     class TestFailureStates:
         @staticmethod
         @pytest.mark.parametrize(
-            "input_string", ["Not a copyright string", "", "foo\n\nbar"]
+            "input_string",
+            ["Not a copyright string", "", "foo\n\nbar"],
         )
         def test_returns_none_for_no_matches(
-            comment_markers: Tuple[str, Optional[str]], input_string: str
+            comment_markers: Tuple[str, Optional[str]],
+            input_string: str,
         ):
             assert (
-                copyright_parsing.parse_copyright_comment(input_string, comment_markers)
+                copyright_parsing.parse_copyright_comment(
+                    input_string,
+                    comment_markers,
+                )
                 is None
             )
 
@@ -120,7 +126,10 @@ class TestParseCopyrightComment:
 
             # WHEN
             with pytest.raises(ValueError) as e:
-                copyright_parsing.parse_copyright_comment(input, comment_markers)
+                copyright_parsing.parse_copyright_comment(
+                    input,
+                    comment_markers,
+                )
 
             # THEN
             assert_matching(
@@ -199,9 +208,19 @@ class TestParseCopyrightDocstring:
             ['"""Not a copyright string"""', '""""""', '"""\nfoo\n\nbar\n"""'],
         )
         def test_returns_none_for_no_matches(input_string: str):
-            assert copyright_parsing.parse_copyright_docstring(input_string) is None
+            assert (
+                copyright_parsing.parse_copyright_docstring(
+                    input_string,
+                )
+                is None
+            )
 
         @staticmethod
         @pytest.mark.parametrize("input_string", ["not a valid python file."])
         def test_returns_none_for_invalid_python_file(input_string: str):
-            assert copyright_parsing.parse_copyright_docstring(input_string) is None
+            assert (
+                copyright_parsing.parse_copyright_docstring(
+                    input_string,
+                )
+                is None
+            )

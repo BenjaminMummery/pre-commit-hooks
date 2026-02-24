@@ -1,9 +1,9 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import os
 import subprocess
 
 import pytest
+
 from pytest_git import GitRepo
 
 from conftest import SortFileContentsGlobals, add_changed_files, assert_matching
@@ -17,7 +17,9 @@ class TestNoChanges:
         """No files have been changed, nothing to check."""
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
@@ -37,13 +39,15 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
         for file in files:
-            with open(git_repo.workspace / file, "r") as f:
+            with open(git_repo.workspace / file) as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
         assert "Sort gitignore sections" in process.stdout
@@ -51,7 +55,8 @@ class TestNoChanges:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "file_contents", SortFileContentsGlobals.SORTED_FILE_CONTENTS
+        "file_contents",
+        SortFileContentsGlobals.SORTED_FILE_CONTENTS,
     )
     def test_all_changed_files_are_sorted(git_repo: GitRepo, cwd, file_contents: str):
         # GIVEN
@@ -60,12 +65,14 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             content = f.read()
         assert content == file_contents
         assert "Sort gitignore sections" in process.stdout
@@ -79,12 +86,14 @@ class TestNoChanges:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 0, process.stdout + process.stderr
-        with open(git_repo.workspace / file, "r") as f:
+        with open(git_repo.workspace / file) as f:
             content = f.read()
         assert content == ""
         assert "Sort gitignore sections" in process.stdout
@@ -94,7 +103,8 @@ class TestNoChanges:
 class TestSorting:
     @staticmethod
     @pytest.mark.parametrize(
-        "unsorted, sorted, description", SortFileContentsGlobals.UNSORTED_FILE_CONTENTS
+        "unsorted, sorted, description",
+        SortFileContentsGlobals.UNSORTED_FILE_CONTENTS,
     )
     def test_default_file_sorting(
         cwd,
@@ -109,12 +119,14 @@ class TestSorting:
         # WHEN
         with cwd(git_repo.workspace):
             process: subprocess.CompletedProcess = subprocess.run(
-                COMMAND, capture_output=True, text=True
+                COMMAND,
+                capture_output=True,
+                text=True,
             )
 
         # THEN
         assert process.returncode == 1, process.stdout + process.stderr
-        with open(git_repo.workspace / filename, "r") as f:
+        with open(git_repo.workspace / filename) as f:
             content = f.read()
         assert_matching(
             "output file contents",

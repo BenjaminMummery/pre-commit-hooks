@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-# Copyright (c) 2023 - 2025 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """
 Scan source files for anything resembling a copyright string, updating dates.
 
@@ -11,6 +9,7 @@ consult the README file.
 
 import argparse
 import datetime
+
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -59,7 +58,8 @@ def _update_copyright_dates(file: Path) -> int:
         if copyright_string.start_year != copyright_string.end_year:
             # multiple dates in copyright string
             new_copyright_string = copyright_string.string.replace(
-                str(copyright_string.end_year), str(copyright_end_year)
+                str(copyright_string.end_year),
+                str(copyright_end_year),
             )
         else:
             # single date in copyright string
@@ -72,7 +72,12 @@ def _update_copyright_dates(file: Path) -> int:
         f.truncate()
         f.write(content.replace(copyright_string.string, new_copyright_string))
 
-        print(print_diff.format_diff(copyright_string.string, new_copyright_string))
+        print(
+            print_diff.format_diff(
+                copyright_string.string,
+                new_copyright_string,
+            ),
+        )
 
         return 1
 

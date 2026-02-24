@@ -1,7 +1,12 @@
+# Build Products
 *.egg-info
-*__pycache__
+.python-version
+
+# Test Products
 .coverage
+
+# Dev Products
+*__pycache__
 .ruff_cache
+.venv
 .vscode
-env
-test_venv

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-# Copyright (c) 2025 Benjamin Mummery
-
+# Copyright (c) 2025-2026 Benjamin Mummery
 """
 Check for non-US spelling in source files, and (optionally) "correct" them.
 
@@ -11,6 +9,7 @@ consult the README file.
 
 import argparse
 import re
+
 from copy import deepcopy
 from pathlib import Path
 from typing import Union
@@ -43,7 +42,7 @@ def _copy_case(target_string: str, input_string: str) -> str:
                 input_string_list[i] = input_string[i].upper()
         output_string = "".join(input_string_list)
         Warning(
-            f"Could not match the case of offending word '{target_string}' - using best guess '{output_string}'."
+            f"Could not match the case of offending word '{target_string}' - using best guess '{output_string}'.",
         )
         return output_string
 
@@ -98,7 +97,7 @@ def _construct_dictionary(word_arg: Union[str, None]) -> dict:
         map = [val.lower().strip() for val in word.split(":")]
         if len(map) != 2:
             raise ValueError(
-                f"Could not parse word argument '{word_arg}'. Custom word arguments should be a in the format '[incorrect_spelling]:[correct_spelling]', for example 'initialise:initialize'."
+                f"Could not parse word argument '{word_arg}'. Custom word arguments should be a in the format '[incorrect_spelling]:[correct_spelling]', for example 'initialise:initialize'.",
             )
         custom_dict[map[0]] = map[1]
 
@@ -115,7 +114,13 @@ def _parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="*", default=[])
-    parser.add_argument("--word", "-w", type=str, default=None, action="append")
+    parser.add_argument(
+        "--word",
+        "-w",
+        type=str,
+        default=None,
+        action="append",
+    )
 
     args = parser.parse_args()
 

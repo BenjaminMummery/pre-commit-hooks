@@ -1,12 +1,11 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 """Shared tools for parsing config files."""
-
 
 import configparser
 import logging
 import os
 import sys
+
 from pathlib import Path
 from typing import List, Tuple
 
@@ -44,7 +43,7 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
         logging.warning(
             "Found multiple config files:\n"
             f"{filepaths}\n"
-            f"Priority will be given to {filepaths[0]}"
+            f"Priority will be given to {filepaths[0]}",
         )
 
     # read config file
@@ -80,7 +79,7 @@ def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
             config = tomllib.load(f)
         except tomllib.TOMLDecodeError as e:
             raise InvalidConfigError(
-                f"Could not parse config file '{pyproject_toml}'."
+                f"Could not parse config file '{pyproject_toml}'.",
             ) from e
 
     # early return for no matching section in config file
@@ -106,7 +105,9 @@ def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
     try:
         config.read(setup_cfg)
     except (configparser.MissingSectionHeaderError, configparser.ParsingError) as e:
-        raise InvalidConfigError(f"Could not parse config file '{setup_cfg}'.") from e
+        raise InvalidConfigError(
+            f"Could not parse config file '{setup_cfg}'.",
+        ) from e
 
     try:
         tool_config = dict(config.items(f"tool.{tool_name}"))

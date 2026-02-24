@@ -1,20 +1,25 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
-
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 import datetime
 import os
+
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Union
 
 import pytest
+
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
 
 # region: shared utilities
 def assert_matching(
-    name1: str, name2: str, value1, value2, message: Optional[str] = None
+    name1: str,
+    name2: str,
+    value1,
+    value2,
+    message: Optional[str] = None,
 ):
     """
     Assert that 2 values are the same, and print an informative output if they are not.
@@ -101,7 +106,7 @@ def mock_resolve_files(mocker):
 
 
 # region: add_copyright_hook_fixtures
-class SupportedLanguage(object):
+class SupportedLanguage:
     """
     Encompass everything we need to run tests by iterating programmatically over
     supported languages.
@@ -137,7 +142,7 @@ class SupportedLanguage(object):
         return names != sorted(names)
 
 
-class DocstrSupportedLanguage(object):
+class DocstrSupportedLanguage:
     """
     Encompass everything we need to run tests by iterating programmatically over
     languages for which we support docstrings.
@@ -316,7 +321,7 @@ class CopyrightGlobals:
                 "-- Copyright {name} as of {year}.",
                 "Copyright {name} as of {year}",
             ),
-        ]
+        ],
     )
     DOCSTR_SUPPORTED_LANGUAGES = sorted(
         [
@@ -324,8 +329,8 @@ class CopyrightGlobals:
                 "python",
                 "python",
                 ".py",
-            )
-        ]
+            ),
+        ],
     )
     VALID_COPYRIGHT_STRINGS = [
         "Copyright {end_year} NAME",
@@ -338,7 +343,7 @@ class CopyrightGlobals:
         (
             "Copyright 2012 - 1312 NAME",
             "ValueError: Copyright end year cannot be before the start year. Got 1312 and 2012 respectively.",  # noqa: E501
-        )
+        ),
     ]
     SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = ["name", "format"] + [
         language.toml_key for language in SUPPORTED_LANGUAGES
@@ -444,7 +449,7 @@ class SortFileContentsGlobals:
         ),
     ]
     DUPLICATES_BETWEEN_SECTIONS_FILE_CONTENTS = [
-        ("beta\ndelta\n\ngamma\nalpha\ndelta\n", "delta", "simple case")
+        ("beta\ndelta\n\ngamma\nalpha\ndelta\n", "delta", "simple case"),
     ]
     COMMENTED_AND_UNCOMMENTED_DUPLICATES = [
         ("beta\n# zulu\ndelta\ngamma\nalpha\nzulu\n", "zulu", "simple clash"),
