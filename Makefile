@@ -1,4 +1,4 @@
-.PHONY : test_unit test_system test_integration
+.PHONY: all clean test
 
 define PRETTYPRINT_PYSCRIPT
 import sys, os
@@ -40,3 +40,7 @@ test_integration:
 test_system:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
 	uv run pytest tests/*/test_system_*.py -x
+
+# RUNNING PRE-COMMIT HOOKS
+lint:
+	@SKIP=add-copyright uv run pre-commit run --all-files
