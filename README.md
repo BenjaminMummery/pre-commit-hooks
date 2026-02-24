@@ -6,42 +6,41 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
 
 ## Table of Contents
 
-<!--TOC-->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- [pre-commit-hooks](#pre-commit-hooks)
-  - [Table of Contents](#table-of-contents)
-  - [1. Usage](#1-usage)
-    - [1.1 Usage with Pre-Commit](#11-usage-with-pre-commit)
-    - [1.2 Usage in a vanilla hook](#12-usage-in-a-vanilla-hook)
-  - [2. Hooks](#2-hooks)
-    - [2.1 The `add-copyright` Hook](#21-the-add-copyright-hook)
-      - [2.1.1 Configuration](#211-configuration)
-        - [CLI Arguments](#cli-arguments)
-        - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration)
-        - [Config file configuration](#config-file-configuration)
-      - [2.1.2 Command line arguments](#212-command-line-arguments)
-        - [`pyproject.toml`](#pyprojecttoml)
-      - [2.1.3 `.add-copyright-hook-config.yaml` file](#213-add-copyright-hook-configyaml-file)
-      - [2.1.4 Language Support](#214-language-support)
-    - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
-    - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
-      - [2.3.1 Example 1: Usage when defining the commit msg from command line](#231-example-1-usage-when-defining-the-commit-msg-from-command-line)
-      - [2.3.2 Example 2: Usage when defining the commit msg from editor](#232-example-2-usage-when-defining-the-commit-msg-from-editor)
-      - [2.3.3 Defining a custom template](#233-defining-a-custom-template)
-    - [2.4 The `sort-file-contents` hook](#24-the-sort-file-contents-hook)
-      - [2.4.1 Section - aware sorting](#241-section---aware-sorting)
-      - [2.4.2 Uniqueness](#242-uniqueness)
-    - [2.5 The `no-import-testtools-in-src` hook](#25-the-no-import-testtools-in-src-hook)
-    - [2.6 The `americanise` hook](#26-the-americanise-hook)
-      - [2.6.1 Configuration](#261-configuration)
-        - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
-        - [Inline ignores](#inline-ignores)
-  - [3. Development](#3-development)
-    - [3.1 Testing](#31-testing)
-      - [3.1.1 Testing scheme](#311-testing-scheme)
-      - [3.1.2 Running Tests](#312-running-tests)
+- [1. Usage](#1-usage)
+  - [1.1 Usage with Pre-Commit](#11-usage-with-pre-commit)
+  - [1.2 Usage in a vanilla hook](#12-usage-in-a-vanilla-hook)
+- [2. Hooks](#2-hooks)
+  - [2.1 The `add-copyright` Hook](#21-the-add-copyright-hook)
+    - [2.1.1 Configuration](#211-configuration)
+      - [CLI Arguments](#cli-arguments)
+      - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration)
+      - [Config file configuration](#config-file-configuration)
+    - [2.1.2 Command line arguments](#212-command-line-arguments)
+      - [`pyproject.toml`](#pyprojecttoml)
+    - [2.1.3 `.add-copyright-hook-config.yaml` file](#213-add-copyright-hook-configyaml-file)
+    - [2.1.4 Language Support](#214-language-support)
+  - [2.2 The `update-copyright` Hook](#22-the-update-copyright-hook)
+  - [2.3 The `add-msg-issue` Hook](#23-the-add-msg-issue-hook)
+    - [2.3.1 Example 1: Usage when defining the commit msg from command line](#231-example-1-usage-when-defining-the-commit-msg-from-command-line)
+    - [2.3.2 Example 2: Usage when defining the commit msg from editor](#232-example-2-usage-when-defining-the-commit-msg-from-editor)
+    - [2.3.3 Defining a custom template](#233-defining-a-custom-template)
+  - [2.4 The `sort-file-contents` hook](#24-the-sort-file-contents-hook)
+    - [2.4.1 Section - aware sorting](#241-section---aware-sorting)
+    - [2.4.2 Uniqueness](#242-uniqueness)
+  - [2.5 The `no-import-testtools-in-src` hook](#25-the-no-import-testtools-in-src-hook)
+  - [2.6 The `americanise` hook](#26-the-americanise-hook)
+    - [2.6.1 Configuration](#261-configuration)
+      - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
+      - [Inline ignores](#inline-ignores)
+- [3. Development](#3-development)
+  - [3.1 Testing](#31-testing)
+    - [3.1.1 Testing scheme](#311-testing-scheme)
+    - [3.1.2 Running Tests](#312-running-tests)
 
-<!--TOC-->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## 1. Usage
 
@@ -217,8 +216,8 @@ The add-copyright hook currently runs on changed source files of the following t
 | SQL        | `.sql`         | `-- Copyright (c) 1969 Buzz` |
 | Swift      | `.swift`       | `// Copyright (c) 1969 Buzz` |
 
-
 [^1]: For python files we also support inserting copyright info into/as module-level docstrings. To enable this, insert the following lines into your `pyproject.toml` or `.add-copyright-hook-config.yaml`:
+
     ```yaml
     [tool.add-copyright.python]
     docstr=true
@@ -228,7 +227,6 @@ The add-copyright hook currently runs on changed source files of the following t
 
 Check changed source files for something that looks like a copyright comment.
 If one is found, the end date is checked against the current date and updated if it is out of date.
-
 
 ### 2.3 The `add-msg-issue` Hook
 
@@ -258,7 +256,7 @@ You should be greeted with something that looks like:
 #
 # On branch feature/TEST-01/demo
 # Changes to be committed:
-#	new file:   test.py
+# new file:   test.py
 #
 ```
 
@@ -275,6 +273,7 @@ If the default template is not to your liking, you can define your own by passin
     -   id: add-msg-issue
         args: ["--template", "{issue_id}: {subject}\n\n{body}"]
 ```
+
 The template must include the following keywords:
 
 ```python
@@ -380,7 +379,6 @@ def initialise():  # pragma: no americanise
     print("initialize")
 ```
 
-
 ## 3. Development
 
 ### 3.1 Testing
@@ -388,6 +386,7 @@ def initialise():  # pragma: no americanise
 #### 3.1.1 Testing scheme
 
 Tests are organised in three levels:
+
 1. Unit: tests for individual methods.
    All other methods should be mocked.
    Hooks have a single entry point so are best tested with the integration tests, unit tests should be used where necessary.
@@ -395,23 +394,22 @@ Tests are organised in three levels:
 3. System: end-to-end tests.
    Uses the `pre-commit try_repo` facility.
 
-
 #### 3.1.2 Running Tests
 
 The provided `Makefile` defines commands for running various combinations of tests:
 
 - General Purpose:
-    - `test`: run unit and integration tests and show coverage (fail fast).
-    - `test_all`: as `test`, but also runs system tests (fail fast).
-    - `clean`: remove the test venv and all temporary files.
+  - `test`: run unit and integration tests and show coverage (fail fast).
+  - `test_all`: as `test`, but also runs system tests (fail fast).
+  - `clean`: remove the test venv and all temporary files.
 - Testing by Level: run all tests of the specified level and show coverage (fail fast).
-    - `test_unit`
-    - `test_integration`
-    - `test_system`
+  - `test_unit`
+  - `test_integration`
+  - `test_system`
 - Testing by hook: run all tests for the specified hook and show coverage (fail slow).
-    - `test_add_copyright`
-    - `test_add_issue`
-    - `test_sort_file_contents`
-    - `test_update_copyright`
+  - `test_add_copyright`
+  - `test_add_issue`
+  - `test_sort_file_contents`
+  - `test_update_copyright`
 - Testing shared resources:
-    - `test_shared`: run all unit tests for utilities on which multiple hooks rely and show coverage (fail fast).
+  - `test_shared`: run all unit tests for utilities on which multiple hooks rely and show coverage (fail fast).

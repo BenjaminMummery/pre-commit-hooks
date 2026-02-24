@@ -12,37 +12,64 @@ exclude: |
   )
 
 repos:
-  # GENERAL PURPOSE  ##################################################################
+  # PROCEDURAL  ########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      # Forbid comitting large files
       - id: check-added-large-files
         args: [--maxkb=500]
+      # Forbid names that would conflict in non-case-sensitive filesystems
       - id: check-case-conflict
-      - id: check-executables-have-shebangs
+      # Forbid merge conflict markers
       - id: check-merge-conflict
         args: [--assume-in-merge]
-      - id: check-shebang-scripts-are-executable
+      # Check that symlinks are up to date
       - id: check-symlinks
-      - id: check-vcs-permalinks
+      # Check for destroyed symlinks
       - id: destroyed-symlinks
-      - id: detect-private-key
-      - id: end-of-file-fixer
-      - id: fix-byte-order-marker
+      # Forbid allow submodules
       - id: forbid-submodules
-      - id: mixed-line-ending
-      - id: name-tests-test
-        args: [--pytest-test-first]
+      # Don't allow committing to protected branches.
       - id: no-commit-to-branch
         args: [-b, main, -b, master, -b, dev, -b, develop]
         stages: [pre-commit]
-      - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
 
   - repo: https://github.com/pre-commit/sync-pre-commit-deps
     rev: v0.0.3
     hooks:
+      # Sync additional dependencies between hooks
       - id: sync-pre-commit-deps
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.8
+    hooks:
+      # Require conventional commit messages
+      - id: commitizen
+
+  # GENERAL PURPOSE  ###################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Forbid executable files without shebangs
+      - id: check-executables-have-shebangs
+      # Forbid shebangs in non-executable files
+      - id: check-shebang-scripts-are-executable
+      # Require that vcs links are permalinks
+      - id: check-vcs-permalinks
+      # Insert blank newlines at the ends of files
+      - id: end-of-file-fixer
+      #
+      - id: fix-byte-order-marker
+      # Forbid mixed line endings
+      - id: mixed-line-ending
+      # Enforce test naming convention
+      - id: name-tests-test
+        args: [--pytest-test-first]
+        exclude: tests/examples/.*
+      # Remove trailing whitespaces at the ends of lines
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: 'v1.10.0'
@@ -52,38 +79,52 @@ repos:
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
+      # Remove outdated noqa markers
       - id: yesqa
-
-  - repo: https://github.com/asottile/add-trailing-comma
-    rev: v4.0.0
-    hooks:
-      - id: add-trailing-comma
-
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v3.2.0
-    hooks:
-      - id: setup-cfg-fmt
-
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.13.8
-    hooks:
-      - id: commitizen
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
+      # Spellchecking
       - id: codespell
         args: [-w]
 
   - repo: https://github.com/BenjaminMummery/pre-commit-hooks
     rev: v2.8.0
     hooks:
+      # Add a copyright notice to files that don't have one
       - id: add-copyright
         exclude: CHANGELOG.md
+      # Append jira issue from the branch name to the commit
       - id: add-msg-issue
+      # Update existing copyright markers.
       - id: update-copyright
+      # Sort the .gitignore file (respects sections)
       - id: sort-file-contents
         files: .gitignore
+
+  # SECURITY  ##########################################################################
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: detect-private-key
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/thoughtworks/talisman
+    rev: 'v1.37.0'
+    hooks:
+      - id: talisman-push
+      - id: talisman-commit
+
+  # CONFIGURATION  #####################################################################
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: v3.2.0
+    hooks:
+      - id: setup-cfg-fmt
 
   # C++ ###############################################################################
   - repo: https://github.com/pre-commit/mirrors-clang-format
@@ -99,10 +140,10 @@ repos:
       - id: cmake-lint
 
   # MARKDOWN  #########################################################################
-  - repo: https://github.com/frnmst/md-toc
-    rev: 9.0.0
+  - repo: https://github.com/thlorenz/doctoc
+    rev: 'v2.3.0'
     hooks:
-      - id: md-toc
+      - id: doctoc
 
   # PYTHON  ###########################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -111,6 +152,7 @@ repos:
       - id: check-ast
       - id: check-builtin-literals
       - id: check-docstring-first
+        exclude: tests/examples/.*
       - id: debug-statements
       - id: requirements-txt-fixer
 
@@ -124,6 +166,11 @@ repos:
       - id: python-no-eval
       - id: python-no-log-warn
       - id: python-use-type-annotations
+
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v4.0.0
+    hooks:
+      - id: add-trailing-comma
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
@@ -161,7 +208,7 @@ repos:
     hooks:
       - id: interrogate
         args: [--config=pyproject.toml]
-        exclude: test_.*\.py|conftest.py
+        exclude: tests/.*|test_.*\.py|conftest.py
 
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
@@ -169,7 +216,7 @@ repos:
     - id: pydocstyle
       args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
       additional_dependencies: [tomli]
-      exclude: test_.*\.py|conftest.py
+      exclude: tests/.*|test_.*\.py|conftest.py
 
   # YAML  #############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -229,6 +276,23 @@ repos:
           --autofix,
           --indent 4,
         ]
+
+  # JUPYTER NOTEBOOKS  #################################################################
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.9.1
+    hooks:
+      - id: nbqa-black
+      - id: nbqa-pyupgrade
+        args: ["--py37-plus"]
+      - id: nbqa-isort
+        args: ["--float-to-top"]
+
+  # TERRAFORM  #########################################################################
+  - repo: https://github.com/AleksaC/terraform-py
+    rev: v1.14.5
+    hooks:
+      - id: tf-fmt
+      - id: tf-validate
 
   # TOML  ##############################################################################
   - repo: https://github.com/pre-commit/pre-commit-hooks

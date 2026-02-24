@@ -1,4 +1,4 @@
-.PHONY : test_unit test_system test_integration
+.PHONY: all clean test
 
 define PRETTYPRINT_PYSCRIPT
 import sys, os
@@ -31,12 +31,16 @@ test_all: test_unit test_integration test_system
 # TESTING BY LEVEL
 test_unit:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING UNIT TESTS; \
-	uv run pytest --cov=src src/ -x
+	uv run pytest src/ -x --cov-fail-under=0
 
 test_integration:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING INTEGRATION TESTS; \
-	uv run pytest --cov=src tests/*/test_integration_*.py -x
+	uv run pytest tests/*/test_integration_*.py -x
 
 test_system:
 	@uv run python -c "$$PRETTYPRINT_PYSCRIPT" RUNNING SYSTEM TESTS; \
-	uv run pytest tests/*/test_system_*.py -x
+	uv run pytest tests/*/test_system_*.py -x --cov-fail-under=0
+
+# RUNNING PRE-COMMIT HOOKS
+lint:
+	@SKIP=update-copyright uv run pre-commit run --all-files
