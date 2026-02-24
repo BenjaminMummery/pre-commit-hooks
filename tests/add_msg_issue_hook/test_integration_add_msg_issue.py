@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 from pathlib import Path
 from typing import List
@@ -199,7 +199,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            file_content := "# <summary line sentinel>\n" "\n" "<body sentinel>"
+            file_content := "# <summary line sentinel>\n\n<body sentinel>"
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 
@@ -232,7 +232,7 @@ class TestAddingMessage:
         git_repo.run(f"git checkout -b {branch_name}")
         filename = "COMMIT_EDITMSG"
         (file := git_repo.workspace / filename).write_text(
-            "<summary line sentinel>\n" "\n" "# <body sentinel>"
+            "<summary line sentinel>\n\n# <body sentinel>"
         )
         mocker.patch("sys.argv", ["stub_name", filename])
 

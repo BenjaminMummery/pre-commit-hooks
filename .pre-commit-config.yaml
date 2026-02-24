@@ -89,7 +89,6 @@ repos:
       - id: check-builtin-literals
       - id: check-docstring-first
       - id: debug-statements
-        args: [--remove]
       - id: requirements-txt-fixer
 
   - repo: https://github.com/hadialqattan/pycln

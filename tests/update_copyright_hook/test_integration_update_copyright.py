@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 import pytest
 from freezegun import freeze_time
@@ -166,7 +166,6 @@ class TestNoChanges:
 
 
 class TestChanges:
-
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(

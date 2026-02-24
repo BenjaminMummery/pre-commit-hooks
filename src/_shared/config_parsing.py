@@ -1,7 +1,6 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """Shared tools for parsing config files."""
-
 
 import configparser
 import logging

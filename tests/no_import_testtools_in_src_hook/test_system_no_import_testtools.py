@@ -1,4 +1,4 @@
-# Copyright (c) 2024 - 2025 Benjamin Mummery
+# Copyright (c) 2024 - 2026 Benjamin Mummery
 
 import os
 import subprocess
@@ -9,7 +9,6 @@ COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "no-import-testtools-in-s
 
 
 class TestNoChanges:
-
     @staticmethod
     def test_no_files_changed(git_repo: GitRepo, cwd):
         """No files have been changed, nothing to check."""

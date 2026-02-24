@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 """
 Check that source files contain a copyright string, and add one to files that don't.
@@ -234,7 +234,8 @@ def _construct_copyright_string(
     end_year: int,
     format: str,
 ) -> str:
-    """Construct a string containing the copyright information.
+    """
+    Construct a string containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
@@ -275,9 +276,9 @@ def _ensure_comment(
         if comment_markers[1] and not line.endswith(comment_markers[1]):
             newline = f"{newline} {comment_markers[1]}"
         outlines[i] = newline
-    assert (
-        len(outlines) > 0
-    ), "Unknown error in `_ensure_comment()`: generated no lines."
+    assert len(outlines) > 0, (
+        "Unknown error in `_ensure_comment()`: generated no lines."
+    )
     if len(outlines) == 1:
         return outlines[0]
     else:

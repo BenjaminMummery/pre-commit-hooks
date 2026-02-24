@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2025 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 import datetime
 import os
@@ -28,9 +28,9 @@ class TestNoChanges:
             )
 
         assert process.returncode == 0, process.stdout + process.stderr
-        assert (
-            "Update dates on copyright strings in source files" in process.stdout
-        ), process.stdout
+        assert "Update dates on copyright strings in source files" in process.stdout, (
+            process.stdout
+        )
         assert "Passed" in process.stdout
 
     @staticmethod
@@ -55,9 +55,9 @@ class TestNoChanges:
             with open(git_repo.workspace / file, "r") as f:
                 content = f.read()
             assert content == f"<file {file} content sentinel>"
-        assert (
-            "Update dates on copyright strings in source files" in process.stdout
-        ), process.stdout
+        assert "Update dates on copyright strings in source files" in process.stdout, (
+            process.stdout
+        )
         assert "Passed" in process.stdout, process.stdout
 
     @staticmethod
@@ -176,7 +176,7 @@ class TestChanges:
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
             with open(git_repo.workspace / file, "r") as f:
@@ -232,7 +232,7 @@ class TestChanges:
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content = input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
             with open(git_repo.workspace / file, "r") as f:

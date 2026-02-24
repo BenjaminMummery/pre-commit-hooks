@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 from pathlib import Path
 
@@ -981,7 +981,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file_path}: 'unsupported_option'. "
+                    + f"{git_repo.workspace / config_file_path}: 'unsupported_option'. "
                     "Supported options are: "
                     f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
                 )
@@ -1054,7 +1054,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file_path}: "
+                    + f"{git_repo.workspace / config_file_path}: "
                     f"'{language.toml_key}.unsupported_option'. "
                     f"Supported options for '{language.toml_key}' are: "
                     f'{CopyrightGlobals.SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS}."'
@@ -1137,7 +1137,7 @@ class TestFailureStates:
                 expected_error_string: str = (
                     'KeyError: "Unsupported option in config file '
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
-                    + f"{git_repo.workspace/ config_file_path}: 'unsupported_option'. "
+                    + f"{git_repo.workspace / config_file_path}: 'unsupported_option'. "
                     "Supported options are: "
                     f'{CopyrightGlobals.SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS}."'
                 )
