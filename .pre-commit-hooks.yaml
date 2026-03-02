@@ -14,7 +14,7 @@
   entry: add-copyright
   language: python
   always_run: true
-  stages: [commit]
+  stages: [pre-commit]
   types_or:
     - c++
     - c#
@@ -41,7 +41,7 @@
   entry: update-copyright
   language: python
   always_run: true
-  stages: [commit]
+  stages: [pre-commit]
   types_or:
     - c++
     - c#
@@ -67,7 +67,7 @@
   entry: sort-file-contents
   language: python
   always_run: true
-  stages: [commit]
+  stages: [pre-commit]
   files: ^.gitignore
 - id: no-import-testtools-in-src
   name: Detect test tool imports in src files
@@ -75,7 +75,7 @@
   entry: no-import-testtools-in-src
   language: python
   always_run: true
-  stages: [commit]
+  stages: [pre-commit]
   types_or: [python]
 - id: americanise
   name: Correct non-US spellings
@@ -83,6 +83,6 @@
   entry: americanise
   language: python
   always_run: true
-  stages: [commit]
+  stages: [pre-commit]
   types_or: [text]
   exclude: .*\.lock
