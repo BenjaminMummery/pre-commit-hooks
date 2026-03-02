@@ -8,7 +8,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     env:
-      SKIP: update-copyright
+      SKIP: update-copyright,no-commit-to-branch
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
