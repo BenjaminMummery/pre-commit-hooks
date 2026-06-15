@@ -8,6 +8,8 @@ from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
+from git import InvalidGitRepositoryError
+
 from conftest import (
     CopyrightGlobals,
     DocstrSupportedLanguage,
@@ -19,7 +21,6 @@ from conftest import (
 )
 from src._shared.exceptions import InvalidConfigError
 from src.add_copyright_hook import add_copyright
-from src.add_copyright_hook.add_copyright import InvalidGitRepositoryError
 
 
 class TestMeta:

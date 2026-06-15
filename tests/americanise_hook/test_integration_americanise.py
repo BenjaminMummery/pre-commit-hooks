@@ -18,7 +18,7 @@ ARMOUR = True
 
 CoLoUr = False
 
-x = deInitIalise()
+initialise = True
 """
 
 us_file_content = """def initialize():
@@ -32,7 +32,7 @@ ARMOR = True
 
 CoLoR = False
 
-x = deInitIalize()
+initialize = True
 """
 
 expected_reports_full = [
@@ -40,7 +40,7 @@ expected_reports_full = [
     "  line 4:\n  - class Instantiater:\n  + class Instantiator:",
     "  line 8:\n  - ARMOUR = True\n  + ARMOR = True",
     "  line 10:\n  - CoLoUr = False\n  + CoLoR = False",
-    "  line 12:\n  - x = deInitIalise()\n  + x = deInitIalize()",
+    "  line 12:\n  - initialise = True\n  + initialize = True",
 ]
 
 

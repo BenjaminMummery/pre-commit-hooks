@@ -17,7 +17,7 @@ ARMOUR = True
 
 CoLoUr = False
 
-x = deInitIalise()
+initialise = True
 """
 
 us_file_content = """def initialize():
@@ -31,7 +31,7 @@ ARMOR = True
 
 CoLoR = False
 
-x = deInitIalize()
+initialize = True
 """
 
 
