@@ -1,10 +1,10 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
 """Tools for parsing copyright strings."""
 
+from __future__ import annotations
+
 import ast
 import re
-
-from typing import Optional, Tuple
 
 
 class ParsedCopyrightString:
@@ -12,15 +12,14 @@ class ParsedCopyrightString:
 
     def __init__(
         self,
-        comment_markers: Optional[Tuple[str, Optional[str]]],
+        comment_markers: tuple[str, str | None] | None,
         signifiers: str,
         start_year: int,
         end_year: int,
         name: str,
         string: str,
-    ):
-        """
-        Construct ParsedCopyrightString.
+    ) -> None:
+        """Construct ParsedCopyrightString.
 
         Arguments:
             comment_markers: The character(s) that denote that
@@ -32,21 +31,19 @@ class ParsedCopyrightString:
             name: The name of the copyright holder.
             string: The full copyright string as it exists in the source file.
         """
-        self.comment_markers: Optional[
-            Tuple[
-                str,
-                Optional[str],
-            ]
-        ] = comment_markers
+        self.comment_markers: tuple[str, str | None] | None = comment_markers
         self.signifiers: str = signifiers
         self.start_year: int = start_year
         self.end_year: int = end_year
         self.name: str = name
         self.string: str = string
         if not self.end_year >= self.start_year:
-            raise ValueError(
+            msg = (
                 "Copyright end year cannot be before the start year. "
-                f"Got {self.end_year} and {self.start_year} respectively.",
+                f"Got {self.end_year} and {self.start_year} respectively."
+            )
+            raise ValueError(
+                msg,
             )
 
     def __repr__(self) -> str:
@@ -61,17 +58,17 @@ class ParsedCopyrightString:
         )
 
 
-def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
-    """
-    Parse a docstring into a ParsedCopyrightString object.
+def _parse_copyright_docstring(text: str) -> ParsedCopyrightString | None:
+    """Parse a docstring into a ParsedCopyrightString object.
 
-    This method is fundamentally similar to _parse_copyright_string_line but a) handles multiple-line inputs, and b) assumes that no comment markers are used.
+    This method is fundamentally similar to _parse_copyright_string_line but a)
+    handles multiple-line inputs, and b) assumes that no comment markers are used.
 
     Args:
-        input: the string to be checked.
+        text: the string to be checked.
 
     Returns:
-        _arsedCopyrightString or None: If a matching copyright string was found,
+        ParsedCopyrightString | None: If a matching copyright string was found,
             returns an object containing its information. If a match was not found,
             returns None.
     """
@@ -94,7 +91,7 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
     )
 
     # Search the input
-    match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
+    match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), text)
 
     # Early return for no match.
     if match is None:
@@ -102,7 +99,8 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
     match_dict = match.groupdict()
 
-    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
+    # Early return for an incomplete match (i.e. we found a passing reference to
+    # copyright, not a marker.)
     if match_dict["year"] is None:
         return None
 
@@ -120,29 +118,30 @@ def _parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
 
 
 def _parse_copyright_string_line(
-    input: str,
-    comment_markers: Tuple[str, Optional[str]],
-) -> Optional[ParsedCopyrightString]:
-    """
-    Check if the input string is a copyright comment.
+    text: str,
+    comment_markers: tuple[str, str | None],
+) -> ParsedCopyrightString | None:
+    """Check if the input string is a copyright comment.
 
     Note: at present this assumes that we're looking for a python comment.
     Future versions will extend this to include other languages.
 
     Args:
-        input (str): The string to be checked
+        text (str): The string to be checked.
+        comment_markers (tuple[str, str | None]): The characters marking the
+            beginning and (optionally) end of a comment.
 
     Returns:
-        ParsedCopyrightString or None: If a matching copyright string was found,
+        ParsedCopyrightString | None: If a matching copyright string was found,
             returns an object containing its information. If a match was not found,
             returns None.
     """
     # Early return for empty line
-    if input == "":
+    if text == "":
         return None
 
     # Safety catch for if we've been given multiple lines.
-    assert len(input.splitlines()) == 1
+    assert len(text.splitlines()) == 1
 
     # Regex string components
     leading_comment_marker_group: str = (
@@ -176,7 +175,7 @@ def _parse_copyright_string_line(
     exp += r"$"
 
     # Search the input
-    match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), input)
+    match = re.search(re.compile(exp, re.IGNORECASE | re.MULTILINE), text)
 
     # Early return for no match
     if match is None:
@@ -184,7 +183,8 @@ def _parse_copyright_string_line(
 
     match_dict = match.groupdict()
 
-    # Early return for an incomplete match (i.e. we found a passing reference to copyright, not a marker.)
+    # Early return for an incomplete match (i.e. we found a passing reference to
+    # copyright, not a marker.)
     if match_dict["year"] is None:
         return None
 
@@ -206,39 +206,39 @@ def _parse_copyright_string_line(
     )
 
 
-def parse_copyright_docstring(input: str) -> Optional[ParsedCopyrightString]:
-    """
-    Search through lines of content looking for docstrings containing copyright markers.
+def parse_copyright_docstring(content: str) -> ParsedCopyrightString | None:
+    """Search content for docstrings containing copyright markers.
 
     Args:
-        input (str): The content to be searched.
+        content (str): The content to be searched.
 
     Returns:
-        ParsedCopyrightString|None: the parsed copyright string if one was found,
+        ParsedCopyrightString | None: the parsed copyright string if one was found,
             otherwise None.
     """
     try:
-        code = ast.parse(input)
+        code = ast.parse(content)
     except SyntaxError:
         return None
 
     for node in ast.walk(code):
-        if isinstance(node, ast.Module):
-            if docstring := ast.get_docstring(node):
-                if parsed_string := _parse_copyright_docstring(docstring):
-                    return parsed_string
+        if (
+            isinstance(node, ast.Module)
+            and (docstring := ast.get_docstring(node))
+            and (parsed_string := _parse_copyright_docstring(docstring))
+        ):
+            return parsed_string
     return None
 
 
 def parse_copyright_comment(
-    input: str,
-    comment_markers: Tuple[str, Optional[str]],
-) -> Optional[ParsedCopyrightString]:
-    """
-    Search through lines of content looking for copyright comments.
+    content: str,
+    comment_markers: tuple[str, str | None],
+) -> ParsedCopyrightString | None:
+    """Search through lines of content looking for copyright comments.
 
     Args:
-        input (str): The content to be searched.
+        content (str): The content to be searched.
         comment_markers (tuple(str, str|None)): The characters marking the beginning and
             (optionally) end of a comment.
 
@@ -246,32 +246,33 @@ def parse_copyright_comment(
         ValueError: When the content contains multiple copyright strings.
 
     Returns:
-        ParsedCopyrightString|None: the parsed copyright string if one was found,
+        ParsedCopyrightString | None: the parsed copyright string if one was found,
             otherwise None.
     """
-    copyright_strings = []
-    for line in input.splitlines():
-        if parsed_string := _parse_copyright_string_line(line, comment_markers):
-            copyright_strings.append(parsed_string)
+    copyright_strings = [
+        parsed_string
+        for line in content.splitlines()
+        if (parsed_string := _parse_copyright_string_line(line, comment_markers))
+    ]
     if len(copyright_strings) == 0:
         return None
     if len(copyright_strings) > 1:
+        msg = f"Found multiple copyright strings: {copyright_strings}"
         raise ValueError(
-            f"Found multiple copyright strings: {copyright_strings}",
+            msg,
         )
     return copyright_strings[0]
 
 
-def _parse_years(year: str) -> Tuple[int, int]:
-    """
-    Parse the identified year string as a range of years.
+def _parse_years(year: str) -> tuple[int, int]:
+    """Parse the identified year string as a range of years.
 
     Arguments:
         year (str): the string to be parsed.
 
     Returns:
-        int, int: the start and end years of the range. If the range is a single year,
-            these values will be the same.
+        tuple[int, int]: the start and end years of the range. If the range is
+            a single year, these values will be the same.
 
     Raises:
         SyntaxError: When the year string cannot be parsed.
@@ -290,6 +291,7 @@ def _parse_years(year: str) -> Tuple[int, int]:
     if match:
         return (int(match.groupdict()["year"]), int(match.groupdict()["year"]))
 
+    msg = f"Could not interpret year value '{year}'."
     raise SyntaxError(
-        f"Could not interpret year value '{year}'.",
+        msg,
     )  # pragma: no cover

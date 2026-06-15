@@ -222,7 +222,7 @@ class TestChanges:
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"  - {language.comment_format.format(content=input_copyright_string)}\n"  # noqa: E501
+            f"  - {language.comment_format.format(content=input_copyright_string)}\n"
             f"  + {new_copyright_string}\n"
         )
 
@@ -287,7 +287,7 @@ class TestChanges:
         expected_content = f"{new_copyright_string}\n\n<file content sentinel>"
         expected_stdout = (
             f"Fixing file `{file}`:\n"
-            f"  - {language.comment_format.format(content=input_copyright_string)}\n"  # noqa: E501
+            f"  - {language.comment_format.format(content=input_copyright_string)}\n"
             f"  + {new_copyright_string}\n"
         )
 
@@ -465,9 +465,8 @@ class TestFailureStates:
         )
 
         # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(ValueError) as e:
-                update_copyright.main()
+        with cwd(git_repo.workspace), pytest.raises(ValueError) as e:
+            update_copyright.main()
 
         # THEN
         assert_matching(
@@ -491,9 +490,8 @@ class TestFailureStates:
         add_changed_files("hello.fake", "", git_repo, mocker)
 
         # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(NotImplementedError) as e:
-                update_copyright.main()
+        with cwd(git_repo.workspace), pytest.raises(NotImplementedError) as e:
+            update_copyright.main()
 
         # THEN
         assert e.exconly().startswith(

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023-2026 Benjamin Mummery
 
 """
 Module docstring.
@@ -17,7 +17,6 @@ def main():
     Function docstring.
     ================
     """
-    pass
 
 
 class foo:
@@ -31,7 +30,6 @@ class foo:
         Method docstring.
         ============
         """
-        pass
 
     class NestedClass:
         """
@@ -39,14 +37,12 @@ class foo:
         ==============
         """
 
-        pass
 
         def nested_method():
             """
             Nested Method docstring.
             =================
             """
-            pass
 
 
 expected_stdout: str = """- error in module docstring: Title underline too short.

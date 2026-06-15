@@ -1,16 +1,20 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
+from __future__ import annotations
+
 import datetime
 import os
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING
 
 import pytest
 
-from pytest_git import GitRepo
-from pytest_mock import MockerFixture
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pytest_git import GitRepo
+    from pytest_mock import MockerFixture
 
 
 # region: shared utilities
@@ -19,7 +23,7 @@ def assert_matching(
     name2: str,
     value1,
     value2,
-    message: Optional[str] = None,
+    message: str | None = None,
 ):
     """
     Assert that 2 values are the same, and print an informative output if they are not.
@@ -45,10 +49,10 @@ class Globals:
 
 
 def add_changed_files(
-    filenames: Union[str, List[str]],
-    contents: Union[str, List[str]],
+    filenames: str | list[str],
+    contents: str | list[str],
     git_repo: GitRepo,
-    mocker: Optional[MockerFixture] = None,
+    mocker: MockerFixture | None = None,
 ):
     if not isinstance(filenames, list):
         filenames = [filenames]
@@ -58,7 +62,8 @@ def add_changed_files(
         (git_repo.workspace / filename).write_text(content)
         git_repo.run(f"git add {filename}")
     if mocker:
-        return mocker.patch("sys.argv", ["stub_name"] + filenames)
+        return mocker.patch("sys.argv", ["stub_name", *filenames])
+    return None
 
 
 def write_config_file(path: Path, name: str, content: str) -> Path:
@@ -133,11 +138,11 @@ class SupportedLanguage:
     def __str__(self):
         return self.tag
 
-    def __lt__(self, other: "SupportedLanguage") -> bool:
+    def __lt__(self, other: SupportedLanguage) -> bool:
         names = [self.tag, other.tag]
         return names == sorted(names)
 
-    def __gt__(self, other: "SupportedLanguage") -> bool:
+    def __gt__(self, other: SupportedLanguage) -> bool:
         names = [self.tag, other.tag]
         return names != sorted(names)
 
@@ -161,11 +166,11 @@ class DocstrSupportedLanguage:
     def __str__(self):
         return self.tag
 
-    def __lt__(self, other: "DocstrSupportedLanguage") -> bool:
+    def __lt__(self, other: DocstrSupportedLanguage) -> bool:
         names = [self.tag, other.tag]
         return names == sorted(names)
 
-    def __gt__(self, other: "DocstrSupportedLanguage") -> bool:
+    def __gt__(self, other: DocstrSupportedLanguage) -> bool:
         names = [self.tag, other.tag]
         return names != sorted(names)
 

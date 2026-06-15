@@ -1,4 +1,7 @@
 ---
+default_language_version:
+  python: python3
+
 default_install_hook_types: [pre-commit, pre-merge-commit, pre-push, prepare-commit-msg,
   commit-msg, post-checkout, post-commit, post-merge, post-rewrite]
 default_stages: [pre-commit, pre-push]
@@ -12,152 +15,142 @@ exclude: |
   )
 
 repos:
-  # PROCEDURAL  ########################################################################
+  # Fast, read-only checks first (fail before any file modifications).
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      # Forbid comitting large files
-      - id: check-added-large-files
-        args: [--maxkb=500]
-      # Forbid names that would conflict in non-case-sensitive filesystems
-      - id: check-case-conflict
-      # Forbid merge conflict markers
-      - id: check-merge-conflict
-        args: [--assume-in-merge]
-      # Check that symlinks are up to date
-      - id: check-symlinks
-      # Check for destroyed symlinks
-      - id: destroyed-symlinks
-      # Forbid allow submodules
-      - id: forbid-submodules
-      # Don't allow committing to protected branches.
       - id: no-commit-to-branch
         args: [-b, main, -b, master, -b, dev, -b, develop]
         stages: [pre-commit]
+      - id: detect-private-key
+      - id: check-merge-conflict
+        args: [--assume-in-merge]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: forbid-submodules
+      - id: name-tests-test
+        args: [--pytest-test-first]
+        exclude: tests/examples/.*|conftest\.py
 
   - repo: https://github.com/pre-commit/sync-pre-commit-deps
     rev: v0.0.3
     hooks:
-      # Sync additional dependencies between hooks
       - id: sync-pre-commit-deps
 
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.13.8
+  # Content normalisers (before spell-check and Python lint/format).
+  - repo: local
     hooks:
-      # Require conventional commit messages
-      - id: commitizen
-
-  # GENERAL PURPOSE  ###################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      # Forbid executable files without shebangs
-      - id: check-executables-have-shebangs
-      # Forbid shebangs in non-executable files
-      - id: check-shebang-scripts-are-executable
-      # Require that vcs links are permalinks
-      - id: check-vcs-permalinks
-      # Insert blank newlines at the ends of files
-      - id: end-of-file-fixer
-      #
-      - id: fix-byte-order-marker
-      # Forbid mixed line endings
-      - id: mixed-line-ending
-      # Enforce test naming convention
-      - id: name-tests-test
-        args: [--pytest-test-first]
-        exclude: tests/examples/.*
-      # Remove trailing whitespaces at the ends of lines
-      - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
-
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: 'v1.10.0'
-    hooks:
-      - id: text-unicode-replacement-char
-
-  - repo: https://github.com/asottile/yesqa
-    rev: v1.5.0
-    hooks:
-      # Remove outdated noqa markers
-      - id: yesqa
+      - id: add-copyright
+        name: Add copyright string to source files
+        entry: uv run add-copyright
+        language: system
+        exclude: CHANGELOG.md
+        types_or:
+          - c++
+          - c#
+          - css
+          - dart
+          - html
+          - java
+          - javascript
+          - kotlin
+          - lua
+          - markdown
+          - perl
+          - php
+          - python
+          - ruby
+          - rust
+          - scala
+          - sql
+          - swift
+      - id: update-copyright
+        name: Update dates on copyright strings in source files
+        entry: uv run update-copyright
+        language: system
+        types_or:
+          - c++
+          - c#
+          - css
+          - dart
+          - html
+          - java
+          - javascript
+          - kotlin
+          - lua
+          - markdown
+          - perl
+          - php
+          - python
+          - ruby
+          - rust
+          - scala
+          - sql
+          - swift
+      - id: add-msg-issue
+        name: Add issue to the commit message
+        entry: uv run add-msg-issue
+        language: system
+        always_run: true
+        stages: [prepare-commit-msg]
+      - id: sort-file-contents
+        name: Sort gitignore sections
+        entry: uv run sort-file-contents
+        language: system
+        files: ^.gitignore
+      - id: no-import-testtools-in-src
+        name: Detect test tool imports in src files
+        entry: uv run no-import-testtools-in-src
+        language: system
+        types_or: [python]
+      - id: sync-type-hints
+        name: Sync type hints with docstrings
+        entry: uv run sync-type-hints
+        language: system
+        files: ^src/
+        exclude: src/.*/test_.*\.py$
+        args: [--on-clash=prefer-signature]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
-      # Spellchecking
       - id: codespell
         args: [-w]
 
-  - repo: https://github.com/BenjaminMummery/pre-commit-hooks
-    rev: v2.8.0
+  # Python lint/format (ruff replaces isort, pycln, pydocstyle, interrogate, pyupgrade).
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
     hooks:
-      # Add a copyright notice to files that don't have one
-      - id: add-copyright
-        exclude: CHANGELOG.md
-      # Append jira issue from the branch name to the commit
-      - id: add-msg-issue
-      # Update existing copyright markers.
-      - id: update-copyright
-      # Sort the .gitignore file (respects sections)
-      - id: sort-file-contents
-        files: .gitignore
+      - id: ruff-check
+        args: [--config=pyproject.toml, --fix]
+      - id: ruff-format
+        args: [--config=pyproject.toml]
 
-  # SECURITY  ##########################################################################
+  # Whitespace and line-ending cleanup after formatters.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: detect-private-key
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
-    hooks:
-      - id: gitleaks
-
-  - repo: https://github.com/thoughtworks/talisman
-    rev: 'v1.37.0'
-    hooks:
-      - id: talisman-push
-      - id: talisman-commit
-
-  # CONFIGURATION  #####################################################################
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v3.2.0
-    hooks:
-      - id: setup-cfg-fmt
-
-  # C++ ###############################################################################
-  - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: 'v21.1.8'
-    hooks:
-      - id: clang-format
-
-  # CMAKE  ############################################################################
-  - repo: https://github.com/cheshirekow/cmake-format-precommit
-    rev: v0.6.13
-    hooks:
-      - id: cmake-format
-      - id: cmake-lint
-
-  # MARKDOWN  #########################################################################
-  - repo: https://github.com/thlorenz/doctoc
-    rev: 'v2.3.0'
-    hooks:
-      - id: doctoc
-
-  # PYTHON  ###########################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-ast
-      - id: check-builtin-literals
-      - id: check-docstring-first
-        exclude: tests/examples/.*
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: debug-statements
-      - id: requirements-txt-fixer
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: 'v1.10.0'
+    rev: v1.10.0
     hooks:
       - id: python-use-type-annotations
       - id: python-check-blanket-noqa
@@ -165,143 +158,34 @@ repos:
       - id: python-check-mock-methods
       - id: python-no-eval
       - id: python-no-log-warn
-      - id: python-use-type-annotations
+      - id: text-unicode-replacement-char
 
-  - repo: https://github.com/asottile/add-trailing-comma
-    rev: v4.0.0
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.5.0
     hooks:
-      - id: add-trailing-comma
-
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
-    hooks:
-      - id: pyupgrade
-
-  - repo: https://github.com/hadialqattan/pycln
-    rev: v2.6.0
-    hooks:
-      - id: pycln
-        exclude: __init__.py
-
-  - repo: https://github.com/dannysepler/rm_unneeded_f_str
-    rev: v0.2.0
-    hooks:
-      - id: rm-unneeded-f-str
-
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.2
-    hooks:
-      - id: ruff-check
-        args: [
-          --fix,
-          --config=pyproject.toml,
-        ]
-      - id: ruff-format
+      - id: yesqa
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1
     hooks:
       - id: mypy
+        args: [--config-file=pyproject.toml]
+        additional_dependencies: [types-PyYAML]
 
-  - repo: https://github.com/econchick/interrogate # flags up missing docstrings
-    rev: 1.7.0
+  - repo: https://github.com/thlorenz/doctoc
+    rev: v2.3.0
     hooks:
-      - id: interrogate
-        args: [--config=pyproject.toml]
-        exclude: tests/.*|test_.*\.py|conftest.py
+      - id: doctoc
 
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.3.0
     hooks:
-    - id: pydocstyle
-      args: ['--ignore=D105,D107,D202,D203,D204,D212,D406,D407,D413']
-      additional_dependencies: [tomli]
-      exclude: tests/.*|test_.*\.py|conftest.py
+      - id: conventional-pre-commit
+        stages: [commit-msg]
 
-  # YAML  #############################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-yaml
-      - id: sort-simple-yaml
-        exclude: .pre-commit-config.yaml
-
-  - repo: https://github.com/lyz-code/yamlfix
-    rev: 1.19.1
-    hooks:
-      - id: yamlfix
-        exclude: .pre-commit-config.yaml
-
-  # RST  ###############################################################################
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: 'v1.10.0'
+    rev: v1.10.0
     hooks:
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
-
-  # CSS  ###############################################################################
-  - repo: https://github.com/pre-commit/mirrors-csslint
-    rev: 'v1.0.5'
-    hooks:
-      - id: csslint
-
-  # JAVASCRIPT  ########################################################################
-  - repo: https://github.com/pre-commit/mirrors-fixmyjs
-    rev: 'v2.0.0'
-    hooks:
-      - id: fixmyjs
-
-  - repo: https://github.com/pre-commit/mirrors-jshint
-    rev: 'v2.13.6'
-    hooks:
-      - id: jshint
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: 'v10.0.2'
-    hooks:
-    -   id: eslint
-
-  # JSON  ##############################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-json
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: pretty-format-json
-        args: [
-          --autofix,
-          --indent 4,
-        ]
-
-  # JUPYTER NOTEBOOKS  #################################################################
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.9.1
-    hooks:
-      - id: nbqa-black
-      - id: nbqa-pyupgrade
-        args: ["--py37-plus"]
-      - id: nbqa-isort
-        args: ["--float-to-top"]
-
-  # TERRAFORM  #########################################################################
-  - repo: https://github.com/AleksaC/terraform-py
-    rev: v1.14.5
-    hooks:
-      - id: tf-fmt
-      - id: tf-validate
-
-  # TOML  ##############################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-toml
-
-  # XML  ###############################################################################
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-xml

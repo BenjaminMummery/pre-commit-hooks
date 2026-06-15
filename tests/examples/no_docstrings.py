@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023-2026 Benjamin Mummery
 
 CONST = 3
 
@@ -12,7 +12,6 @@ class foo:
         pass
 
     class NestedClass:
-        pass
 
         def nested_method():
             pass

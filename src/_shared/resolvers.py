@@ -1,33 +1,30 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
 """Common resolvers that are used by multiple hooks."""
 
-import os
-import typing as t
+from __future__ import annotations
 
 from pathlib import Path
 
 
-def resolve_files(files: t.Union[str, t.List[str]]) -> t.List[Path]:
-    """
-    Convert the list of files into a list of paths.
+def resolve_files(files: str | list[str]) -> list[Path]:
+    """Convert the list of files into a list of paths.
 
     Args:
-        files (str, List[str]): The list of changed files.
+        files (str | list[str]): The list of changed files.
 
     Raises:
         FileNotFoundError: When one or more of the specified files does not
         exist.
 
     Returns:
-        List[Path]: A list of paths corresponding to the changed files.
+        list[Path]: A list of paths corresponding to the changed files.
     """
-
-    _files: t.List[Path] = [
+    _files: list[Path] = [
         Path(file) for file in (files if isinstance(files, list) else [files])
     ]
 
     for file in _files:
-        if not os.path.isfile(file):
+        if not file.is_file():
             raise FileNotFoundError(file)
 
     return _files

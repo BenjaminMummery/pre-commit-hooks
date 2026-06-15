@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023-2026 Benjamin Mummery
 
 """Module docstring."""
 
@@ -8,7 +8,6 @@ CONST = 3
 
 def main():
     """Function docstring."""
-    pass
 
 
 class foo:
@@ -16,13 +15,10 @@ class foo:
 
     def method():
         """Method docstring"""
-        pass
 
     class NestedClass:
         """Nested CLass docstring."""
 
-        pass
 
         def nested_method():
             """Nested method docstring."""
-            pass

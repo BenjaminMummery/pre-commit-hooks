@@ -288,9 +288,8 @@ class TestFailureStates:
         )
 
         # WHEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(FileNotFoundError) as e:
-                sort_file_contents.main()
+        with cwd(git_repo.workspace), pytest.raises(FileNotFoundError) as e:
+            sort_file_contents.main()
 
         # THEN
         assert_matching(

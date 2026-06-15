@@ -4,8 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from conftest import assert_matching
-
-from . import config_parsing
+from src._shared import config_parsing
 
 toml_file_content = """[tool.foo]
 option1="blah{foo}"
@@ -88,9 +87,8 @@ class TestReadConfig:
             cwd,
         ):
             # WHEN
-            with pytest.raises(FileNotFoundError) as e:
-                with cwd(tmp_path):
-                    config_parsing.read_config("<tool name sentinel>")
+            with pytest.raises(FileNotFoundError) as e, cwd(tmp_path):
+                config_parsing.read_config("<tool name sentinel>")
 
             # THEN
             assert e.exconly() == "FileNotFoundError: No config file found."
@@ -148,7 +146,7 @@ class TestReadingPyprojectToml:
                 "Output error string",
                 "Expected error string",
                 e.exconly(),
-                f"src._shared.exceptions.InvalidConfigError: Could not parse config file '{file}'.",  # noqa: E501
+                f"src._shared.exceptions.InvalidConfigError: Could not parse config file '{file}'.",
             )
 
 
@@ -204,5 +202,5 @@ class TestReadingSetupCfg:
                 "Output error string",
                 "Expected error string",
                 e.exconly(),
-                f"src._shared.exceptions.InvalidConfigError: Could not parse config file '{file}'.",  # noqa: E501
+                f"src._shared.exceptions.InvalidConfigError: Could not parse config file '{file}'.",
             )
