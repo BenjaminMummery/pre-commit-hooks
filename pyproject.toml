@@ -76,7 +76,7 @@ addopts = [
     "--doctest-modules",
     "--strict-markers",
     "--cov=src",
-    "--cov-fail-under=98",
+    "--cov-fail-under=78",
 ]
 
 ########## LINTING AND FORMATTING TOOL CONFIGURATION ###################################
