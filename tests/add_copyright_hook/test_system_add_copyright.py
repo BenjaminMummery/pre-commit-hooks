@@ -432,7 +432,7 @@ class TestCustomBehavior:
 
                 toml_text = "\n".join(
                     [
-                        f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'  # noqa: E501
+                        f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'
                         for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                     ],
                 )
@@ -490,7 +490,7 @@ class TestCustomBehavior:
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     toml_text += (
                         f"[tool.add_copyright.{language.toml_key}]\n"
-                        f'format="""{language.custom_copyright_format_uncommented}"""\n\n'  # noqa: E501
+                        f'format="""{language.custom_copyright_format_uncommented}"""\n\n'
                     )
                 write_config_file(
                     git_repo.workspace,

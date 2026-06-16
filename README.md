@@ -1,4 +1,4 @@
-<!--- Copyright (c) 2022 - 2025 Benjamin Mummery -->
+<!--- Copyright (c) 2022 - 2026 Benjamin Mummery -->
 
 # pre-commit-hooks
 
@@ -35,7 +35,14 @@ A selection of quality-of-life tools for use with [pre-commit](https://github.co
     - [2.6.1 Configuration](#261-configuration)
       - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-1)
       - [Inline ignores](#inline-ignores)
+  - [2.7 The `sync-type-hints` hook](#27-the-sync-type-hints-hook)
+    - [2.7.1 Configuration](#271-configuration)
+      - [`.pre-commit-config.yaml` Configuration](#pre-commit-configyaml-configuration-2)
+      - [Config file configuration](#config-file-configuration-1)
+      - [Inline ignores](#inline-ignores-1)
+    - [2.7.2 Supported docstring formats](#272-supported-docstring-formats)
 - [3. Development](#3-development)
+  - [3.0 Setup](#30-setup)
   - [3.1 Testing](#31-testing)
     - [3.1.1 Testing scheme](#311-testing-scheme)
     - [3.1.2 Running Tests](#312-running-tests)
@@ -62,6 +69,7 @@ repos:
         files: .gitignore
     -   id: no-import-testtools-in-src
     -   id: americanise
+    -   id: sync-type-hints
 ```
 
 Even if you've already installed pre-commit, it may be necessary to run:
@@ -376,10 +384,125 @@ will be corrected to:
 
 ```python
 def initialise():  # pragma: no americanise
-    print("initialize")
+    print("initialise")
 ```
 
+### 2.7 The `sync-type-hints` hook
+
+This hook synchronises type information between Python function and method signatures and their docstrings. It parses type annotations from docstring `Args`/`Parameters` and `Returns` sections, compares them with type hints in the signature, and updates the source file accordingly.
+
+By default, missing signature annotations are filled in from the docstring. When the two sources disagree, the hook fails so that the conflict can be resolved manually.
+
+For example, given:
+
+```python
+def greet(name, count):
+    """Say hello.
+
+    Args:
+        name (str): Who to greet.
+        count (int): How many times.
+
+    Returns:
+        bool: Whether greeting succeeded.
+    """
+    return True
+```
+
+the hook will rewrite the signature as:
+
+```python
+def greet(name: str, count: int) -> bool:
+```
+
+The docstring is left unchanged unless configured otherwise.
+
+#### 2.7.1 Configuration
+
+##### `.pre-commit-config.yaml` Configuration
+
+```yaml
+repos:
+-   repo: https://github.com/BenjaminMummery/pre-commit-hooks
+    rev: ''
+    hooks:
+    -   id: sync-type-hints
+        args:
+        -   --on-clash=prefer-signature
+        -   --remove-docstring-types
+```
+
+The hook accepts the following command line arguments:
+
+| Flag | Description |
+|------|-------------|
+| `--on-clash` | How to handle disagreements between docstring and signature types. One of `error` (default), `prefer-signature`, or `prefer-docstring`. |
+| `--remove-docstring-types` | Remove type information from docstrings after syncing. |
+
+When `--on-clash` is set to:
+
+- `error`: the hook fails with a descriptive message.
+- `prefer-signature`: docstring types are updated to match the signature.
+- `prefer-docstring`: signature annotations are updated to match the docstring.
+
+##### Config file configuration
+
+Configuration can also be supplied in `pyproject.toml` or `setup.cfg`:
+
+```toml
+[tool.sync_type_hints]
+on-clash = "error"
+remove-docstring-types = false
+```
+
+Command line arguments take precedence over config file settings.
+
+##### Inline ignores
+
+Individual functions can be excluded by marking the definition line with an inline comment reading `pragma: no sync-type-hints`. For example:
+
+```python
+def legacy(name):  # pragma: no sync-type-hints
+    """Args:
+        name (str): Ignored by the hook.
+    """
+    return name
+```
+
+#### 2.7.2 Supported docstring formats
+
+The hook recognises type information in the following docstring styles:
+
+| Style | Parameter example | Return example |
+|-------|-------------------|----------------|
+| Google | `name (str): Description.` | `bool: Description.` |
+| NumPy | `name : str` | `bool` (on the line after the `Returns` underline) |
+| Sphinx | `:param str name: Description.` | `:rtype: bool` |
+
 ## 3. Development
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management, packaging, and running commands in a locked virtual environment.
+
+### 3.0 Setup
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then sync dependencies and install pre-commit hooks:
+
+```bash
+make install
+```
+
+Or manually:
+
+```bash
+uv sync
+uv run pre-commit install
+```
+
+Build a wheel or source distribution with:
+
+```bash
+uv build
+```
 
 ### 3.1 Testing
 
@@ -396,7 +519,7 @@ Tests are organised in three levels:
 
 #### 3.1.2 Running Tests
 
-The provided `Makefile` defines commands for running various combinations of tests:
+The provided `Makefile` defines commands for running various combinations of tests. All targets run through `uv run` (for example, `make test` runs unit and integration tests).
 
 - General Purpose:
   - `test`: run unit and integration tests and show coverage (fail fast).
@@ -411,5 +534,6 @@ The provided `Makefile` defines commands for running various combinations of tes
   - `test_add_issue`
   - `test_sort_file_contents`
   - `test_update_copyright`
+  - `test_sync_type_hints`
 - Testing shared resources:
   - `test_shared`: run all unit tests for utilities on which multiple hooks rely and show coverage (fail fast).

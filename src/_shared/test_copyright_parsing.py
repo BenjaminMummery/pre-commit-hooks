@@ -1,15 +1,17 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
 
-from pytest_mock import MockerFixture
-
 from conftest import assert_matching
+from src._shared import copyright_parsing
 from src._shared.comment_mapping import COMMENT_MARKERS
 
-from . import copyright_parsing
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 # region: fixtures mocking all public functions, classes, and methods.
@@ -82,7 +84,7 @@ class TestParseCopyrightComment:
         )
         def test_correctly_parses_string(
             input_string: str,
-            comment_markers: Tuple[str, Optional[str]],
+            comment_markers: tuple[str, str | None],
             expected_args: list,
             mock_ParsedCopyrightString: Mock,
         ):
@@ -93,7 +95,7 @@ class TestParseCopyrightComment:
             )
 
             # THEN
-            _expected_args = [comment_markers] + expected_args + [input_string]
+            _expected_args = [comment_markers, *expected_args, input_string]
             mock_ParsedCopyrightString.assert_called_once_with(*_expected_args)
             assert ret == mock_ParsedCopyrightString.return_value
 
@@ -105,7 +107,7 @@ class TestParseCopyrightComment:
             ["Not a copyright string", "", "foo\n\nbar"],
         )
         def test_returns_none_for_no_matches(
-            comment_markers: Tuple[str, Optional[str]],
+            comment_markers: tuple[str, str | None],
             input_string: str,
         ):
             assert (
@@ -136,7 +138,7 @@ class TestParseCopyrightComment:
                 "output exception",
                 "expected exception",
                 e.exconly(),
-                "ValueError: Found multiple copyright strings: ['<mock_ParsedCopyrightString return sentinel>', '<mock_ParsedCopyrightString return sentinel>']",  # noqa: E501,
+                "ValueError: Found multiple copyright strings: ['<mock_ParsedCopyrightString return sentinel>', '<mock_ParsedCopyrightString return sentinel>']",
             )
 
 
@@ -197,7 +199,7 @@ class TestParseCopyrightDocstring:
             ret = copyright_parsing.parse_copyright_docstring(input_string)
 
             # THEN
-            _expected_args = [None] + expected_args
+            _expected_args = [None, *expected_args]
             mock_ParsedCopyrightString.assert_called_once_with(*_expected_args)
             assert ret == mock_ParsedCopyrightString.return_value
 

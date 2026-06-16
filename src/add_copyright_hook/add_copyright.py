@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-"""
-Check that source files contain a copyright string, and add one to files that don't.
+"""Check that source files contain a copyright string, and add one to files that don't.
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
 """
 
+from __future__ import annotations
+
 import argparse
 import ast
 import datetime
+import sys
 
 from pathlib import Path
-from typing import List, Optional, Tuple
 
-from git import GitCommandError, InvalidGitRepositoryError, Repo
+from git import GitCommandError, Repo
 from git.objects.commit import Commit
 from git.repo.base import BlameEntry
 from identify import identify
@@ -59,8 +60,7 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
 
 
 def _get_earliest_commit_year(file: Path) -> int:
-    """
-    Get the years of the earliest and latest commits made to the specified file.
+    """Get the years of the earliest and latest commits made to the specified file.
 
     Args:
         file (Path): The path to the file to be checked
@@ -74,10 +74,7 @@ def _get_earliest_commit_year(file: Path) -> int:
         int: The year of the earliest commit on the file.
 
     """
-    try:
-        repo = Repo(".")
-    except InvalidGitRepositoryError:
-        raise
+    repo = Repo(".")
 
     try:
         blames = repo.blame(repo.head, str(file))
@@ -85,7 +82,8 @@ def _get_earliest_commit_year(file: Path) -> int:
         raise NoCommitsError from e
 
     if blames is None:
-        raise NoCommitsError("No blames to parse.")
+        msg = "No blames to parse."
+        raise NoCommitsError(msg)
 
     timestamps: list[int] = []
     for blame in blames:
@@ -105,7 +103,8 @@ def _get_earliest_commit_year(file: Path) -> int:
     timestamps_set = set(timestamps)
 
     if len(timestamps_set) < 1:
-        raise NoCommitsError("No blame timestamps found.")
+        msg = "No blame timestamps found."
+        raise NoCommitsError(msg)
 
     earliest_date: datetime.datetime = datetime.datetime.fromtimestamp(
         min(timestamps),
@@ -115,11 +114,10 @@ def _get_earliest_commit_year(file: Path) -> int:
 
 
 def _parse_args() -> dict:
-    """
-    Parse the CLI arguments.
+    """Parse the CLI arguments.
 
     Returns:
-        dict with the following keys:
+        dict:
         - files (list of Path): the paths to each changed file relevant to this hook.
         - name (str, None): the configured name to add to the copyright
         - format (str, None): the format that the copyright string should follow.
@@ -137,8 +135,7 @@ def _parse_args() -> dict:
 
 
 def _get_git_user_name() -> str:
-    """
-    Get the user name as configured in git.
+    """Get the user name as configured in git.
 
     Raises:
         ValueError: when the user name has not been configured.
@@ -151,26 +148,25 @@ def _get_git_user_name() -> str:
     name = reader.get_value("user", "name")
 
     if not isinstance(name, str) or len(name) < 1:
-        raise ValueError("The git username is not configured.")
+        msg = "The git username is not configured."
+        raise ValueError(msg)
     return name
 
 
-def _has_shebang(input: str) -> bool:
-    """
-    Check whether the input string starts with a shebang.
+def _has_shebang(content: str) -> bool:
+    """Check whether the content string starts with a shebang.
 
     Args:
-        input (str): The string to check.
+        content (str): The string to check.
 
     Returns:
         bool: True if a shebang is found, false otherwise.
     """
-    return input.startswith("#!")
+    return content.startswith("#!")
 
 
 def _add_copyright_docstring_to_content(content: str, copyright_string: str) -> str:
-    """
-    Insert a copyright docstring into the appropriate place in existing content.
+    """Insert a copyright docstring into the appropriate place in existing content.
 
     This method attempts to place the copyright in a module level docstring at the top
     of the file. If a docstring doesn't exist, it will be created. If it does exist,
@@ -186,9 +182,8 @@ def _add_copyright_docstring_to_content(content: str, copyright_string: str) -> 
     # Check for an existing docstring, modifying it if it exists.
     code = ast.parse(content)
     for node in ast.walk(code):
-        if isinstance(node, ast.Module):
-            if docstring := ast.get_docstring(node):
-                return content.replace(docstring, f"{copyright_string}\n\n{docstring}")
+        if isinstance(node, ast.Module) and (docstring := ast.get_docstring(node)):
+            return content.replace(docstring, f"{copyright_string}\n\n{docstring}")
 
     # If there isn't a docstring, we need to insert it
     # We can do this by treating it like a comment and inserting it in the same way we
@@ -197,8 +192,7 @@ def _add_copyright_docstring_to_content(content: str, copyright_string: str) -> 
 
 
 def _add_copyright_comment_to_content(content: str, copyright_string: str) -> str:
-    """
-    Insert a copyright string into the appropriate place in existing content.
+    """Insert a copyright string into the appropriate place in existing content.
 
     This method attempts to place the copyright string at the top of the file, unless
     the file starts with a shebang in which case the copyright string is inserted after
@@ -211,8 +205,8 @@ def _add_copyright_comment_to_content(content: str, copyright_string: str) -> st
     Returns:
         str: the new content.
     """
-    lines: List[str] = content.splitlines()
-    new_lines: List[str] = []
+    lines: list[str] = content.splitlines()
+    new_lines: list[str] = []
 
     # If the file starts with a shebang, keep that first in the new content.
     if _has_shebang(content):
@@ -223,8 +217,8 @@ def _add_copyright_comment_to_content(content: str, copyright_string: str) -> st
     while len(lines) >= 1 and lines[0] == "":
         lines = lines[1:]
 
-    new_lines += [copyright_string, ""] + lines
-    if not new_lines[-1] == "":
+    new_lines += [copyright_string, "", *lines]
+    if new_lines[-1] != "":
         new_lines.append("")
     return "\n".join(new_lines)
 
@@ -233,34 +227,29 @@ def _construct_copyright_string(
     name: str,
     start_year: int,
     end_year: int,
-    format: str,
+    copyright_format: str,
 ) -> str:
-    """
-    Construct a string containing the copyright information.
+    """Construct a string containing the copyright information.
 
     Args:
         name (str): The name of the copyright holder.
-        start_year (str): The start year of the copyright.
-        end_year (str): The end year of the copyright.
-        format (str): The f-string into which the name and year should be
-            inserted.
+        start_year (int): The start year of the copyright.
+        end_year (int): The end year of the copyright.
+        copyright_format (str): The f-string into which the name and year should
+            be inserted.
 
     Returns:
         str: the copyright string.
     """
-    if start_year == end_year:
-        year = f"{start_year}"
-    else:
-        year = f"{start_year}-{end_year}"
-    return f"{format.format(year=year, name=name)}"
+    year = f"{start_year}" if start_year == end_year else f"{start_year}-{end_year}"
+    return f"{copyright_format.format(year=year, name=name)}"
 
 
 def _ensure_comment(
     copyright_string: str,
-    comment_markers: Tuple[str, Optional[str]],
+    comment_markers: tuple[str, str | None],
 ) -> str:
-    """
-    Ensure that the string passed in is properly comment escaped.
+    """Ensure that the string passed in is properly comment escaped.
 
     Args:
         copyright_string (str): The string to be checked
@@ -283,13 +272,11 @@ def _ensure_comment(
     )
     if len(outlines) == 1:
         return outlines[0]
-    else:
-        return "\n".join(outlines)
+    return "\n".join(outlines)
 
 
 def _read_default_configuration() -> dict:
-    """
-    Read in the default configuration from a config file.
+    """Read in the default configuration from a config file.
 
     Raises:
         KeyError: when the configuration contains unsupported options.
@@ -311,11 +298,9 @@ def _read_default_configuration() -> dict:
             ```
     """
     supported_language_subkeys = ["format", "docstr"]
-    supported_toml_keys = ["name", "format"] + [
-        v for v in LANGUAGE_TAGS_TOMLKEYS.values()
-    ]
+    supported_toml_keys = ["name", "format", *list(LANGUAGE_TAGS_TOMLKEYS.values())]
 
-    retv = {key: None for key in supported_toml_keys}
+    retv = dict.fromkeys(supported_toml_keys)
 
     # read data from config file
     try:
@@ -327,20 +312,26 @@ def _read_default_configuration() -> dict:
     for key in data:
         # Check that the keys are things we support, and raise an error if not.
         if key not in supported_toml_keys:
-            raise KeyError(
+            msg = (
                 f"Unsupported option in config file {filepath}: '{key}'. "
-                f"Supported options are: {supported_toml_keys}.",
+                f"Supported options are: {supported_toml_keys}."
+            )
+            raise KeyError(
+                msg,
             )
 
         # If the key is a supported language, check that the subkeys are supported.
         if key in LANGUAGE_TAGS_TOMLKEYS.values():
             for subkey in data[key]:
                 if subkey not in supported_language_subkeys:
-                    raise KeyError(
+                    msg = (
                         f"Unsupported option in config file {filepath}: "
                         f"'{key}.{subkey}'. "
                         f"Supported options for '{key}' are: "
-                        f"{supported_language_subkeys}.",
+                        f"{supported_language_subkeys}."
+                    )
+                    raise KeyError(
+                        msg,
                     )
 
         retv[key] = data[key]
@@ -348,47 +339,46 @@ def _read_default_configuration() -> dict:
     return retv
 
 
-def _ensure_valid_format(format: str):
-    """
-    Ensure that the provided format string contains the required keys.
+def _ensure_valid_format(copyright_format: str) -> None:
+    """Ensure that the provided format string contains the required keys.
 
     Args:
-        format (str): The string to be checked.
+        copyright_format (str): The string to be checked.
 
     Raises:
         KeyError: when one or more keys is missing.
 
     Returns:
-        str: the checked format string.
+        None: the checked format string.
     """
     keys = ["name", "year"]
-    missing_keys = []
-    for key in keys:
-        if "{" + key + "}" not in format:
-            missing_keys.append(key)
+    missing_keys = [key for key in keys if "{" + key + "}" not in copyright_format]
     if len(missing_keys) > 0:
+        msg = (
+            f"The format string '{copyright_format}' is missing the following "
+            f"required keys: {missing_keys}"
+        )
         raise KeyError(
-            f"The format string '{format}' is missing the following required keys: "
-            f"{missing_keys}",
+            msg,
         )
 
 
 def _ensure_copyright_string(
     file: Path,
-    name: Optional[str],
-    format: str,
+    name: str | None,
+    copyright_format: str,
     docstr: bool = False,
 ) -> int:
-    """
-    Ensure that the file has a copyright string.
+    """Ensure that the file has a copyright string.
 
     This function encompasses the heavy lifting for the hook.
 
     Args:
-        file (path): the file to be checked.
+        file (Path): the file to be checked.
         name (optional(str)): the name of the copyright holder. If not specified, when a
             copyright string is added, the git username will be used.
-        format (str): the format to be used when adding new copyright strings.
+        copyright_format (str): the format to be used when adding new copyright
+            strings.
         docstr (bool): if true, the copyright is expected to be part of
             the docstring. If false, it is expected to be a comment.
 
@@ -400,16 +390,12 @@ def _ensure_copyright_string(
         int: 0 if the file already had a copyright string, 1 if a copyright string had
             to be added.
     """
-
     # Early return if the format is invalid.
-    try:
-        _ensure_valid_format(format)
-    except KeyError:
-        raise
+    _ensure_valid_format(copyright_format)
 
-    with open(file, "r+") as f:
+    with file.open("r+") as f:
         content: str = f.read()
-        comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
+        comment_markers: tuple[str, str | None] = get_comment_markers(file)
 
         # Early return if the file already has copyright info, either in a comment or a
         # docstring.
@@ -428,21 +414,18 @@ def _ensure_copyright_string(
         except NoCommitsError:
             copyright_start_year = copyright_end_year
 
-        try:
-            new_copyright_string = _construct_copyright_string(
-                name or _get_git_user_name(),
-                copyright_start_year,
-                copyright_end_year,
-                format,
-            )
+        new_copyright_string = _construct_copyright_string(
+            name or _get_git_user_name(),
+            copyright_start_year,
+            copyright_end_year,
+            copyright_format,
+        )
 
-            if not docstr:
-                new_copyright_string = _ensure_comment(
-                    new_copyright_string,
-                    comment_markers=comment_markers,
-                )
-        except ValueError:  # pragma: no cover
-            raise
+        if not docstr:
+            new_copyright_string = _ensure_comment(
+                new_copyright_string,
+                comment_markers=comment_markers,
+            )
 
         f.seek(0, 0)
         f.truncate()
@@ -455,9 +438,8 @@ def _ensure_copyright_string(
     return 1
 
 
-def main():
-    """
-    Entrypoint for the add_copyright hook.
+def main() -> int:
+    """Entrypoint for the add_copyright hook.
 
     Check that source files contain a copyright string, and add one to files that don't.
 
@@ -467,10 +449,7 @@ def main():
     # Build the configuration from config files and CLI args.
     # Fields that appear in both the configuration and CLI args use the CLI
     # values.
-    try:
-        configuration = _read_default_configuration()
-    except KeyError:
-        raise
+    configuration = _read_default_configuration()
     args = _parse_args()
     for key in args:
         if args[key] is not None:
@@ -485,30 +464,29 @@ def main():
     for file in configuration["files"]:
         # Global configurations inherited by this file.
         kwargs: dict = {
-            "format": configuration["format"] or "Copyright (c) {year} {name}",
+            "copyright_format": configuration["format"]
+            or "Copyright (c) {year} {name}",
         }
 
         # Extract the language-specific config options for this file. Override global
         # options where required.
         for tag in identify.tags_from_path(file):
-            if (tag in LANGUAGE_TAGS_TOMLKEYS.keys()) and (
+            if (tag in LANGUAGE_TAGS_TOMLKEYS) and (
                 configuration[LANGUAGE_TAGS_TOMLKEYS[tag]] is not None
             ):
-                for key in configuration[LANGUAGE_TAGS_TOMLKEYS[tag]].keys():
-                    kwargs[key] = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]][key]
+                for key in configuration[LANGUAGE_TAGS_TOMLKEYS[tag]]:
+                    kwargs_key = "copyright_format" if key == "format" else key
+                    kwargs[kwargs_key] = configuration[LANGUAGE_TAGS_TOMLKEYS[tag]][key]
                 break
 
         # Ensure that the file has copyright.
-        try:
-            retv |= _ensure_copyright_string(
-                Path(file),
-                name=configuration["name"],
-                **kwargs,
-            )
-        except (KeyError, ValueError):
-            raise
+        retv |= _ensure_copyright_string(
+            Path(file),
+            name=configuration["name"],
+            **kwargs,
+        )
     return retv
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

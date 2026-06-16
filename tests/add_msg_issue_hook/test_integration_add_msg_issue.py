@@ -1,14 +1,18 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-from pathlib import Path
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 
-from pytest_git import GitRepo
-from pytest_mock import MockerFixture
-
 from conftest import assert_matching
 from src.add_msg_issue_hook import add_msg_issue
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pytest_git import GitRepo
+    from pytest_mock import MockerFixture
 
 BRANCH_NAMES = [
     ("ORQSDK-3", "ORQSDK-3"),
@@ -297,7 +301,7 @@ class TestFailureStates:
     def test_missing_key_in_template(
         cwd,
         template: str,
-        missing_keys: List[str],
+        missing_keys: list[str],
         tmp_path: Path,
         mocker: MockerFixture,
         capsys: pytest.CaptureFixture,
@@ -314,16 +318,15 @@ class TestFailureStates:
         )
 
         # WHEN
-        with cwd(tmp_path):
-            with pytest.raises(KeyError) as e:
-                add_msg_issue.main()
+        with cwd(tmp_path), pytest.raises(KeyError) as e:
+            add_msg_issue.main()
 
         # THEN
         expected_errormessage: str = (
             f"KeyError: \"Template argument {template!r} did not contain the required keyword '"  # noqa: E501
-            + "{"
+             "{"
             + missing_keys[0]
-            + "}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\""  # noqa: E501
+            + "}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\""
         )
         assert_matching(
             "captured err",
@@ -340,7 +343,7 @@ class TestFailureStates:
     def test_additional_key_in_template(
         cwd,
         template: str,
-        additional_keys: List[str],
+        additional_keys: list[str],
         tmp_path: Path,
         mocker: MockerFixture,
         capsys: pytest.CaptureFixture,
@@ -357,9 +360,8 @@ class TestFailureStates:
         )
 
         # WHEN
-        with cwd(tmp_path):
-            with pytest.raises(KeyError) as e:
-                add_msg_issue.main()
+        with cwd(tmp_path), pytest.raises(KeyError) as e:
+            add_msg_issue.main()
 
         # THEN
         assert_matching(

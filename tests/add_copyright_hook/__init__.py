@@ -1,1 +1,1 @@
-# Copyright (c) 2023 Benjamin Mummery
+# Copyright (c) 2023-2026 Benjamin Mummery

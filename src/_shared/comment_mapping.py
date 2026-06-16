@@ -1,10 +1,10 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
 """Mapping between coding languages and the comment markers they use."""
 
-import os
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Mapping, Optional, Tuple
+from typing import Mapping
 
 from identify import identify
 
@@ -13,7 +13,7 @@ SLASH_COMMENT = ("//", None)
 DASH_COMMENT = ("--", None)
 HTML_COMMENT = ("<!---", "-->")
 
-COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
+COMMENT_MARKERS: Mapping[str, tuple[str, str | None]] = {
     "c++": SLASH_COMMENT,
     "c#": ("/*", "*/"),
     "css": ("/*", "*/"),
@@ -35,9 +35,8 @@ COMMENT_MARKERS: Mapping[str, Tuple[str, Optional[str]]] = {
 }
 
 
-def get_comment_markers(file: Path) -> Tuple[str, Optional[str]]:
-    """
-    Get the appropriate comment markers for the type of file.
+def get_comment_markers(file: Path) -> tuple[str, str | None]:
+    """Get the appropriate comment markers for the type of file.
 
     Args:
         file (Path): Path to the file to which we want to add comments.
@@ -46,17 +45,18 @@ def get_comment_markers(file: Path) -> Tuple[str, Optional[str]]:
         NotImplementedError: When the file is not a format we support.
 
     Returns:
-        t.Tuple[str, t.Optional[str]]: The leading and trailing comment markers.
+        tuple[str, str | None]: The leading and trailing comment markers.
     """
     # Try to identify the file type from the extension.
     tags = identify.tags_from_path(str(file))
     for tag in tags:
-        try:
+        if tag in COMMENT_MARKERS:
             return COMMENT_MARKERS[tag]
-        except KeyError:
-            continue
 
+    msg = (
+        f"The file extension '{Path(file).suffix}' is not currently supported. "
+        f"File has tags: {tags}"
+    )
     raise NotImplementedError(
-        f"The file extension '{os.path.splitext(file)[1]}' is not currently supported. "
-        f"File has tags: {tags}",
+        msg,
     )

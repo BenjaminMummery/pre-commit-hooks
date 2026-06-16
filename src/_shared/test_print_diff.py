@@ -1,7 +1,6 @@
 # Copyright (c) 2025-2026 Benjamin Mummery
 from conftest import assert_matching
-
-from . import print_diff
+from src._shared import print_diff
 
 
 def test_print_diff():

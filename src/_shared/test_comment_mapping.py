@@ -1,7 +1,7 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
 import pytest
 
-from . import comment_mapping
+from src._shared import comment_mapping
 
 
 class TestGetCommentMarkers:

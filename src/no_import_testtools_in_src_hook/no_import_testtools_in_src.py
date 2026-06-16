@@ -1,28 +1,31 @@
 # Copyright (c) 2024-2026 Benjamin Mummery
-"""
-Scan source files that aren't tests for test-specific imports (pytest, unittest, etc).
+"""Scan non-test source files for test-specific imports (pytest, unittest, etc).
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
 """
 
+from __future__ import annotations
+
 import argparse
 import ast
 import logging
+import sys
 
 from collections import namedtuple
-from pathlib import Path
-from typing import Any, Generator, List
+from typing import TYPE_CHECKING, Any, Generator
 
 from src._shared import resolvers
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 logger = logging.getLogger(__name__)
 
 
 def _get_imports(file: Path) -> Generator[Import, Any, None]:
-    """
-    Find all modules a file imports.
+    """Find all modules a file imports.
 
     Args:
         file (Path): The file to be checked.
@@ -30,11 +33,11 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
     Yields:
         Generator[Import, None]
     """
-    with open(file) as fh:
+    with file.open() as fh:
         try:
             root = ast.parse(fh.read(), file)
         except SyntaxError:
-            logging.warning(
+            logger.warning(
                 f"Could not parse file {file}."
                 " We'll assume that this is fine since an unparsable file probably "
                 "won't successfully import anything anyway.",
@@ -43,7 +46,7 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
 
     for node in ast.iter_child_nodes(root):
         if isinstance(node, ast.Import):
-            module: List[str] = []
+            module: list[str] = []
         elif isinstance(node, ast.ImportFrom):
             module = node.module.split(".") if node.module is not None else []
         else:
@@ -55,8 +58,7 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
 
 
 def _check_for_imports(file: Path) -> int:
-    """
-    Check whether the file imports from a testing toolkit.
+    """Check whether the file imports from a testing toolkit.
 
     Currently detects imports from pytest and unittest.
 
@@ -66,8 +68,7 @@ def _check_for_imports(file: Path) -> int:
     Returns:
         int: 1 if the file imports testing, 0 otherwise.
     """
-
-    bad_imports: List[str] = []
+    bad_imports: list[str] = []
     test_toolkits = {"pytest", "unittest"}
     for imp in _get_imports(file):
         bad_imports += test_toolkits.intersection(imp.module + imp.name)
@@ -81,11 +82,10 @@ def _check_for_imports(file: Path) -> int:
 
 
 def _parse_args() -> argparse.Namespace:
-    """
-    Parse the CLI arguments.
+    """Parse the CLI arguments.
 
     Returns:
-        argparse.Namespace with the following attributes:
+        argparse.Namespace:
         - files (list of Path): the paths to each changed file relevant to this hook.
     """
     parser = argparse.ArgumentParser()
@@ -99,9 +99,8 @@ def _parse_args() -> argparse.Namespace:
     return args
 
 
-def main():
-    """
-    Entrypoint for the no_import_testtools_in_src hook.
+def main() -> int:
+    """Entrypoint for the no_import_testtools_in_src hook.
 
     Scan source files that aren't tests for test-specific imports (pytest, unittest,
     etc).
@@ -119,4 +118,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

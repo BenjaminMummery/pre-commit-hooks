@@ -86,3 +86,12 @@
   stages: [pre-commit]
   types_or: [text]
   exclude: .*\.lock
+- id: sync-type-hints
+  name: Sync type hints with docstrings
+  description: Synchronise type hints between function signatures and docstring
+    Args/Returns sections.
+  entry: sync-type-hints
+  language: python
+  always_run: true
+  stages: [pre-commit]
+  types_or: [python]

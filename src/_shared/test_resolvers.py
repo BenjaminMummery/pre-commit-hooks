@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024 Benjamin Mummery
+# Copyright (c) 2023 - 2026 Benjamin Mummery
 
 from pathlib import Path
 
 import pytest
 
-from . import resolvers
+from src._shared import resolvers
 
 
 class TestResolveFiles:
@@ -41,6 +41,5 @@ class TestResolveFiles:
         p1 = tmp_path / "hello.txt"
         p1.write_text("")
 
-        with cwd(tmp_path):
-            with pytest.raises(FileNotFoundError):
-                resolvers.resolve_files(["hello.txt", "goodbye.py"])
+        with cwd(tmp_path), pytest.raises(FileNotFoundError):
+            resolvers.resolve_files(["hello.txt", "goodbye.py"])

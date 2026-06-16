@@ -2,18 +2,20 @@
 
 # Copyright (c) 2022 - 2026 Benjamin Mummery
 
-"""
-Parse the branch name for anything resembling an issue id, and add it to the commit msg.
+"""Parse the branch name for an issue id and add it to the commit msg.
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
 """
 
+from __future__ import annotations
+
 import argparse
 import re
 import subprocess
+import sys
 
-from typing import List
+from pathlib import Path
 
 # The default template to use when the commit message has a subject line and body. Can
 # be overridden by the 'format' argument.
@@ -26,12 +28,9 @@ FALLBACK_TEMPLATE: str = "{message}\n[{issue_id}]"
 class BranchNameReadError(BaseException):
     """Raised when the name of the current git branch cannot be read."""
 
-    pass
-
 
 def _get_branch_name() -> str:
-    """
-    Get the name of the current git branch.
+    """Get the name of the current git branch.
 
     Raises:
         BranchNameReadError: when we can't read the name of the current branch.
@@ -46,15 +45,15 @@ def _get_branch_name() -> str:
             universal_newlines=True,
         ).strip()
     except subprocess.CalledProcessError as e:
+        msg = "Getting branch name for add_msg_issue_hook pre-commit hook failed."
         raise BranchNameReadError(
-            "Getting branch name for add_msg_issue_hook pre-commit hook failed.",
+            msg,
         ) from e
     return branch
 
 
-def _get_issue_ids_from_branch_name(branch: str) -> List[str]:
-    """
-    Parse the branch name looking for an issue ID.
+def _get_issue_ids_from_branch_name(branch: str) -> list[str]:
+    """Parse the branch name looking for an issue ID.
 
     Issue IDs are assumed to follow "X-Y" where X is a string of 1-10 letters, and
     Y is a string of 1-5 numerals.
@@ -63,18 +62,16 @@ def _get_issue_ids_from_branch_name(branch: str) -> List[str]:
         branch (str): the name of the current branch.
 
     Returns:
-        str: the first instance of something resembling a jira issue id.
+        list[str]: the first instance of something resembling a jira issue id.
     """
     matches = re.findall("[a-zA-Z]{1,10}-[0-9]{1,5}", branch)
     if len(matches) > 0:
         return [match.upper() for match in matches]
-    else:
-        return []
+    return []
 
 
 def _issue_is_in_message(issue_id: str, message: str) -> bool:
-    """
-    Determine if the issue ID is already in the message.
+    """Determine if the issue ID is already in the message.
 
     Ignores lines in the message that start with '#'.
 
@@ -88,15 +85,11 @@ def _issue_is_in_message(issue_id: str, message: str) -> bool:
     lines = [
         line.strip() for line in message.split("\n") if not line.strip().startswith("#")
     ]
-    for line in lines:
-        if issue_id.lower() in line.lower():
-            return True
-    return False
+    return any(issue_id.lower() in line.lower() for line in lines)
 
 
 def _insert_issue_into_message(issue_id: str, message: str, template: str) -> str:
-    """
-    Insert the issue_id into the commit message according to the template.
+    """Insert the issue_id into the commit message according to the template.
 
     The existing message is parsed into two parts:
     - "Subject" is the first line, if that line is not a comment.
@@ -115,7 +108,7 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
         str: the modified message.
     """
     # Separate subject line from message body.
-    content_sections: List[str] = [
+    content_sections: list[str] = [
         line.strip() for line in message.split("\n", maxsplit=1)
     ]
     subject: str = content_sections[0]
@@ -146,11 +139,10 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
 
 
 def _parse_args() -> argparse.Namespace:
-    """
-    Parse the CLI arguments.
+    """Parse the CLI arguments.
 
     Returns:
-        argparse.Namespace with the following attributes:
+        argparse.Namespace:
         - commit_msg_filepath (str): path to the location of the commit message
         - template (str): the template into which to render the commit message.
     """
@@ -169,11 +161,14 @@ def _parse_args() -> argparse.Namespace:
 
     for keyword in [r"{subject}", r"{body}", r"{issue_id}"]:
         if keyword not in args.template:
-            raise KeyError(
+            msg = (
                 rf"Template argument '{args.template}' did not contain the required "
                 f"keyword '{keyword}' and cannot be used. "
                 "For more information, see "
-                "https://github.com/BenjaminMummery/pre-commit-hooks",
+                "https://github.com/BenjaminMummery/pre-commit-hooks"
+            )
+            raise KeyError(
+                msg,
             )
 
     try:
@@ -200,11 +195,11 @@ def main() -> int:
         # doing whatever it's trying to do.
         return 0
 
-    issue_ids: List[str] = _get_issue_ids_from_branch_name(branch_name)
+    issue_ids: list[str] = _get_issue_ids_from_branch_name(branch_name)
     if len(issue_ids) < 1:
         return 0  # If no IDs are found, then there's nothing to do
 
-    with open(args.commit_msg_filepath, "r+") as f:
+    with Path(args.commit_msg_filepath).open("r+") as f:
         message: str = f.read()
 
         if _issue_is_in_message(issue_ids[0], message):
@@ -217,4 +212,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

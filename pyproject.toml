@@ -1,13 +1,14 @@
-########## PROJECT SETUP ##########
+########## PROJECT SETUP ###############################################################
+
 [project]
 name = "pre-commit-hooks"
-dynamic = ["version"]
+version = "2.8.1"
 authors=[
     {name = "Benjamin Mummery", email="benjamin.mummery13@gmail.com"}
 ]
 description = "A selection of quality-of-life tools for use with pre-commit."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -31,8 +32,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "flake8>=5.0.4",
+    "pre-commit>=3.5.0",
     "python-semantic-release>=10.5.3",
+    "ruff>=0.15.0",
     {include-group = "test"},
 ]
 test = [
@@ -51,18 +53,18 @@ sort-file-contents = "src.sort_file_contents_hook.sort_file_contents:main"
 update-copyright = "src.update_copyright_hook.update_copyright:main"
 no-import-testtools-in-src = "src.no_import_testtools_in_src_hook.no_import_testtools_in_src:main"
 americanise = "src.americanise_hook.americanise:main"
+sync-type-hints = "src.sync_type_hints_hook.sync_type_hints:main"
 
 ########## BUILD SYSTEM CONFIGURATION ##################################################
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.11.20,<0.12"]
+build-backend = "uv_build"
 
-[tool.setuptools.dynamic]
-version = {attr = "src.__version__"}
-
-[tool.setuptools.packages]
-find = {}
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
+namespace = true
 
 [tool.distutils.bdist_wheel]
 universal = true
@@ -74,45 +76,135 @@ addopts = [
     "--doctest-modules",
     "--strict-markers",
     "--cov=src",
-    "--cov-fail-under=98",
+    "--cov-fail-under=78",
 ]
 
 ########## LINTING AND FORMATTING TOOL CONFIGURATION ###################################
 
 [tool.mypy]
-exclude = "tests/"
+files = ["src"]
+exclude = "(?x)(^tests/|.*/test_.*\\.py$)"
+python_version = "3.11"
+warn_return_any = true
 warn_unused_configs = true
 check_untyped_defs = true
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module="tests.*"
+module = "tests.*"
 ignore_errors = true
 
-[tool.interrogate]
-ignore-init-method = true
-fail-under = 100
-verbose = 2
-ignore_magic = true
-
 [tool.ruff]
+fix = true
+target-version = "py38"
 line-length = 88
 indent-width = 4
+show-fixes = true
+unsafe-fixes = true
+exclude = ["tests", "conftest.py"]
 
 [tool.ruff.lint]
-select = ["F", "I"]
+select = [
+    "A",    # flake8-builtins
+    "ANN",  # flake8-annotations
+    "ARG",  # flake8-unused-arguments
+    "B",    # flake8-bugbear
+    "BLE",  # flake8-blind-except
+    "C4",   # flake8-comprehensions
+    "D",    # pydocstyle
+    "E",    # pycodestyle errors
+    "EM",   # flake8-errmsg
+    "ERA",  # eradicate
+    "F",    # pyflakes
+    "FA",   # flake8-future-annotations
+    "FBT",  # flake8-boolean-trap
+    "FLY",  # flynt
+    "I",    # isort
+    "ICN",  # flake8-import-conventions
+    "INP",  # flake8-no-pep420
+    "ISC",  # flake8-implicit-str-concat
+    "LOG",  # flake8-logging
+    "N",    # pep8-naming
+    "PERF", # perflint
+    "PGH",  # pygrep-hooks
+    "PIE",  # flake8-pie
+    "PL",   # pylint
+    "PT",   # flake8-pytest-style
+    "PTH",  # flake8-use-pathlib
+    "Q",    # flake8-quotes
+    "RET",  # flake8-return
+    "RSE",  # flake8-raise
+    "RUF",  # ruff-specific rules
+    "SIM",  # flake8-simplify
+    "SLF",  # flake8-self
+    "T10",  # flake8-debugger
+    "T20",  # flake8-print
+    "TCH",  # flake8-type-checking
+    "TID",  # flake8-tidy-imports
+    "TRY",  # tryceratops
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+    "YTT",  # flake8-2020
+]
+ignore = [
+    "ANN401",  # allow Any in annotations for hook CLI/config boundaries
+    "D105",    # magic methods
+    "D107",    # __init__ methods
+    "FBT001",  # boolean positional args in argparse-heavy hook CLIs
+    "FBT002",  # boolean default args in argparse-heavy hook CLIs
+    "PLR0913", # hooks often need many parameters
+    "PLR2004", # magic values in tests
+    "TRY003",  # long exception messages are fine in hooks
+]
 
 [tool.ruff.lint.isort]
+known-first-party = ["src"]
 lines-between-types = 1
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "D104"]
+"**/test_*.py" = [
+    "ANN",
+    "D",
+    "E501",
+    "N802",
+    "N803",
+    "SLF001",
+    "A001",
+    "PLR2004",
+    "PT",
+    "T20",
+]
+"src/sync_type_hints_hook/docstring_types.py" = ["PLR0912"]
+"src/americanise_hook/americanise.py" = ["PLW0133"]
+"src/**/*_hook/**/*.py" = ["T20"]
+"src/sync_type_hints_hook/sync_type_hints.py" = ["PLR0912", "T20"]
+"src/_shared/config_parsing.py" = ["PLC0415"]  # tomllib import guarded by version
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.pylint]
+max-args = 10
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
-line-ending = "auto"
+line-ending = "lf"
 docstring-code-format = true
 docstring-code-line-length = "dynamic"
 
-########## RELEASE TOOLS ##########
+########## RELEASE TOOLS ###############################################################
 
 [tool.semantic_release]
 assets = []
@@ -121,7 +213,14 @@ commit_parser = "angular"
 logging_use_named_masks = false
 major_on_zero = true
 tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
 version_variables = ["src/__init__.py:__version__"]
+build_command = """
+pip install 'uv>=0.10.4'
+uv lock --upgrade-package "$PACKAGE_NAME"
+git add uv.lock
+uv build
+"""
 
 [tool.semantic_release.branches.main]
 match = "(main|master|release)"

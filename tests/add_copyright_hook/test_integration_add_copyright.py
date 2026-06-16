@@ -8,6 +8,8 @@ from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
 
+from git import InvalidGitRepositoryError
+
 from conftest import (
     CopyrightGlobals,
     DocstrSupportedLanguage,
@@ -19,7 +21,6 @@ from conftest import (
 )
 from src._shared.exceptions import InvalidConfigError
 from src.add_copyright_hook import add_copyright
-from src.add_copyright_hook.add_copyright import InvalidGitRepositoryError
 
 
 class TestMeta:
@@ -1240,7 +1241,7 @@ class TestFailureStates:
                 write_config_file(
                     git_repo.workspace,
                     config_file,
-                    f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',  # noqa: E501
+                    f'[tool.add_copyright.{language.toml_key}]\nformat="{input_format}"\n',
                 )
 
                 # WHEN
@@ -1364,9 +1365,8 @@ class TestFailureStates:
             )
 
             # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(ValueError) as e:
-                    add_copyright.main()
+            with cwd(git_repo.workspace), pytest.raises(ValueError) as e:
+                add_copyright.main()
 
             # THEN
             assert_matching(
@@ -1419,9 +1419,8 @@ class TestFailureStates:
             )
 
             # WHEN
-            with cwd(git_repo.workspace):
-                with pytest.raises(ValueError) as e:
-                    add_copyright.main()
+            with cwd(git_repo.workspace), pytest.raises(ValueError) as e:
+                add_copyright.main()
 
             # THEN
             assert e.exconly().startswith(
@@ -1442,12 +1441,11 @@ class TestGitRepoErrors:
         files = [f"hello{language.extension}"]
         for file in files:
             (tmp_path / file).write_text("")
-        mocker.patch("sys.argv", ["stub_name"] + files)
+        mocker.patch("sys.argv", ["stub_name", *files])
 
         # WHEN / THEN
-        with cwd(tmp_path):
-            with pytest.raises(InvalidGitRepositoryError):
-                add_copyright.main()
+        with cwd(tmp_path), pytest.raises(InvalidGitRepositoryError):
+            add_copyright.main()
 
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
@@ -1478,8 +1476,7 @@ class TestGitRepoErrors:
         git_repo.run('git config user.name ""')
 
         # WHEN / THEN
-        with cwd(git_repo.workspace):
-            with pytest.raises(ValueError) as e:
-                add_copyright.main()
+        with cwd(git_repo.workspace), pytest.raises(ValueError) as e:
+            add_copyright.main()
 
         assert e.exconly() == "ValueError: The git username is not configured."

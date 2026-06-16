@@ -1,16 +1,17 @@
-# Copyright (c) 2025 Benjamin Mummery
+# Copyright (c) 2025-2026 Benjamin Mummery
 
 """Utilities for printing the differences between lines with nice formatting."""
 
+from __future__ import annotations
+
 from difflib import ndiff
-from typing import Union
 
 REMOVED_COLOUR: str = "\033[91m"
 ADDED_COLOUR: str = "\033[92m"
 END_COLOUR: str = "\033[0m"
 
 
-def format_diff(old_line: str, new_line: str, line_number: Union[int, None] = None):
+def format_diff(old_line: str, new_line: str, line_number: int | None = None) -> str:
     """Print the old and new lines, highlighting any differences between them."""
     printline_old = ""
     printline_new = ""

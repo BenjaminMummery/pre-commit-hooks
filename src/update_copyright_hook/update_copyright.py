@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # Copyright (c) 2023 - 2026 Benjamin Mummery
-"""
-Scan source files for anything resembling a copyright string, updating dates.
+"""Scan source files for anything resembling a copyright string, updating dates.
 
 This module is intended for use as a pre-commit hook. For more information please
 consult the README file.
 """
 
+from __future__ import annotations
+
 import argparse
 import datetime
+import sys
 
-from pathlib import Path
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING
 
 from src._shared import print_diff, resolvers
 from src._shared.comment_mapping import get_comment_markers
@@ -20,23 +21,25 @@ from src._shared.copyright_parsing import (
     parse_copyright_docstring,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 def _update_copyright_dates(file: Path) -> int:
-    """
-    Ensure that if the file has a copyright string, the end date matches the current year.
+    """Ensure the file copyright end date matches the current year.
 
     This function encompasses the heavy lifting for the hook.
 
     Args:
-        file (path): the file to be checked.
+        file (Path): the file to be checked.
 
     Returns:
         int: 0 if the file already had an up to date copyright string or had no
             copyright string, 1 if a copyright string had to be added.
     """
-    with open(file, "r+") as f:
+    with file.open("r+") as f:
         content: str = f.read()
-        comment_markers: Tuple[str, Optional[str]] = get_comment_markers(file)
+        comment_markers: tuple[str, str | None] = get_comment_markers(file)
 
         # Early return for no copyright string in file
         if not (
@@ -83,11 +86,10 @@ def _update_copyright_dates(file: Path) -> int:
 
 
 def _parse_args() -> argparse.Namespace:
-    """
-    Parse the CLI arguments.
+    """Parse the CLI arguments.
 
     Returns:
-        argparse.Namespace with the following attributes:
+        argparse.Namespace:
         - files (list of Path): the paths to each changed file relevant to this hook.
     """
     parser = argparse.ArgumentParser()
@@ -101,9 +103,8 @@ def _parse_args() -> argparse.Namespace:
     return args
 
 
-def main():
-    """
-    Entrypoint for the update_copyright hook.
+def main() -> int:
+    """Entrypoint for the update_copyright hook.
 
     Parses source files containing a copyright string, and updates the date range if it
     falls short of the current year.
@@ -121,4 +122,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

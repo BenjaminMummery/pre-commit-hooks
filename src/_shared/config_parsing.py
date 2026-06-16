@@ -1,20 +1,21 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
 """Shared tools for parsing config files."""
 
+from __future__ import annotations
+
 import configparser
 import logging
-import os
 import sys
 
 from pathlib import Path
-from typing import List, Tuple
 
 from src._shared.exceptions import InvalidConfigError
 
+logger = logging.getLogger(__name__)
 
-def read_config(tool_name: str) -> Tuple[dict, Path]:
-    """
-    Find configuration files and read in config options.
+
+def read_config(tool_name: str) -> tuple[dict, Path]:
+    """Find configuration files and read in config options.
 
     Args:
         tool_name (str): The name of the tool whose configuration should be
@@ -24,23 +25,21 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
         FileNotFoundError: When there are no configuration files found.
 
     Returns:
-        dict: A mapping of key-value pairs where the key is the config option
-            name, and the value is its value.
+        tuple[dict, Path]: A mapping of key-value pairs where the key is the
+            config option name, and the value is its value.
     """
     # find config file
     filenames = ["pyproject.toml", "setup.cfg"]
-    filepaths: List[Path] = []
-
-    files = os.listdir(root := os.getcwd())
-    for filename in filenames:
-        if filename in files:
-            filepaths.append(Path(os.path.join(root, filename)))
+    root = Path.cwd()
+    existing = {path.name for path in root.iterdir()}
+    filepaths = [root / filename for filename in filenames if filename in existing]
 
     if len(filepaths) == 0:
-        raise FileNotFoundError("No config file found.")
+        msg = "No config file found."
+        raise FileNotFoundError(msg)
 
     if len(filepaths) > 1:  # pragma: no cover
-        logging.warning(
+        logger.warning(
             "Found multiple config files:\n"
             f"{filepaths}\n"
             f"Priority will be given to {filepaths[0]}",
@@ -57,8 +56,7 @@ def read_config(tool_name: str) -> Tuple[dict, Path]:
 
 
 def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
-    """
-    Read in default configuration options from a `pyproject.toml` file.
+    """Read in default configuration options from a `pyproject.toml` file.
 
     Args:
         pyproject_toml (Path): The location of the file to be read.
@@ -74,24 +72,24 @@ def _read_pyproject_toml(pyproject_toml: Path, tool_name: str) -> dict:
         import tomli as tomllib  # pragma: no cover
 
     # Load in the config file
-    with open(pyproject_toml, "rb") as f:
+    with pyproject_toml.open("rb") as f:
         try:
             config = tomllib.load(f)
         except tomllib.TOMLDecodeError as e:
+            msg = f"Could not parse config file '{pyproject_toml}'."
             raise InvalidConfigError(
-                f"Could not parse config file '{pyproject_toml}'.",
+                msg,
             ) from e
 
     # early return for no matching section in config file
     if not (tool_config := config.get("tool", {}).get(tool_name)):
         return {}
 
-    return tool_config
+    return dict(tool_config)
 
 
 def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
-    """
-    Read in default configuration options from a `setup.cfg` file.
+    """Read in default configuration options from a `setup.cfg` file.
 
     Args:
         setup_cfg (Path): The location of the file to be read.
@@ -105,8 +103,9 @@ def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
     try:
         config.read(setup_cfg)
     except (configparser.MissingSectionHeaderError, configparser.ParsingError) as e:
+        msg = f"Could not parse config file '{setup_cfg}'."
         raise InvalidConfigError(
-            f"Could not parse config file '{setup_cfg}'.",
+            msg,
         ) from e
 
     try:
@@ -114,4 +113,4 @@ def _read_setup_cfg(setup_cfg: Path, tool_name: str) -> dict:
     except configparser.NoSectionError:
         return {}
 
-    return tool_config
+    return dict(tool_config)

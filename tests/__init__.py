@@ -1,3 +1,3 @@
-# Copyright (c) 2022 - 2023 Benjamin Mummery
+# Copyright (c) 2022 - 2026 Benjamin Mummery
 
 """Required for sharing utilities across test files."""
