@@ -2,4 +2,4 @@
 """Initialiser to make pre-commit hooks accessible to externally."""
 
 # Version number, automatically updated by semantic-release
-__version__ = "2.8.1"
+__version__ = "2.9.0"

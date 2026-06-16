@@ -2,7 +2,7 @@
 
 [project]
 name = "pre-commit-hooks"
-version = "2.8.1"
+version = "2.9.0"
 authors=[
     {name = "Benjamin Mummery", email="benjamin.mummery13@gmail.com"}
 ]
