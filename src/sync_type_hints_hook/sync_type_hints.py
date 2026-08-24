@@ -131,8 +131,6 @@ def _get_docstring_node(node: ast.AST) -> tuple[ast.expr, str] | None:
     value = statement.value
     if isinstance(value, ast.Constant) and isinstance(value.value, str):
         return value, value.value
-    if isinstance(value, ast.Str):  # pragma: no cover
-        return value, value.s  # type: ignore[return-value]
     return None
 
 
