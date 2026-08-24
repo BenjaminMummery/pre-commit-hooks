@@ -194,6 +194,21 @@ class TestNoChanges:
         assert_matching("captured stderr", "expected stderr", captured.err, "")
 
     @staticmethod
+    def test_leaves_invalid_python_docstring_unchanged(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # A module docstring cannot be identified reliably when the AST is invalid.
+        original = '"""Copyright (c) 1066 NAME"""\ndef unfinished(\n    pass\n'
+        add_changed_files("hello.py", original, git_repo, mocker)
+
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 0
+
+        assert (git_repo.workspace / "hello.py").read_text() == original
+
+    @staticmethod
     @freeze_time("1312-01-01")
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     def test_no_changed_files_have_copyright(
@@ -342,6 +357,28 @@ class TestChanges:
             expected_stdout,
         )
         assert_matching("captured stderr", "expected stderr", captured.err, "")
+
+    @staticmethod
+    @freeze_time("1312-01-01")
+    def test_preserves_invalid_python_when_updating_comment(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+        mock_colour,
+    ):
+        # GIVEN
+        original = "# Copyright (c) 1066 NAME\ndef unfinished(\n    pass\n"
+        add_changed_files("hello.py", original, git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 1
+
+        # THEN
+        assert (git_repo.workspace / "hello.py").read_text() == original.replace(
+            "1066",
+            "1066-1312",
+        )
 
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)

@@ -88,6 +88,19 @@ class TestParseNumpyDocstrings:
         assert info.documents_return is True
         assert info.returns is None
 
+    @staticmethod
+    def test_extracts_return_aligned_with_indented_section():
+        info = parse_docstring_types(
+            "Summary.\n\n"
+            "    Returns\n"
+            "    -------\n"
+            "    ActiveSpaceSelectionResult\n"
+            "        Uniform descriptive result.\n",
+        )
+        assert info.style == "numpy"
+        assert info.documents_return is True
+        assert info.returns == "ActiveSpaceSelectionResult"
+
 
 class TestParseSphinxDocstrings:
     @staticmethod
@@ -206,6 +219,21 @@ class TestRewriteDocstrings:
         )
         assert changed is True
         assert "name (int): The name." in rewritten
+
+    @staticmethod
+    def test_add_numpy_return_type_at_section_indentation():
+        docstring = "Summary.\n\n    Returns\n    -------\n        Whether it worked."
+        info = parse_docstring_types(docstring)
+        rewritten, changed = rewrite_docstring_types(
+            docstring,
+            info,
+            remove_types=False,
+            updated_return="bool",
+        )
+        assert changed is True
+        assert (
+            "    Returns\n    -------\n    bool\n        Whether it worked."
+        ) in rewritten
 
     @staticmethod
     def test_remove_numpy_types():
@@ -421,6 +449,28 @@ class TestSyncTypeHintsHelpers:
         updated = apply_edits(source, edits)
         assert "name (str): The name." in updated
         assert "bool: Whether it worked." in updated
+
+    @staticmethod
+    def test_plan_function_preserves_indented_numpy_return_type(tmp_path):
+        source = textwrap.dedent(
+            '''
+            def select_active_space() -> ActiveSpaceSelectionResult:
+                """Select an active space.
+
+                Returns
+                -------
+                ActiveSpaceSelectionResult
+                    Uniform descriptive result.
+                """
+            ''',
+        ).strip()
+        file = tmp_path / "example.py"
+        context = _collect_functions(ast.parse(source))[0]
+
+        edits, changed = _plan_function_edits(source, context, file, HookConfig())
+
+        assert changed is False
+        assert edits == []
 
     @staticmethod
     def test_signature_only_moves_docstring_types_to_signature(tmp_path):
