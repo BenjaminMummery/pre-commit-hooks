@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## Unreleased
+
+### Features
+
+- Synchronize `sync-type-hints` bidirectionally by default, filling untyped
+  docstring entries from signature annotations as well as signatures from
+  docstrings.
+- Add `--signature-types-only` / `signature-types-only = true` to keep type
+  information exclusively in signatures.
+
+### Breaking Changes
+
+- Require `add-copyright` users to configure `name` or explicitly opt in to git's
+  `user.name` with `use_git_user = true` / `--use-git-user`.
+- Run `update-copyright` in the `pre-push` and `manual` stages instead of
+  `pre-commit`, and derive copyright ranges from file commit history.
+
+### Documentation
+
+- Add a Material for MkDocs documentation site with local build commands and
+  GitHub Pages deployment.
+- Add a complete generated Python API reference and reduce the README to a concise
+  project overview, moving unique guidance into the documentation site.
+
 
 ## v2.6.3 (2025-03-14)
 

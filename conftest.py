@@ -53,6 +53,7 @@ def add_changed_files(
     contents: str | list[str],
     git_repo: GitRepo,
     mocker: MockerFixture | None = None,
+    hook_args: list[str] | None = None,
 ):
     if not isinstance(filenames, list):
         filenames = [filenames]
@@ -62,7 +63,10 @@ def add_changed_files(
         (git_repo.workspace / filename).write_text(content)
         git_repo.run(f"git add {filename}")
     if mocker:
-        return mocker.patch("sys.argv", ["stub_name", *filenames])
+        return mocker.patch(
+            "sys.argv",
+            ["stub_name", *(hook_args or []), *filenames],
+        )
     return None
 
 
@@ -350,7 +354,7 @@ class CopyrightGlobals:
             "ValueError: Copyright end year cannot be before the start year. Got 1312 and 2012 respectively.",  # noqa: E501
         ),
     ]
-    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = ["name", "format"] + [
+    SUPPORTED_TOP_LEVEL_CONFIG_OPTIONS = ["name", "use_git_user", "format"] + [
         language.toml_key for language in SUPPORTED_LANGUAGES
     ]
     SUPPORTED_PER_LANGUAGE_CONFIG_OPTIONS = ["format", "docstr"]

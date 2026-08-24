@@ -76,6 +76,35 @@ class TestAddMissingAnnotations:
         captured = capsys.readouterr()
         assert "hello.py" in captured.out
 
+    @staticmethod
+    def test_adds_signature_types_to_docstring(
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        cwd,
+    ):
+        source = '''def greet(name: str) -> bool:
+    """Say hello.
+
+    Args:
+        name: Who to greet.
+
+    Returns:
+        Whether greeting succeeded.
+    """
+    return True
+'''
+        expected = source.replace("name: Who", "name (str): Who").replace(
+            "Whether greeting",
+            "bool: Whether greeting",
+        )
+        add_changed_files("hello.py", source, git_repo, mocker)
+
+        with cwd(git_repo.workspace):
+            assert sync_type_hints.main() == 1
+
+        with open(git_repo.workspace / "hello.py") as handle:
+            assert_matching("output", "expected", handle.read(), expected)
+
 
 class TestTypeClash:
     @staticmethod
@@ -148,7 +177,7 @@ class TestPreferSignature:
             assert_matching("output", "expected", handle.read(), expected)
 
 
-class TestRemoveDocstringTypes:
+class TestSignatureTypesOnly:
     @staticmethod
     def test_removes_google_types(
         mocker: MockerFixture,
@@ -180,7 +209,37 @@ class TestRemoveDocstringTypes:
         add_changed_files("hello.py", source, git_repo, mocker)
         mocker.patch(
             "sys.argv",
-            ["stub_name", "--remove-docstring-types", "hello.py"],
+            ["stub_name", "--signature-types-only", "hello.py"],
+        )
+
+        with cwd(git_repo.workspace):
+            assert sync_type_hints.main() == 1
+
+        with open(git_repo.workspace / "hello.py") as handle:
+            assert_matching("output", "expected", handle.read(), expected)
+
+    @staticmethod
+    def test_signature_types_only_moves_types_to_signature(
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        cwd,
+    ):
+        source = '''def greet(name):
+    """Say hello.
+
+    Args:
+        name (str): Who to greet.
+    """
+    return True
+'''
+        expected = source.replace("name):", "name: str):").replace(
+            "name (str):",
+            "name:",
+        )
+        add_changed_files("hello.py", source, git_repo, mocker)
+        mocker.patch(
+            "sys.argv",
+            ["stub_name", "--signature-types-only", "hello.py"],
         )
 
         with cwd(git_repo.workspace):

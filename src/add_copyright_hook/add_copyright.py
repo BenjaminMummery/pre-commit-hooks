@@ -27,7 +27,7 @@ from src._shared.copyright_parsing import (
     parse_copyright_comment,
     parse_copyright_docstring,
 )
-from src._shared.exceptions import NoCommitsError
+from src._shared.exceptions import InvalidConfigError, NoCommitsError
 
 TOOL_NAME = "add_copyright"
 
@@ -60,15 +60,15 @@ LANGUAGE_TAGS_TOMLKEYS: dict = dict(
 
 
 def _get_earliest_commit_year(file: Path) -> int:
-    """Get the years of the earliest and latest commits made to the specified file.
+    """Get the year of the earliest commit made to the specified file.
 
     Args:
         file (Path): The path to the file to be checked
 
     Raises:
-        InvalidGitRepositoryError: when the hook is called in a directory that
-        is not a git repository.
-        NoCommitsError: when the file has no commits for us to examine the blame.
+        InvalidGitRepositoryError: When the hook is called in a directory that
+            is not a git repository.
+        NoCommitsError: When the file has no commits for us to examine the blame.
 
     Returns:
         int: The year of the earliest commit on the file.
@@ -123,7 +123,16 @@ def _parse_args() -> dict:
         - format (str, None): the format that the copyright string should follow.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--name", type=str, default=None)
+    holder_group: argparse._MutuallyExclusiveGroup = (
+        parser.add_mutually_exclusive_group()
+    )
+    holder_group.add_argument("-n", "--name", type=str, default=None)
+    holder_group.add_argument(
+        "--use-git-user",
+        action="store_true",
+        default=None,
+        help="Use git's user.name as the copyright holder.",
+    )
     parser.add_argument("-f", "--format", type=str, default=None)
     parser.add_argument("files", nargs="*", default=[])
     args = parser.parse_args()
@@ -151,6 +160,41 @@ def _get_git_user_name() -> str:
         msg = "The git username is not configured."
         raise ValueError(msg)
     return name
+
+
+def _parse_bool(value: object, option: str) -> bool:
+    """Parse a boolean configuration value from TOML or setup.cfg."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.lower() in {"true", "false"}:
+        return value.lower() == "true"
+    msg = f"The '{option}' option must be true or false."
+    raise InvalidConfigError(msg)
+
+
+def _resolve_copyright_holder(name: str | None, use_git_user: object) -> str:
+    """Resolve the explicitly configured copyright-holder strategy."""
+    if name is not None and not name.strip():
+        msg = "The copyright holder 'name' must not be empty."
+        raise InvalidConfigError(msg)
+
+    use_git_user_bool = (
+        _parse_bool(use_git_user, "use_git_user") if use_git_user is not None else False
+    )
+    if name is not None and use_git_user_bool:
+        msg = "Configure either 'name' or 'use_git_user', not both."
+        raise InvalidConfigError(msg)
+    if name is not None:
+        return name
+    if use_git_user_bool:
+        return _get_git_user_name()
+
+    msg = (
+        "No copyright holder is configured. Set 'name' in "
+        "[tool.add_copyright], pass --name, or explicitly opt in to git's "
+        "user.name with 'use_git_user = true' / --use-git-user."
+    )
+    raise InvalidConfigError(msg)
 
 
 def _has_shebang(content: str) -> bool:
@@ -253,8 +297,9 @@ def _ensure_comment(
 
     Args:
         copyright_string (str): The string to be checked
-        comment_markers: (tuple(str, str|None)): The comment markers to be inserted
-            before and, optionally, after the copyright string.
+        comment_markers (tuple[str, str | None]): (tuple(str, str|None)):
+            The comment markers to be inserted before and, optionally, after the
+            copyright string.
 
     Returns:
         str: the properly escaped string.
@@ -298,7 +343,12 @@ def _read_default_configuration() -> dict:
             ```
     """
     supported_language_subkeys = ["format", "docstr"]
-    supported_toml_keys = ["name", "format", *list(LANGUAGE_TAGS_TOMLKEYS.values())]
+    supported_toml_keys = [
+        "name",
+        "use_git_user",
+        "format",
+        *list(LANGUAGE_TAGS_TOMLKEYS.values()),
+    ]
 
     retv = dict.fromkeys(supported_toml_keys)
 
@@ -366,6 +416,7 @@ def _ensure_valid_format(copyright_format: str) -> None:
 def _ensure_copyright_string(
     file: Path,
     name: str | None,
+    use_git_user: object,
     copyright_format: str,
     docstr: bool = False,
 ) -> int:
@@ -375,8 +426,8 @@ def _ensure_copyright_string(
 
     Args:
         file (Path): the file to be checked.
-        name (optional(str)): the name of the copyright holder. If not specified, when a
-            copyright string is added, the git username will be used.
+        name (optional(str)): the explicitly configured copyright holder.
+        use_git_user (object): whether to explicitly use git's configured user.name.
         copyright_format (str): the format to be used when adding new copyright
             strings.
         docstr (bool): if true, the copyright is expected to be part of
@@ -405,7 +456,7 @@ def _ensure_copyright_string(
         ) or parse_copyright_docstring(content):
             return 0
 
-        print(f"Fixing file `{file}` ", end="")
+        copyright_holder = _resolve_copyright_holder(name, use_git_user)
 
         copyright_end_year: int = datetime.date.today().year
         copyright_start_year: int
@@ -415,7 +466,7 @@ def _ensure_copyright_string(
             copyright_start_year = copyright_end_year
 
         new_copyright_string = _construct_copyright_string(
-            name or _get_git_user_name(),
+            copyright_holder,
             copyright_start_year,
             copyright_end_year,
             copyright_format,
@@ -434,6 +485,7 @@ def _ensure_copyright_string(
             if docstr
             else _add_copyright_comment_to_content(content, new_copyright_string),
         )
+        print(f"Fixing file `{file}` ", end="")
         print(f"- added line(s):\n{new_copyright_string}")
     return 1
 
@@ -451,6 +503,10 @@ def main() -> int:
     # values.
     configuration = _read_default_configuration()
     args = _parse_args()
+    if args["name"] is not None:
+        configuration["use_git_user"] = False
+    elif args["use_git_user"]:
+        configuration["name"] = None
     for key in args:
         if args[key] is not None:
             configuration[key] = args[key]
@@ -483,6 +539,7 @@ def main() -> int:
         retv |= _ensure_copyright_string(
             Path(file),
             name=configuration["name"],
+            use_git_user=configuration["use_git_user"],
             **kwargs,
         )
     return retv

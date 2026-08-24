@@ -172,6 +172,7 @@ class TestDefaultBehavior:
                 "",
                 git_repo,
                 mocker,
+                hook_args=["--use-git-user"],
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -231,6 +232,7 @@ class TestDefaultBehavior:
                 "",
                 git_repo,
                 mocker,
+                hook_args=["--use-git-user"],
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -290,6 +292,7 @@ class TestDefaultBehavior:
                 f"<file {file} content sentinel>",
                 git_repo,
                 mocker,
+                hook_args=["--use-git-user"],
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -357,6 +360,7 @@ class TestDefaultBehavior:
                 file_content,
                 git_repo,
                 mocker,
+                hook_args=["--use-git-user"],
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -427,6 +431,7 @@ class TestDefaultBehavior:
                 f"<file {file} content sentinel>",
                 git_repo,
                 mocker,
+                hook_args=["--use-git-user"],
             )
             git_repo.run(f"git config user.name '{git_username}'")
             git_repo.run("git config user.email 'you@example.com'")
@@ -618,7 +623,13 @@ class TestCustomBehavior:
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch(
                     "sys.argv",
-                    ["stub_name", "-f", "(C) {name} {year}", file],
+                    [
+                        "stub_name",
+                        "--use-git-user",
+                        "-f",
+                        "(C) {name} {year}",
+                        file,
+                    ],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -677,7 +688,13 @@ class TestCustomBehavior:
                 add_changed_files(file := "hello.py", "", git_repo, mocker)
                 mocker.patch(
                     "sys.argv",
-                    ["stub_name", "-f", "(C) {name} {year}", file],
+                    [
+                        "stub_name",
+                        "--use-git-user",
+                        "-f",
+                        "(C) {name} {year}",
+                        file,
+                    ],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -748,7 +765,12 @@ class TestCustomBehavior:
                 mocker: MockerFixture,
             ):
                 # GIVEN
-                add_changed_files(file := "hello.py", "", git_repo, mocker)
+                add_changed_files(
+                    file := "hello.py",
+                    "",
+                    git_repo,
+                    mocker,
+                )
                 write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -807,7 +829,13 @@ class TestCustomBehavior:
                 mocker: MockerFixture,
             ):
                 # GIVEN
-                add_changed_files(file := "hello.py", "", git_repo, mocker)
+                add_changed_files(
+                    file := "hello.py",
+                    "",
+                    git_repo,
+                    mocker,
+                    hook_args=["--use-git-user"],
+                )
                 write_config_file(
                     git_repo.workspace,
                     config_file,
@@ -884,6 +912,7 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                     mocker,
+                    hook_args=["--use-git-user"],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -946,6 +975,7 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                     mocker,
+                    hook_args=["--use-git-user"],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -1019,6 +1049,7 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                     mocker,
+                    hook_args=["--use-git-user"],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -1061,6 +1092,7 @@ class TestCustomBehavior:
                     f'"""\n{docstring_content}\n"""',
                     git_repo,
                     mocker,
+                    hook_args=["--use-git-user"],
                 )
                 write_config_file(
                     git_repo.workspace,
@@ -1084,6 +1116,74 @@ class TestCustomBehavior:
 
 
 class TestFailureStates:
+    @staticmethod
+    def test_requires_an_explicit_copyright_holder(
+        capsys: CaptureFixture,
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(file := "hello.py", "", git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace), pytest.raises(InvalidConfigError) as e:
+            add_copyright.main()
+
+        # THEN
+        assert "No copyright holder is configured" in e.exconly()
+        assert (git_repo.workspace / file).read_text() == ""
+        assert capsys.readouterr().out == ""
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "config_file, config_value",
+        [("pyproject.toml", "true"), ("setup.cfg", "true")],
+    )
+    @freeze_time("1312-01-01")
+    def test_can_explicitly_use_git_user_from_config(
+        config_file: str,
+        config_value: str,
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files(file := "hello.py", "", git_repo, mocker)
+        write_config_file(
+            git_repo.workspace,
+            config_file,
+            "[tool.add_copyright]\nuse_git_user=" + config_value + "\n",
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert add_copyright.main() == 1
+
+        # THEN
+        assert (git_repo.workspace / file).read_text() == (
+            "# Copyright (c) 1312 <git config username sentinel>\n"
+        )
+
+    @staticmethod
+    def test_rejects_conflicting_holder_configuration(
+        cwd,
+        git_repo: GitRepo,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        add_changed_files("hello.py", "", git_repo, mocker)
+        write_config_file(
+            git_repo.workspace,
+            "pyproject.toml",
+            '[tool.add_copyright]\nname="Example Ltd"\nuse_git_user=true\n',
+        )
+
+        # WHEN / THEN
+        with cwd(git_repo.workspace), pytest.raises(InvalidConfigError) as e:
+            add_copyright.main()
+        assert "Configure either 'name' or 'use_git_user', not both" in e.exconly()
+
     class TestConfigFailures:
         @pytest.mark.parametrize("config_file", ["pyproject.toml"])
         class TestTomlFailures:
@@ -1441,7 +1541,7 @@ class TestGitRepoErrors:
         files = [f"hello{language.extension}"]
         for file in files:
             (tmp_path / file).write_text("")
-        mocker.patch("sys.argv", ["stub_name", *files])
+        mocker.patch("sys.argv", ["stub_name", "--use-git-user", *files])
 
         # WHEN / THEN
         with cwd(tmp_path), pytest.raises(InvalidGitRepositoryError):
@@ -1472,6 +1572,7 @@ class TestGitRepoErrors:
             "",
             git_repo,
             mocker,
+            hook_args=["--use-git-user"],
         )
         git_repo.run('git config user.name ""')
 

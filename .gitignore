@@ -1,6 +1,7 @@
 # Build Products
 *.egg-info
 .python-version
+site/
 
 # Test Products
 .coverage

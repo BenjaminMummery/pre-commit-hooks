@@ -14,7 +14,7 @@ def resolve_files(files: str | list[str]) -> list[Path]:
 
     Raises:
         FileNotFoundError: When one or more of the specified files does not
-        exist.
+            exist.
 
     Returns:
         list[Path]: A list of paths corresponding to the changed files.

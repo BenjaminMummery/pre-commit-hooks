@@ -78,6 +78,7 @@ repos:
         name: Update dates on copyright strings in source files
         entry: uv run update-copyright
         language: system
+        stages: [pre-push, manual]
         types_or:
           - c++
           - c#
@@ -176,6 +177,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: doctoc
+        exclude: ^docs/
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.3.0

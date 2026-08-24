@@ -51,7 +51,7 @@ class HookConfig:
     """Runtime configuration for the sync-type-hints hook."""
 
     on_clash: str = "error"
-    remove_docstring_types: bool = False
+    signature_types_only: bool = False
 
 
 def _parse_bool(value: object) -> bool:
@@ -70,15 +70,15 @@ def _load_config() -> HookConfig:
         return HookConfig()
 
     on_clash = str(config.get("on-clash", config.get("on_clash", "error")))
-    remove_docstring_types = _parse_bool(
+    signature_types_only = _parse_bool(
         config.get(
-            "remove-docstring-types",
-            config.get("remove_docstring_types", False),
+            "signature-types-only",
+            config.get("signature_types_only", False),
         ),
     )
     return HookConfig(
         on_clash=on_clash,
-        remove_docstring_types=remove_docstring_types,
+        signature_types_only=signature_types_only,
     )
 
 
@@ -92,9 +92,10 @@ def _parse_args() -> argparse.Namespace:
         default=None,
     )
     parser.add_argument(
-        "--remove-docstring-types",
+        "--signature-types-only",
         action="store_true",
         default=None,
+        help="keep type information only in signatures",
     )
 
     args = parser.parse_args()
@@ -103,8 +104,8 @@ def _parse_args() -> argparse.Namespace:
     config = _load_config()
     if args.on_clash is None:
         args.on_clash = config.on_clash
-    if args.remove_docstring_types is None:
-        args.remove_docstring_types = config.remove_docstring_types
+    if args.signature_types_only is None:
+        args.signature_types_only = config.signature_types_only
 
     return args
 
@@ -199,7 +200,7 @@ def _plan_function_edits(
 
     doc_node, docstring = docstring_info
     doc_types = parse_docstring_types(docstring)
-    if not doc_types.args and doc_types.returns is None:
+    if not doc_types.documented_args and not doc_types.documents_return:
         return [], False
 
     signature_types = parse_signature_types(node)
@@ -211,10 +212,17 @@ def _plan_function_edits(
     overwrite_return: str | None = None
     updated_doc_return: str | None = None
 
-    for name, doc_type in doc_types.args.items():
+    for name in doc_types.documented_args:
+        doc_type = doc_types.args.get(name)
         signature_type = signature_types.args.get(name)
+        if doc_type is None:
+            if signature_type is not None and not config.signature_types_only:
+                updated_doc_args[name] = signature_type
+            continue
+
         if signature_type is None:
-            add_args[name] = doc_type
+            if name in signature_types.args:
+                add_args[name] = doc_type
             continue
 
         if types_match(doc_type, signature_type):
@@ -249,7 +257,11 @@ def _plan_function_edits(
                 updated_doc_return = signature_types.returns
             else:
                 overwrite_return = doc_types.returns
-    elif signature_types.returns is not None and config.on_clash == "prefer-docstring":
+    elif (
+        doc_types.documents_return
+        and signature_types.returns is not None
+        and not config.signature_types_only
+    ):
         updated_doc_return = signature_types.returns
 
     edits = build_signature_edits(
@@ -263,14 +275,14 @@ def _plan_function_edits(
 
     docstring_changed = False
     if (
-        config.remove_docstring_types
+        config.signature_types_only
         or updated_doc_args
         or updated_doc_return is not None
     ):
         new_docstring, docstring_changed = rewrite_docstring_types(
             docstring,
             doc_types,
-            remove_types=config.remove_docstring_types,
+            remove_types=config.signature_types_only,
             updated_args=updated_doc_args or None,
             updated_return=updated_doc_return,
         )
@@ -347,7 +359,7 @@ def main() -> int:
     for file in args.files:
         config = HookConfig(
             on_clash=args.on_clash,
-            remove_docstring_types=args.remove_docstring_types,
+            signature_types_only=args.signature_types_only,
         )
         retv |= _sync_type_hints(file, config)
     return retv

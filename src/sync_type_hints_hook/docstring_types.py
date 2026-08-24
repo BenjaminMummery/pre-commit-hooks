@@ -14,7 +14,9 @@ class DocstringTypeInfo:
     """Type information extracted from a docstring."""
 
     args: dict[str, str] = field(default_factory=dict)
+    documented_args: set[str] = field(default_factory=set)
     returns: str | None = None
+    documents_return: bool = False
     style: str | None = None
 
 
@@ -51,10 +53,14 @@ _SECTION_ALIASES = {
 _GOOGLE_PARAM_RE = re.compile(
     r"^(\s*)(\w+)\s+\(([^)]+)\)\s*:\s*(.*)$",
 )
+_GOOGLE_UNTYPED_PARAM_RE = re.compile(r"^(\s*)(\w+)\s*:\s*(.*)$")
 _NUMPY_PARAM_RE = re.compile(r"^(\s*)(\w+)\s*:\s*(.+)$")
+_NUMPY_UNTYPED_PARAM_RE = re.compile(r"^(\s*)(\w+)\s*$")
 _SPHINX_PARAM_RE = re.compile(r"^:param\s+(\S+)\s+(\w+)\s*:\s*(.*)$")
+_SPHINX_UNTYPED_PARAM_RE = re.compile(r"^:param\s+(\w+)\s*:\s*(.*)$")
 _SPHINX_TYPE_RE = re.compile(r"^:type\s+(\w+)\s*:\s*(.+)$")
 _SPHINX_RTYPE_RE = re.compile(r"^:rtype:\s*(.+)$")
+_SPHINX_RETURN_RE = re.compile(r"^:returns?\s*:")
 
 
 def _normalize_type(type_str: str) -> str:
@@ -76,17 +82,17 @@ def parse_docstring_types(docstring: str) -> DocstringTypeInfo:
     Supports Google, NumPy, and Sphinx/reStructuredText formats.
     """
     google = _parse_google(docstring)
-    if google.args or google.returns:
+    if google.documented_args or google.documents_return:
         google.style = "google"
         return google
 
     numpy = _parse_numpy(docstring)
-    if numpy.args or numpy.returns:
+    if numpy.documented_args or numpy.documents_return:
         numpy.style = "numpy"
         return numpy
 
     sphinx = _parse_sphinx(docstring)
-    if sphinx.args or sphinx.returns:
+    if sphinx.documented_args or sphinx.documents_return:
         sphinx.style = "sphinx"
         return sphinx
 
@@ -103,16 +109,22 @@ def _parse_google(docstring: str) -> DocstringTypeInfo:
             continue
 
         header = stripped.rstrip(":")
-        if header.lower() in _SECTION_ALIASES:
+        if stripped.endswith(":") and header.lower() in _SECTION_ALIASES:
             section = _SECTION_ALIASES[header.lower()]
             continue
 
         if section == "args":
             if match := _GOOGLE_PARAM_RE.match(line):
-                info.args[match.group(2)] = _normalize_type(match.group(3))
-        elif section == "returns" and info.returns is None and ":" in stripped:
-            type_part, _ = stripped.split(":", 1)
-            info.returns = _normalize_type(type_part)
+                name = match.group(2)
+                info.documented_args.add(name)
+                info.args[name] = _normalize_type(match.group(3))
+            elif match := _GOOGLE_UNTYPED_PARAM_RE.match(line):
+                info.documented_args.add(match.group(2))
+        elif section == "returns" and not info.documents_return:
+            info.documents_return = True
+            if ":" in stripped:
+                type_part, _ = stripped.split(":", 1)
+                info.returns = _normalize_type(type_part)
 
     return info
 
@@ -140,7 +152,10 @@ def _parse_numpy(docstring: str) -> DocstringTypeInfo:
                 if match := _NUMPY_PARAM_RE.match(line):
                     param = match.group(2)
                     type_str = _normalize_type(match.group(3))
+                    info.documented_args.add(param)
                     info.args[param] = type_str
+                elif match := _NUMPY_UNTYPED_PARAM_RE.match(line):
+                    info.documented_args.add(match.group(2))
                 index += 1
             continue
 
@@ -151,7 +166,9 @@ def _parse_numpy(docstring: str) -> DocstringTypeInfo:
         ):
             index += 2
             if index < len(lines) and lines[index].strip():
-                info.returns = _normalize_type(lines[index].strip())
+                info.documents_return = True
+                if not lines[index][:1].isspace():
+                    info.returns = _normalize_type(lines[index].strip())
             continue
 
         index += 1
@@ -167,11 +184,18 @@ def _parse_sphinx(docstring: str) -> DocstringTypeInfo:
         stripped = line.strip()
         if match := _SPHINX_PARAM_RE.match(stripped):
             type_str, name = match.group(1), match.group(2)
+            info.documented_args.add(name)
             info.args[name] = _normalize_type(type_str)
+        elif match := _SPHINX_UNTYPED_PARAM_RE.match(stripped):
+            info.documented_args.add(match.group(1))
         elif match := _SPHINX_TYPE_RE.match(stripped):
+            info.documented_args.add(match.group(1))
             pending_types[match.group(1)] = _normalize_type(match.group(2))
         elif match := _SPHINX_RTYPE_RE.match(stripped):
+            info.documents_return = True
             info.returns = _normalize_type(match.group(1))
+        elif _SPHINX_RETURN_RE.match(stripped):
+            info.documents_return = True
 
     for name, type_str in pending_types.items():
         info.args.setdefault(name, type_str)
@@ -190,7 +214,7 @@ def rewrite_docstring_types(
     """Rewrite a docstring to remove or update embedded type information.
 
     Returns:
-        Tuple of the rewritten docstring and whether it changed.
+        tuple[str, bool]: Tuple of the rewritten docstring and whether it changed.
     """
     if info.style == "google":
         return _rewrite_google(
@@ -250,17 +274,32 @@ def _rewrite_google(
                 )
             continue
 
-        if section == "returns" and ":" in stripped:
-            indent = line[: len(line) - len(line.lstrip())]
-            type_part, description = stripped.split(":", 1)
-            if updated_return is not None:
-                type_part = updated_return
-                changed = True
-            if remove_types:
-                output.append(f"{indent}{description.lstrip()}")
+        if section == "args" and (match := _GOOGLE_UNTYPED_PARAM_RE.match(line)):
+            indent, name, description = match.groups()
+            if not remove_types and updated_args and name in updated_args:
+                output.append(f"{indent}{name} ({updated_args[name]}): {description}")
                 changed = True
             else:
-                output.append(f"{indent}{type_part}: {description.lstrip()}")
+                output.append(line)
+            continue
+
+        if section == "returns" and stripped:
+            indent = line[: len(line) - len(line.lstrip())]
+            if ":" in stripped:
+                type_part, description = stripped.split(":", 1)
+                if updated_return is not None:
+                    type_part = updated_return
+                    changed = True
+                if remove_types:
+                    output.append(f"{indent}{description.lstrip()}")
+                    changed = True
+                else:
+                    output.append(f"{indent}{type_part}: {description.lstrip()}")
+            elif updated_return is not None and not remove_types:
+                output.append(f"{indent}{updated_return}: {stripped}")
+                changed = True
+            else:
+                output.append(line)
             section = None
             continue
 
@@ -308,6 +347,13 @@ def _rewrite_numpy(
                         changed = True
                     else:
                         output.append(f"{indent}{name} : {type_str}")
+                elif match := _NUMPY_UNTYPED_PARAM_RE.match(line):
+                    indent, name = match.groups()
+                    if not remove_types and updated_args and name in updated_args:
+                        output.append(f"{indent}{name} : {updated_args[name]}")
+                        changed = True
+                    else:
+                        output.append(line)
                 else:
                     output.append(line)
                 index += 1
@@ -319,24 +365,56 @@ def _rewrite_numpy(
             and re.match(r"^-+$", lines[index + 1].strip())
         ):
             output.extend([lines[index], lines[index + 1]])
-            index += 2
-            if index < len(lines) and lines[index].strip():
-                type_line = lines[index]
-                if updated_return is not None:
-                    type_line = updated_return
-                    changed = True
-                if remove_types:
-                    index += 1
-                    changed = True
-                else:
-                    output.append(type_line)
-                    index += 1
+            return_lines, index, return_changed = _rewrite_numpy_return(
+                lines,
+                index + 2,
+                remove_types=remove_types,
+                updated_return=updated_return,
+            )
+            output.extend(return_lines)
+            changed |= return_changed
             continue
 
         output.append(lines[index])
         index += 1
 
     return "\n".join(output), changed
+
+
+def _rewrite_numpy_return(
+    lines: list[str],
+    index: int,
+    *,
+    remove_types: bool,
+    updated_return: str | None,
+) -> tuple[list[str], int, bool]:
+    if index >= len(lines) or not lines[index].strip():
+        return [], index, False
+
+    type_line = lines[index]
+    has_type_line = not type_line[:1].isspace()
+    if remove_types and has_type_line:
+        return [], index + 1, True
+    if updated_return is not None and has_type_line:
+        return [updated_return], index + 1, True
+    if updated_return is not None:
+        return [updated_return, type_line], index + 1, True
+    return [type_line], index + 1, False
+
+
+def _sphinx_type_directives(docstring: str) -> tuple[set[str], bool]:
+    lines = docstring.splitlines()
+    names = {
+        match.group(1)
+        for line in lines
+        if (match := _SPHINX_TYPE_RE.match(line.strip()))
+    }
+    has_rtype = any(_SPHINX_RTYPE_RE.match(line.strip()) for line in lines)
+    return names, has_rtype
+
+
+def _with_indent(line: str, value: str) -> str:
+    return f"{line[: len(line) - len(line.lstrip())]}{value}"
 
 
 def _rewrite_sphinx(
@@ -348,6 +426,7 @@ def _rewrite_sphinx(
 ) -> tuple[str, bool]:
     output: list[str] = []
     changed = False
+    typed_directive_names, has_rtype = _sphinx_type_directives(docstring)
 
     for line in docstring.splitlines():
         stripped = line.strip()
@@ -357,10 +436,31 @@ def _rewrite_sphinx(
                 type_str = updated_args[name]
                 changed = True
             if remove_types:
-                output.append(f":param {name}: {description}")
+                output.append(_with_indent(line, f":param {name}: {description}"))
                 changed = True
             else:
-                output.append(f":param {type_str} {name}: {description}")
+                output.append(
+                    _with_indent(line, f":param {type_str} {name}: {description}"),
+                )
+            continue
+
+        if match := _SPHINX_UNTYPED_PARAM_RE.match(stripped):
+            name, description = match.groups()
+            if (
+                not remove_types
+                and updated_args
+                and name in updated_args
+                and name not in typed_directive_names
+            ):
+                output.append(
+                    _with_indent(
+                        line,
+                        f":param {updated_args[name]} {name}: {description}",
+                    ),
+                )
+                changed = True
+            else:
+                output.append(line)
             continue
 
         if match := _SPHINX_TYPE_RE.match(stripped):
@@ -372,7 +472,7 @@ def _rewrite_sphinx(
             if updated_args and name in updated_args:
                 type_str = updated_args[name]
                 changed = True
-            output.append(f":type {name}: {type_str}")
+            output.append(_with_indent(line, f":type {name}: {type_str}"))
             continue
 
         if match := _SPHINX_RTYPE_RE.match(stripped):
@@ -383,7 +483,18 @@ def _rewrite_sphinx(
             if remove_types:
                 changed = True
                 continue
-            output.append(f":rtype: {type_str}")
+            output.append(_with_indent(line, f":rtype: {type_str}"))
+            continue
+
+        if (
+            _SPHINX_RETURN_RE.match(stripped)
+            and updated_return is not None
+            and not remove_types
+            and not has_rtype
+        ):
+            output.append(line)
+            output.append(_with_indent(line, f":rtype: {updated_return}"))
+            changed = True
             continue
 
         output.append(line)

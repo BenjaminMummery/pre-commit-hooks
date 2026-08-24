@@ -8,7 +8,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     env:
-      SKIP: update-copyright,no-commit-to-branch
+      SKIP: no-commit-to-branch
     steps:
       - uses: actions/checkout@v3
       - name: Install uv

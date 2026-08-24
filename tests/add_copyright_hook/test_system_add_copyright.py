@@ -116,6 +116,14 @@ class TestNoChanges:
     ["<git config username sentinel>", "Taylor Swift"],
 )
 class TestDefaultBehavior:
+    @pytest.fixture(autouse=True)
+    def configure_git_user_holder(self, git_repo: GitRepo):
+        write_config_file(
+            git_repo.workspace,
+            "pyproject.toml",
+            "[tool.add_copyright]\nuse_git_user=true\n",
+        )
+
     class TestEmptyFiles:
         @staticmethod
         def test_adding_copyright_to_empty_files(
@@ -352,12 +360,16 @@ class TestCustomBehavior:
                 [
                     (
                         "pyproject.toml",
-                        '[tool.add_copyright]\nformat="(C) {name} {year}"\n',
+                        "[tool.add_copyright]\n"
+                        "use_git_user=true\n"
+                        'format="(C) {name} {year}"\n',
                         "(C) <git config username sentinel> {year}",
                     ),
                     (
                         "setup.cfg",
-                        "[tool.add_copyright]\nformat=(C) {name} {year}\n",
+                        "[tool.add_copyright]\n"
+                        "use_git_user=true\n"
+                        "format=(C) {name} {year}\n",
                         "(C) <git config username sentinel> {year}",
                     ),
                 ],
@@ -430,7 +442,7 @@ class TestCustomBehavior:
                     git_repo,
                 )
 
-                toml_text = "\n".join(
+                toml_text = "[tool.add_copyright]\nuse_git_user=true\n\n" + "\n".join(
                     [
                         f'[tool.add_copyright.{lang.toml_key}]\nformat="""{lang.custom_copyright_format_commented}"""\n'
                         for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
@@ -486,7 +498,7 @@ class TestCustomBehavior:
                     "",
                     git_repo,
                 )
-                toml_text = ""
+                toml_text = "[tool.add_copyright]\nuse_git_user=true\n\n"
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     toml_text += (
                         f"[tool.add_copyright.{language.toml_key}]\n"

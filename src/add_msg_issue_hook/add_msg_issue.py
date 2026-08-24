@@ -99,10 +99,10 @@ def _insert_issue_into_message(issue_id: str, message: str, template: str) -> st
     is inserted as a new line above the existing message.
 
     Args:
-        issue_id (str): the ID string to be inserted
-        message (str): the current contents of the commit message
-        template (str): a format string dictating how the output is to be arranged.
-        Must contain keywords "subject", "body", and "issue_id".
+        issue_id (str): The ID string to be inserted.
+        message (str): The current contents of the commit message.
+        template (str): A format string dictating how the output is to be arranged.
+            Must contain keywords "subject", "body", and "issue_id".
 
     Returns:
         str: the modified message.
