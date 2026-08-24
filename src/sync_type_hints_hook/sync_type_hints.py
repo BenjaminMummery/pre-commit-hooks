@@ -13,7 +13,7 @@ import ast
 import sys
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from src._shared import print_diff, resolvers
 from src._shared.config_parsing import read_config
@@ -30,6 +30,7 @@ from src.sync_type_hints_hook.signature_types import (
 from src.sync_type_hints_hook.source_edits import apply_edits
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pathlib import Path
 
     from src.sync_type_hints_hook.source_edits import Edit

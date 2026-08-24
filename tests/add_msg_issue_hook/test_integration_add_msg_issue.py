@@ -323,8 +323,8 @@ class TestFailureStates:
 
         # THEN
         expected_errormessage: str = (
-            f"KeyError: \"Template argument {template!r} did not contain the required keyword '"  # noqa: E501
-             "{"
+            f"KeyError: \"Template argument {template!r} did not contain the required keyword '"
+            "{"
             + missing_keys[0]
             + "}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\""
         )
@@ -368,5 +368,5 @@ class TestFailureStates:
             "captured err",
             "expected_err",
             e.exconly(),
-            f"KeyError: \"Template argument {template!r} contained unrecognized keywords: '{additional_keys[0]}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\"",  # noqa: E501
+            f"KeyError: \"Template argument {template!r} contained unrecognized keywords: '{additional_keys[0]}' and cannot be used. For more information, see https://github.com/BenjaminMummery/pre-commit-hooks\"",
         )

@@ -592,5 +592,5 @@ class TestFailureStates:
 
         # THEN
         assert e.exconly().startswith(
-            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",  # noqa: E501
+            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",
         )

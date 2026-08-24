@@ -1,78 +1,96 @@
 ---
 name: Python Tests
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
-  unit_tests:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-versions: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: 0.10.4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-versions }}
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev
-      - name: Unit tests with pytest
-        run: |
-          uv run pytest src --cov-fail-under=0
-  integration_tests:
-    runs-on: ubuntu-latest
-    needs: unit_tests
-    strategy:
-      fail-fast: true
-      matrix:
-        python-versions: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: 0.10.4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-versions }}
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev
-      - name: Unit tests with pytest
-        run: |
-          uv run pytest tests/*/test_integration_*.py
-  system_tests:
-    needs: integration_tests
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install test dependencies
+        run: uv sync --locked --no-dev --group test
+      - name: Run unit tests
+        run: uv run --no-sync pytest src --no-cov
+
+  integration-tests:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        python-versions: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ["3.9", "3.14"]
     steps:
-      - uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: 0.10.4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install test dependencies
+        run: uv sync --locked --no-dev --group test
+      - name: Run integration tests
+        run: uv run --no-sync pytest tests/*/test_integration_*.py --no-cov
+
+  system-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.14"]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          python-version: ${{ matrix.python-versions }}
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev
-      - name: Unit tests with pytest
-        run: |-
-          uv run pytest tests/*/test_system_*.py --cov-fail-under=0
+          persist-credentials: false
+      - name: Install uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: 0.10.4
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install test dependencies
+        run: uv sync --locked --no-dev --group test
+      - name: Run system tests
+        run: uv run --no-sync pytest tests/*/test_system_*.py --no-cov
+
+  package-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: 0.10.4
+          python-version: "3.9"
+          enable-cache: true
+      - name: Build distributions
+        run: uv build
+      - name: Test the built wheel
+        run: uv run --isolated --no-project --with ./dist/*.whl add-copyright --help

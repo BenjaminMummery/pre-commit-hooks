@@ -13,30 +13,32 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
     "gitpython>=3.1.46",
     "identify>=2.6.1",
-    "path>=17.0.0",
-    "pyyaml>=6.0.3",
-    "restructuredtext-lint>=2.0.2",
-    "tomli>=2.4.0",
+    "tomli>=2.4.0; python_version < '3.11'",
 ]
 
 [dependency-groups]
 dev = [
-    "pre-commit>=3.5.0",
-    "python-semantic-release>=10.5.3",
-    "ruff>=0.15.0",
+    {include-group = "lint"},
     {include-group = "docs"},
     {include-group = "test"},
+    "python-semantic-release>=10.5.3",
+]
+lint = [
+    "deptry>=0.23.1",
+    "pre-commit>=3.5.0",
+    "ruff>=0.15.0",
 ]
 docs = [
     "mkdocs-material>=9,<10",
@@ -92,7 +94,7 @@ addopts = [
 [tool.mypy]
 files = ["src"]
 exclude = "(?x)(^tests/|.*/test_.*\\.py$)"
-python_version = "3.11"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 check_untyped_defs = true
@@ -103,13 +105,11 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.ruff]
-fix = true
-target-version = "py38"
+target-version = "py39"
 line-length = 88
 indent-width = 4
 show-fixes = true
-unsafe-fixes = true
-exclude = ["tests", "conftest.py"]
+extend-exclude = ["tests/examples"]
 
 [tool.ruff.lint]
 select = [
@@ -127,6 +127,7 @@ select = [
     "FA",   # flake8-future-annotations
     "FBT",  # flake8-boolean-trap
     "FLY",  # flynt
+    "G010", # logging.warn
     "I",    # isort
     "ICN",  # flake8-import-conventions
     "INP",  # flake8-no-pep420
@@ -143,6 +144,7 @@ select = [
     "RET",  # flake8-return
     "RSE",  # flake8-raise
     "RUF",  # ruff-specific rules
+    "S307", # eval
     "SIM",  # flake8-simplify
     "SLF",  # flake8-self
     "T10",  # flake8-debugger
@@ -171,18 +173,34 @@ lines-between-types = 1
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "D104"]
-"**/test_*.py" = [
+"conftest.py" = [
     "ANN",
     "D",
+    "PTH109",
+    "PT003",
+    "RUF012",
+    "TID251",
+]
+"**/test_*.py" = [
+    "A",
+    "ANN",
+    "ARG",
+    "D",
     "E501",
+    "INP001",
     "N802",
     "N803",
+    "PTH109",
+    "SIM117",
     "SLF001",
-    "A001",
     "PLR2004",
     "PT",
+    "PTH123",
+    "PLW1510",
     "T20",
+    "TID251",
 ]
+"tests/examples/*.py" = ["ALL"]
 "src/sync_type_hints_hook/docstring_types.py" = ["PLR0912"]
 "src/americanise_hook/americanise.py" = ["PLW0133"]
 "src/**/*_hook/**/*.py" = ["T20"]
@@ -200,6 +218,15 @@ strict = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest" = { msg = "Test frameworks must only be imported from test modules." }
+"pytest_mock" = { msg = "Test frameworks must only be imported from test modules." }
+"unittest" = { msg = "Test frameworks must only be imported from test modules." }
+
+[tool.deptry]
+known_first_party = ["src"]
+extend_exclude = ["conftest.py", "src/.*/test_.*\\.py"]
 
 [tool.ruff.lint.pylint]
 max-args = 10

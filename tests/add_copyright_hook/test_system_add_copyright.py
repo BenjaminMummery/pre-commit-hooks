@@ -243,7 +243,7 @@ class TestDefaultBehavior:
                     for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 [
-                    f"#!/usr/bin/env python3\n<file hello{lang.extension} content sentinel>"  # noqa: E501
+                    f"#!/usr/bin/env python3\n<file hello{lang.extension} content sentinel>"
                     for lang in CopyrightGlobals.SUPPORTED_LANGUAGES
                 ],
                 git_repo,
@@ -295,7 +295,7 @@ class TestCustomBehavior:
                 [
                     (
                         "pyproject.toml",
-                        '[tool.add_copyright]\nname="<config file username sentinel>"\n',  # noqa: E501
+                        '[tool.add_copyright]\nname="<config file username sentinel>"\n',
                     ),
                     (
                         "setup.cfg",
@@ -337,7 +337,7 @@ class TestCustomBehavior:
                 for language in CopyrightGlobals.SUPPORTED_LANGUAGES:
                     file = "hello" + language.extension
                     copyright_string = language.comment_format.format(
-                        content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>",  # noqa: E501
+                        content=f"Copyright (c) {THIS_YEAR} <config file username sentinel>",
                     )
                     expected_content = f"{copyright_string}\n"
                     expected_stdout = (
@@ -590,7 +590,7 @@ class TestFailureStates:
         @pytest.mark.parametrize(
             "config_file_content",
             [
-                '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
+                '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
             ],
         )
         @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
@@ -667,7 +667,7 @@ class TestFailureStates:
 
             # THEN
             assert process.returncode == 1, process.stdout + process.stderr
-            expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""  # noqa: E501
+            expected_stdout = f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\""
             print("E:", expected_stdout)
             print("R:", process.stdout)
             assert expected_stdout in process.stdout
@@ -736,7 +736,7 @@ class TestFailureStates:
             # THEN
             assert process.returncode == 1, process.stdout + process.stderr
             assert (
-                "src._shared.exceptions.InvalidConfigError: Could not parse config file "  # noqa: E501
+                "src._shared.exceptions.InvalidConfigError: Could not parse config file "
                 in process.stdout
             )
 

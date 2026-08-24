@@ -1,21 +1,25 @@
 ---
 name: Semantic Release
+
 on:
   push:
     branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
   release:
     runs-on: ubuntu-latest
     concurrency: release
     permissions:
-      id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
-          token: ${{ secrets.ADMIN_PAT }}
+          persist-credentials: false
       - name: Python Semantic Release
-        uses: python-semantic-release/python-semantic-release@master
+        uses: python-semantic-release/python-semantic-release@39dd2052f2ce8282a5d932c31d58a2ca06d2550e # v10.6.1
         with:
-          github_token: ${{ secrets.ADMIN_PAT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

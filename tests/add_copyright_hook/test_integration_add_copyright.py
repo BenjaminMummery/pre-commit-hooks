@@ -4,11 +4,10 @@ from pathlib import Path
 import pytest
 
 from freezegun import freeze_time
+from git import InvalidGitRepositoryError
 from pytest import CaptureFixture
 from pytest_git import GitRepo
 from pytest_mock import MockerFixture
-
-from git import InvalidGitRepositoryError
 
 from conftest import (
     CopyrightGlobals,
@@ -187,7 +186,7 @@ class TestDefaultBehavior:
                 content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = f"{copyright_string}\n"
-            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"
 
             # Gather actual outputs
             with open(git_repo.workspace / file) as f:
@@ -248,7 +247,7 @@ class TestDefaultBehavior:
                 content=f"Copyright (c) 1312 {git_username}",
             )
             expected_content = f"{copyright_string}\n"
-            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"
 
             # Gather actual outputs
             with open(git_repo.workspace / file) as f:
@@ -309,7 +308,7 @@ class TestDefaultBehavior:
             expected_content = (
                 copyright_string + f"\n\n<file {file} content sentinel>\n"
             )
-            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"  # noqa: E501
+            expected_stdout = f"Fixing file `hello{language.extension}` - added line(s):\n{copyright_string}\n"
 
             # Gather actual outputs
             with open(git_repo.workspace / file) as f:
@@ -1262,7 +1261,7 @@ class TestFailureStates:
                     "Output error string",
                     "Expected error string",
                     e.exconly(),
-                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
+                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
                     + f"{file}'.",
                 )
@@ -1271,7 +1270,7 @@ class TestFailureStates:
             @pytest.mark.parametrize(
                 "config_file_content",
                 [
-                    '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',  # noqa: E501
+                    '[tool.add_copyright.{language}]\nunsupported_option="should not matter"\n',
                 ],
             )
             @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
@@ -1354,7 +1353,7 @@ class TestFailureStates:
                     "Output error string",
                     "Expected error string",
                     e.exconly(),
-                    f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",  # noqa: E501
+                    f"KeyError: \"The format string '{input_format}' is missing the following required keys: ['{missing_keys}']\"",
                 )
 
         @pytest.mark.parametrize("config_file", ["setup.cfg"])
@@ -1433,7 +1432,7 @@ class TestFailureStates:
                     "Output error string",
                     "Expected error string",
                     e.exconly(),
-                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"  # noqa: E501
+                    "src._shared.exceptions.InvalidConfigError: Could not parse config file '"
                     + (str(Path("/private")) if "/private" in e.exconly() else "")
                     + f"{file}'.",
                 )
@@ -1496,7 +1495,7 @@ class TestFailureStates:
 
             # THEN
             assert e.exconly().startswith(
-                "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",  # noqa: E501
+                "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",
             )
 
         @staticmethod
