@@ -2,17 +2,8 @@
 default_language_version:
   python: python3
 
-default_install_hook_types: [pre-commit, pre-merge-commit, pre-push, prepare-commit-msg,
-  commit-msg, post-checkout, post-commit, post-merge, post-rewrite]
-default_stages: [pre-commit, pre-push]
-
-exclude: |
-  (?x)(
-    setup.py|
-    pyproject.toml|
-    CHANGELOG.md|
-    pull_request_template.md
-  )
+default_install_hook_types: [pre-commit, pre-push, prepare-commit-msg, commit-msg]
+default_stages: [pre-commit]
 
 repos:
   # Fast, read-only checks first (fail before any file modifications).
@@ -30,29 +21,26 @@ repos:
       - id: check-case-conflict
       - id: check-illegal-windows-names
       - id: check-ast
-      - id: check-json
       - id: check-toml
-      - id: check-xml
       - id: check-yaml
         args: [--allow-multiple-documents]
-      - id: check-symlinks
       - id: destroyed-symlinks
       - id: forbid-submodules
       - id: name-tests-test
         args: [--pytest-test-first]
         exclude: tests/examples/.*|conftest\.py
 
-  - repo: https://github.com/pre-commit/sync-pre-commit-deps
-    rev: v0.0.3
+  - repo: meta
     hooks:
-      - id: sync-pre-commit-deps
+      - id: check-hooks-apply
+      - id: check-useless-excludes
 
   # Content normalisers (before spell-check and Python lint/format).
   - repo: local
     hooks:
       - id: add-copyright
         name: Add copyright string to source files
-        entry: uv run add-copyright
+        entry: uv run --no-sync add-copyright
         language: system
         exclude: CHANGELOG.md
         types_or:
@@ -76,8 +64,9 @@ repos:
           - swift
       - id: update-copyright
         name: Update dates on copyright strings in source files
-        entry: uv run update-copyright
+        entry: uv run --no-sync update-copyright
         language: system
+        stages: [pre-push, manual]
         types_or:
           - c++
           - c#
@@ -99,27 +88,28 @@ repos:
           - swift
       - id: add-msg-issue
         name: Add issue to the commit message
-        entry: uv run add-msg-issue
+        entry: uv run --no-sync add-msg-issue
         language: system
         always_run: true
         stages: [prepare-commit-msg]
       - id: sort-file-contents
         name: Sort gitignore sections
-        entry: uv run sort-file-contents
+        entry: uv run --no-sync sort-file-contents
         language: system
-        files: ^.gitignore
-      - id: no-import-testtools-in-src
-        name: Detect test tool imports in src files
-        entry: uv run no-import-testtools-in-src
-        language: system
-        types_or: [python]
+        files: ^\.gitignore$
       - id: sync-type-hints
         name: Sync type hints with docstrings
-        entry: uv run sync-type-hints
+        entry: uv run --no-sync sync-type-hints
         language: system
         files: ^src/
         exclude: src/.*/test_.*\.py$
         args: [--on-clash=prefer-signature]
+      - id: deptry
+        name: Check Python dependency declarations
+        entry: uv run --no-sync deptry .
+        language: system
+        always_run: true
+        pass_filenames: false
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -132,9 +122,8 @@ repos:
     rev: v0.15.2
     hooks:
       - id: ruff-check
-        args: [--config=pyproject.toml, --fix]
+        args: [--fix]
       - id: ruff-format
-        args: [--config=pyproject.toml]
 
   # Whitespace and line-ending cleanup after formatters.
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -147,45 +136,31 @@ repos:
         args: [--fix=lf]
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
-      - id: debug-statements
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
       - id: python-use-type-annotations
-      - id: python-check-blanket-noqa
-      - id: python-check-blanket-type-ignore
-      - id: python-check-mock-methods
-      - id: python-no-eval
-      - id: python-no-log-warn
       - id: text-unicode-replacement-char
-
-  - repo: https://github.com/asottile/yesqa
-    rev: v1.5.0
-    hooks:
-      - id: yesqa
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1
     hooks:
       - id: mypy
-        args: [--config-file=pyproject.toml]
-        additional_dependencies: [types-PyYAML]
 
-  - repo: https://github.com/thlorenz/doctoc
-    rev: v2.3.0
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.11
     hooks:
-      - id: doctoc
+      - id: actionlint
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.29.0
+    hooks:
+      - id: zizmor
+        args: [--no-progress, --fix]
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.3.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
-
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: rst-backticks
-      - id: rst-directive-colons
-      - id: rst-inline-touching-normal

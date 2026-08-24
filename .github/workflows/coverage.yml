@@ -1,32 +1,41 @@
 ---
 name: Test Coverage
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  IntegrationTestCoverage:
+  coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+          persist-credentials: false
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: 0.10.4
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: pyproject.toml
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev
-      - name: Integration Test Coverage
+          python-version: "3.14"
+          enable-cache: true
+      - name: Install test dependencies
+        run: uv sync --locked --no-dev --group test
+      - name: Run unit and integration coverage
         run: |-
-          uv run pytest --junitxml=pytest.xml --cov-report=term-missing --cov=src tests/*/test_integration_*.py | tee pytest-coverage.txt
+          set -o pipefail
+          uv run --no-sync pytest src tests/*/test_integration_*.py \
+            --junitxml=pytest.xml --cov-report=term-missing --cov=src \
+            | tee pytest-coverage.txt
       - name: Comment coverage
-        uses: coroo/pytest-coverage-commentator@v1.0.2
+        if: github.event_name == 'pull_request'
+        uses: coroo/pytest-coverage-commentator@bf2d76a0d38a8bbf7292aba469ae5285c5ea9660 # v1.0.2

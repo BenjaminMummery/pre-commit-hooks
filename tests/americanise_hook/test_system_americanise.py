@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2026 Benjamin Mummery
+# Copyright (c) 2024-2026 Benjamin Mummery
 import os
 import subprocess
 
@@ -71,8 +71,8 @@ class TestNoChanges:
         assert process.returncode == 0, process.stdout + process.stderr
         for file in ["file.py", "file.md"]:
             f = git_repo.workspace / file
-            with open(f) as file:
-                content = file.read()
+            with open(f) as file_handle:
+                content = file_handle.read()
         assert content == "<file content sentinel>"
         assert "Correct non-US spellings" in process.stdout
         assert "Passed" in process.stdout, process.stdout
@@ -127,8 +127,8 @@ class TestChanges:
         assert process.returncode == 1, process.stdout + process.stderr
         for file in ["file.py", "file.md", "file.txt"]:
             f = git_repo.workspace / file
-            with open(f) as file:
-                content = file.read()
+            with open(f) as file_handle:
+                content = file_handle.read()
             assert content == us_file_content, file
         assert "Correct non-US spellings" in process.stdout
         assert "Failed" in process.stdout, process.stdout

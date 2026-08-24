@@ -65,8 +65,9 @@ def build_signature_edits(
     """Build source edits for updating a function signature.
 
     Returns:
-        List of (start_line, start_col, end_line, end_col, replacement) tuples.
-        Line and column numbers are 1-based and 0-based respectively, matching AST.
+        list[tuple[int, int, int, int, str]]: List of ``(start_line, start_col,
+        end_line, end_col, replacement)`` tuples. Line and column numbers are 1-based
+        and 0-based respectively, matching AST.
     """
     if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         msg = "Expected a function definition node."

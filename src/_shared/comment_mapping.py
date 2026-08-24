@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Mapping
+from typing import TYPE_CHECKING
 
 from identify import identify
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 HASH_COMMENT = ("#", None)
 SLASH_COMMENT = ("//", None)

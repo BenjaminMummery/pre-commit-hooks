@@ -1,4 +1,4 @@
-.PHONY: all clean test
+.PHONY: all clean docs-build docs-serve test
 
 define PRETTYPRINT_PYSCRIPT
 import sys, os
@@ -20,6 +20,13 @@ export PRETTYPRINT_PYSCRIPT
 install:
 	uv sync
 	uv run pre-commit install
+
+# DOCUMENTATION
+docs-build:
+	uv run --group docs mkdocs build --strict
+
+docs-serve:
+	uv run --group docs mkdocs serve
 
 # GENERAL TESTING
 test: test_unit test_integration
@@ -43,4 +50,4 @@ test_system:
 
 # RUNNING PRE-COMMIT HOOKS
 lint:
-	@SKIP=update-copyright uv run pre-commit run --all-files
+	@uv run pre-commit run --all-files

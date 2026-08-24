@@ -13,11 +13,12 @@ import logging
 import sys
 
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any
 
 from src._shared import resolvers
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from pathlib import Path
 
 Import = namedtuple("Import", ["module", "name", "alias"])
@@ -31,7 +32,7 @@ def _get_imports(file: Path) -> Generator[Import, Any, None]:
         file (Path): The file to be checked.
 
     Yields:
-        Generator[Import, None]
+        Generator[Import, Any, None]: Generator[Import, None]
     """
     with file.open() as fh:
         try:

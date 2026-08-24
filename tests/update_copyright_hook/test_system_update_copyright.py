@@ -14,7 +14,14 @@ from conftest import (
     assert_matching,
 )
 
-COMMAND = ["pre-commit", "try-repo", f"{os.getcwd()}", "update-copyright"]
+COMMAND = [
+    "pre-commit",
+    "try-repo",
+    f"{os.getcwd()}",
+    "update-copyright",
+    "--hook-stage",
+    "manual",
+]
 THIS_YEAR = datetime.date.today().year
 
 
@@ -33,7 +40,7 @@ class TestNoChanges:
         assert "Update dates on copyright strings in source files" in process.stdout, (
             process.stdout
         )
-        assert "Passed" in process.stdout
+        assert "Skipped" in process.stdout
 
     @staticmethod
     def test_no_supported_files_changed(git_repo: GitRepo, cwd):
@@ -62,7 +69,7 @@ class TestNoChanges:
         assert "Update dates on copyright strings in source files" in process.stdout, (
             process.stdout
         )
-        assert "Passed" in process.stdout, process.stdout
+        assert "Skipped" in process.stdout, process.stdout
 
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
@@ -192,7 +199,7 @@ class TestChanges:
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
             with open(git_repo.workspace / file) as f:
@@ -250,7 +257,7 @@ class TestChanges:
             expected_content = copyright_string + "\n\n<file content sentinel>\n"
             expected_stdout = (
                 f"Fixing file `{file}`:\n"
-                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"  # noqa: E501
+                f"\033[91m  - {language.comment_format.format(content=input_copyright_string)}\033[0m\n"
                 f"\033[92m  + {copyright_string}\033[0m\n"
             )
             with open(git_repo.workspace / file) as f:

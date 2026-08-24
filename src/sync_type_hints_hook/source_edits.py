@@ -5,9 +5,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Tuple
+from typing import TYPE_CHECKING
 
-Edit = Tuple[int, int, int, int, str]
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+Edit = tuple[int, int, int, int, str]
 
 
 @dataclass

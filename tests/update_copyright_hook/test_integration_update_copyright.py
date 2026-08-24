@@ -1,4 +1,6 @@
 # Copyright (c) 2023 - 2026 Benjamin Mummery
+from pathlib import Path
+
 import pytest
 
 from freezegun import freeze_time
@@ -13,6 +15,14 @@ from conftest import (
     assert_matching,
 )
 from src.update_copyright_hook import update_copyright
+
+
+@pytest.fixture(autouse=True)
+def mock_commit_year_range(mocker):
+    return mocker.patch(
+        "src.update_copyright_hook.update_copyright._get_commit_year_range",
+        return_value=(1312, 1312),
+    )
 
 
 @pytest.fixture()
@@ -33,6 +43,49 @@ def mock_colour(mocker):
 
 @pytest.mark.usefixtures("git_repo")
 class TestNoChanges:
+    @staticmethod
+    def test_reads_committer_year_range_from_git_history(
+        mock_commit_year_range,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        mocker.stop(mock_commit_year_range)
+        repo = mocker.patch(
+            "src.update_copyright_hook.update_copyright.Repo",
+        ).return_value
+        repo.git.log.return_value = "1312-01-01\n1066-12-31\n1088-06-01"
+
+        # WHEN / THEN
+        assert update_copyright._get_commit_year_range(
+            Path("hello.py"),
+            "revision-sentinel",
+        ) == (1066, 1312)
+        repo.git.log.assert_called_once_with(
+            "revision-sentinel",
+            "--follow",
+            "--format=%cs",
+            "--",
+            "hello.py",
+        )
+
+    @staticmethod
+    def test_rejects_a_pushed_revision_other_than_checked_out_head(
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        mocker.patch("sys.argv", ["stub_name"])
+        mocker.patch.dict("os.environ", {"PRE_COMMIT_TO_REF": "pushed-ref"})
+        repo = mocker.patch(
+            "src.update_copyright_hook.update_copyright.Repo",
+        ).return_value
+        repo.head.commit.hexsha = "checked-out-head"
+        repo.commit.return_value.hexsha = "pushed-head"
+
+        # WHEN / THEN
+        with pytest.raises(RuntimeError) as e:
+            update_copyright.main()
+        assert "can only modify the checked-out revision" in e.exconly()
+
     @staticmethod
     def test_no_files_changed(
         capsys: CaptureFixture,
@@ -180,6 +233,50 @@ class TestNoChanges:
 
 
 class TestChanges:
+    @staticmethod
+    def test_extends_both_ends_of_range_from_history(
+        cwd,
+        git_repo: GitRepo,
+        mock_commit_year_range,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        mock_commit_year_range.return_value = (1066, 1312)
+        add_changed_files(
+            file := "hello.py",
+            "# Copyright 1088 - 1300 NAME\n",
+            git_repo,
+            mocker,
+        )
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 1
+
+        # THEN
+        assert (git_repo.workspace / file).read_text() == (
+            "# Copyright 1066 - 1312 NAME\n"
+        )
+
+    @staticmethod
+    def test_never_shortens_declared_range(
+        cwd,
+        git_repo: GitRepo,
+        mock_commit_year_range,
+        mocker: MockerFixture,
+    ):
+        # GIVEN
+        mock_commit_year_range.return_value = (1088, 1300)
+        content = "# Copyright 1066-1312 NAME\n"
+        add_changed_files(file := "hello.py", content, git_repo, mocker)
+
+        # WHEN
+        with cwd(git_repo.workspace):
+            assert update_copyright.main() == 0
+
+        # THEN
+        assert (git_repo.workspace / file).read_text() == content
+
     @staticmethod
     @pytest.mark.parametrize("language", CopyrightGlobals.SUPPORTED_LANGUAGES)
     @pytest.mark.parametrize(
@@ -495,5 +592,5 @@ class TestFailureStates:
 
         # THEN
         assert e.exconly().startswith(
-            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",  # noqa: E501
+            "NotImplementedError: The file extension '.fake' is not currently supported. File has tags: {",
         )

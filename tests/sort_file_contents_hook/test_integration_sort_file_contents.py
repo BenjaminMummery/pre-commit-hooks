@@ -227,7 +227,7 @@ class TestFailureStates:
             "Captured error message",
             "Expected error message",
             e.exconly(),
-            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '.gitignore'. The following entries appear in multiple sections:\n- '{clashing_entry}' appears in 2 sections.",  # noqa: E501
+            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '.gitignore'. The following entries appear in multiple sections:\n- '{clashing_entry}' appears in 2 sections.",
             message=description,
         )
 
@@ -268,7 +268,7 @@ class TestFailureStates:
             "Captured error message",
             "Expected error message",
             e.exconly(),
-            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '{filename}'. The following entries exists in both commented and uncommented forms:\n- '{clashing_entry}'.",  # noqa: E501
+            f"src.sort_file_contents_hook.sort_file_contents.UnsortableError: Could not sort '{filename}'. The following entries exists in both commented and uncommented forms:\n- '{clashing_entry}'.",
             message=description,
         )
 

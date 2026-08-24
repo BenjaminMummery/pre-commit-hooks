@@ -22,14 +22,14 @@ class ParsedCopyrightString:
         """Construct ParsedCopyrightString.
 
         Arguments:
-            comment_markers: The character(s) that denote that
-                the line is a comment.
-            signifiers: The string that indicates that this comment relates to
+            comment_markers (tuple[str, str | None] | None): The character(s) that
+                denote that the line is a comment.
+            signifiers (str): The string that indicates that this comment relates to
                 copyright.
-            start_year: The earlier year attached to the copyright.
-            end_year: The later year attached to the copyright.
-            name: The name of the copyright holder.
-            string: The full copyright string as it exists in the source file.
+            start_year (int): The earlier year attached to the copyright.
+            end_year (int): The later year attached to the copyright.
+            name (str): The name of the copyright holder.
+            string (str): The full copyright string as it exists in the source file.
         """
         self.comment_markers: tuple[str, str | None] | None = comment_markers
         self.signifiers: str = signifiers
@@ -65,7 +65,7 @@ def _parse_copyright_docstring(text: str) -> ParsedCopyrightString | None:
     handles multiple-line inputs, and b) assumes that no comment markers are used.
 
     Args:
-        text: the string to be checked.
+        text (str): the string to be checked.
 
     Returns:
         ParsedCopyrightString | None: If a matching copyright string was found,

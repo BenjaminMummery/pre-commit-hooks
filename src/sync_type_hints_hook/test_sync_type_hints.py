@@ -43,6 +43,17 @@ class TestParseGoogleDocstrings:
         assert info.args == {"name": "str", "count": "int"}
         assert info.returns == "bool"
 
+    @staticmethod
+    def test_detects_untyped_entries():
+        info = parse_docstring_types(
+            "Args:\n    name: The name.\n\nReturns:\n    Whether it worked.\n",
+        )
+        assert info.style == "google"
+        assert info.documented_args == {"name"}
+        assert info.args == {}
+        assert info.documents_return is True
+        assert info.returns is None
+
 
 class TestParseNumpyDocstrings:
     @staticmethod
@@ -65,6 +76,18 @@ class TestParseNumpyDocstrings:
         assert info.args == {"name": "str", "count": "int"}
         assert info.returns == "bool"
 
+    @staticmethod
+    def test_detects_untyped_entries():
+        info = parse_docstring_types(
+            "Parameters\n----------\nname\n    The name.\n\n"
+            "Returns\n-------\n    Whether it worked.\n",
+        )
+        assert info.style == "numpy"
+        assert info.documented_args == {"name"}
+        assert info.args == {}
+        assert info.documents_return is True
+        assert info.returns is None
+
 
 class TestParseSphinxDocstrings:
     @staticmethod
@@ -79,6 +102,17 @@ class TestParseSphinxDocstrings:
         assert info.style == "sphinx"
         assert info.args == {"name": "str", "count": "int"}
         assert info.returns == "bool"
+
+    @staticmethod
+    def test_detects_untyped_entries():
+        info = parse_docstring_types(
+            ":param name: The name.\n:return: Whether it worked.\n",
+        )
+        assert info.style == "sphinx"
+        assert info.documented_args == {"name"}
+        assert info.args == {}
+        assert info.documents_return is True
+        assert info.returns is None
 
     @staticmethod
     def test_supports_type_directives():
@@ -105,6 +139,41 @@ class TestTypesMatch:
 
 
 class TestRewriteDocstrings:
+    @staticmethod
+    @pytest.mark.parametrize(
+        ("docstring", "expected_arg", "expected_return"),
+        [
+            (
+                "Args:\n    name: The name.\n\nReturns:\n    Whether it worked.",
+                "name (str): The name.",
+                "bool: Whether it worked.",
+            ),
+            (
+                "Parameters\n----------\nname\n    The name.\n\n"
+                "Returns\n-------\n    Whether it worked.",
+                "name : str",
+                "bool\n    Whether it worked.",
+            ),
+            (
+                ":param name: The name.\n:return: Whether it worked.",
+                ":param str name: The name.",
+                ":rtype: bool",
+            ),
+        ],
+    )
+    def test_add_types_to_untyped_entries(docstring, expected_arg, expected_return):
+        info = parse_docstring_types(docstring)
+        rewritten, changed = rewrite_docstring_types(
+            docstring,
+            info,
+            remove_types=False,
+            updated_args={"name": "str"},
+            updated_return="bool",
+        )
+        assert changed is True
+        assert expected_arg in rewritten
+        assert expected_return in rewritten
+
     @staticmethod
     def test_remove_google_types():
         docstring = (
@@ -328,6 +397,59 @@ class TestSyncTypeHintsHelpers:
             )
 
     @staticmethod
+    def test_plan_function_adds_signature_types_to_docstring(tmp_path):
+        source = textwrap.dedent(
+            '''
+            def foo(name: str) -> bool:
+                """Summary.
+
+                Args:
+                    name: The name.
+
+                Returns:
+                    Whether it worked.
+                """
+                return True
+            ''',
+        ).strip()
+        file = tmp_path / "example.py"
+        context = _collect_functions(ast.parse(source))[0]
+
+        edits, changed = _plan_function_edits(source, context, file, HookConfig())
+
+        assert changed is True
+        updated = apply_edits(source, edits)
+        assert "name (str): The name." in updated
+        assert "bool: Whether it worked." in updated
+
+    @staticmethod
+    def test_signature_only_moves_docstring_types_to_signature(tmp_path):
+        source = textwrap.dedent(
+            '''
+            def foo(name):
+                """Args:
+                    name (str): The name.
+                """
+                return name
+            ''',
+        ).strip()
+        file = tmp_path / "example.py"
+        context = _collect_functions(ast.parse(source))[0]
+
+        edits, changed = _plan_function_edits(
+            source,
+            context,
+            file,
+            HookConfig(signature_types_only=True),
+        )
+
+        assert changed is True
+        updated = apply_edits(source, edits)
+        assert "def foo(name: str):" in updated
+        assert "name: The name." in updated
+        assert "name (str)" not in updated
+
+    @staticmethod
     def test_sync_type_hints_syntax_error(tmp_path, capsys):
         file = tmp_path / "broken.py"
         file.write_text("def broken(:\n")
@@ -361,11 +483,19 @@ class TestSyncTypeHintsHelpers:
         (tmp_path / "pyproject.toml").write_text(
             "[tool.sync_type_hints]\n"
             'on-clash = "prefer-signature"\n'
-            "remove-docstring-types = true\n",
+            "signature-types-only = true\n",
         )
         config = _load_config()
         assert config.on_clash == "prefer-signature"
-        assert config.remove_docstring_types is True
+        assert config.signature_types_only is True
+
+    @staticmethod
+    def test_load_signature_types_only_underscore_key(tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            "[tool.sync_type_hints]\nsignature_types_only = true\n",
+        )
+        assert _load_config().signature_types_only is True
 
 
 class TestTypeClashError:

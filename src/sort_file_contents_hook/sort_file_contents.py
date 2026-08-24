@@ -122,7 +122,7 @@ def _find_duplicates(lines: list[str]) -> list[tuple[str, int]]:
     'None' entries are not counted as duplicates.
 
     Arguments:
-        lines: the list of strings to check for duplicates.
+        lines (list[str]): the list of strings to check for duplicates.
 
     Returns:
         list[tuple[str, int]]: a list of tuples containing the duplicated string, and
@@ -137,7 +137,7 @@ def _find_comment_clashes(lines: list[str]) -> list[str]:
     """Identify duplicate entries in the list where one of the entries is commented out.
 
     Args:
-        lines: the list of strings to check for duplicates.
+        lines (list[str]): the list of strings to check for duplicates.
 
     Returns:
         list[str]: a list of duplicated strings.
