@@ -124,9 +124,15 @@ def _update_copyright_dates(file: Path, revision: str = "HEAD") -> int:
                 1,
             )
 
+        new_content = content.replace(
+            copyright_string.string,
+            new_copyright_string,
+        )
+
+        # Do not mutate the file until all parsing and transformation has succeeded.
         f.seek(0, 0)
+        f.write(new_content)
         f.truncate()
-        f.write(content.replace(copyright_string.string, new_copyright_string))
 
         print(
             print_diff.format_diff(

@@ -1072,6 +1072,44 @@ class TestCustomBehavior:
 
             @staticmethod
             @freeze_time("1312-01-01")
+            def test_preserves_invalid_python_when_adding_docstring(
+                language: DocstrSupportedLanguage,
+                config_file: str,
+                config_content: str,
+                git_repo: GitRepo,
+                mocker: MockerFixture,
+                cwd,
+            ):
+                # GIVEN
+                invalid_source = "def unfinished(\n    pass\n"
+                add_changed_files(
+                    f"hello{language.extension}",
+                    invalid_source,
+                    git_repo,
+                    mocker,
+                    hook_args=["--use-git-user"],
+                )
+                write_config_file(
+                    git_repo.workspace,
+                    config_file,
+                    config_content.format(key=language.toml_key),
+                )
+
+                # WHEN
+                with cwd(git_repo.workspace):
+                    assert add_copyright.main() == 1
+
+                # THEN
+                output_content = (
+                    git_repo.workspace / f"hello{language.extension}"
+                ).read_text()
+                assert output_content == (
+                    '"""\nCopyright (c) 1312 <git config username sentinel>\n"""\n\n'
+                    + invalid_source
+                )
+
+            @staticmethod
+            @freeze_time("1312-01-01")
             @pytest.mark.parametrize(
                 "docstring_content",
                 ["Module level docstring.", "Multi\nline\ndocstring"],

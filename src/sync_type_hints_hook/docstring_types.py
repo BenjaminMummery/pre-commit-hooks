@@ -71,6 +71,12 @@ def _normalize_type(type_str: str) -> str:
     return normalized
 
 
+def _indent_width(line: str) -> int:
+    """Return the display width of a line's leading whitespace."""
+    indent = line[: len(line) - len(line.lstrip())]
+    return len(indent.expandtabs())
+
+
 def types_match(docstring_type: str, signature_type: str) -> bool:
     """Return True when two type strings describe the same type."""
     return _normalize_type(docstring_type) == _normalize_type(signature_type)
@@ -164,10 +170,11 @@ def _parse_numpy(docstring: str) -> DocstringTypeInfo:
             and header.lower() in {"returns", "return", "yields"}
             and re.match(r"^-+$", lines[index + 1].strip())
         ):
+            section_indent = _indent_width(lines[index])
             index += 2
             if index < len(lines) and lines[index].strip():
                 info.documents_return = True
-                if not lines[index][:1].isspace():
+                if _indent_width(lines[index]) <= section_indent:
                     info.returns = _normalize_type(lines[index].strip())
             continue
 
@@ -364,10 +371,14 @@ def _rewrite_numpy(
             and header.lower() in {"returns", "return", "yields"}
             and re.match(r"^-+$", lines[index + 1].strip())
         ):
+            section_indent = lines[index][
+                : len(lines[index]) - len(lines[index].lstrip())
+            ]
             output.extend([lines[index], lines[index + 1]])
             return_lines, index, return_changed = _rewrite_numpy_return(
                 lines,
                 index + 2,
+                section_indent=section_indent,
                 remove_types=remove_types,
                 updated_return=updated_return,
             )
@@ -385,6 +396,7 @@ def _rewrite_numpy_return(
     lines: list[str],
     index: int,
     *,
+    section_indent: str,
     remove_types: bool,
     updated_return: str | None,
 ) -> tuple[list[str], int, bool]:
@@ -392,13 +404,13 @@ def _rewrite_numpy_return(
         return [], index, False
 
     type_line = lines[index]
-    has_type_line = not type_line[:1].isspace()
+    has_type_line = _indent_width(type_line) <= len(section_indent.expandtabs())
     if remove_types and has_type_line:
         return [], index + 1, True
     if updated_return is not None and has_type_line:
-        return [updated_return], index + 1, True
+        return [_with_indent(type_line, updated_return)], index + 1, True
     if updated_return is not None:
-        return [updated_return, type_line], index + 1, True
+        return [f"{section_indent}{updated_return}", type_line], index + 1, True
     return [type_line], index + 1, False
 
 

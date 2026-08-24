@@ -224,7 +224,16 @@ def _add_copyright_docstring_to_content(content: str, copyright_string: str) -> 
         str: the new content.
     """
     # Check for an existing docstring, modifying it if it exists.
-    code = ast.parse(content)
+    try:
+        code = ast.parse(content)
+    except SyntaxError:
+        # A file may be temporarily invalid while it is being edited. We cannot
+        # inspect its module docstring safely, but we can still prepend one without
+        # discarding any of the original content.
+        return _add_copyright_comment_to_content(
+            content,
+            f'"""\n{copyright_string}\n"""',
+        )
     for node in ast.walk(code):
         if isinstance(node, ast.Module) and (docstring := ast.get_docstring(node)):
             return content.replace(docstring, f"{copyright_string}\n\n{docstring}")
@@ -478,13 +487,16 @@ def _ensure_copyright_string(
                 comment_markers=comment_markers,
             )
 
-        f.seek(0, 0)
-        f.truncate()
-        f.write(
+        new_content = (
             _add_copyright_docstring_to_content(content, new_copyright_string)
             if docstr
-            else _add_copyright_comment_to_content(content, new_copyright_string),
+            else _add_copyright_comment_to_content(content, new_copyright_string)
         )
+
+        # Do not mutate the file until all parsing and transformation has succeeded.
+        f.seek(0, 0)
+        f.write(new_content)
+        f.truncate()
         print(f"Fixing file `{file}` ", end="")
         print(f"- added line(s):\n{new_copyright_string}")
     return 1
