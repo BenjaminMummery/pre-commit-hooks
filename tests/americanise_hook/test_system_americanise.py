@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2026 Benjamin Mummery
+# Copyright (c) 2024-2026 Benjamin Mummery
 import os
 import subprocess
 
