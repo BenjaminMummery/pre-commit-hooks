@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 
 from dataclasses import dataclass, field
@@ -77,6 +78,18 @@ def _indent_width(line: str) -> int:
     return len(indent.expandtabs())
 
 
+def _split_google_return(line: str) -> tuple[str, str] | None:
+    """Split a typed Google return entry without mistaking description punctuation."""
+    for match in re.finditer(":", line):
+        type_str = line[: match.start()].strip()
+        try:
+            ast.parse(type_str, mode="eval")
+        except SyntaxError:
+            continue
+        return type_str, line[match.end() :].lstrip()
+    return None
+
+
 def types_match(docstring_type: str, signature_type: str) -> bool:
     """Return True when two type strings describe the same type."""
     return _normalize_type(docstring_type) == _normalize_type(signature_type)
@@ -128,8 +141,8 @@ def _parse_google(docstring: str) -> DocstringTypeInfo:
                 info.documented_args.add(match.group(2))
         elif section == "returns" and not info.documents_return:
             info.documents_return = True
-            if ":" in stripped:
-                type_part, _ = stripped.split(":", 1)
+            if return_entry := _split_google_return(stripped):
+                type_part, _ = return_entry
                 info.returns = _normalize_type(type_part)
 
     return info
@@ -292,16 +305,16 @@ def _rewrite_google(
 
         if section == "returns" and stripped:
             indent = line[: len(line) - len(line.lstrip())]
-            if ":" in stripped:
-                type_part, description = stripped.split(":", 1)
+            if return_entry := _split_google_return(stripped):
+                type_part, description = return_entry
                 if updated_return is not None:
                     type_part = updated_return
                     changed = True
                 if remove_types:
-                    output.append(f"{indent}{description.lstrip()}")
+                    output.append(f"{indent}{description}")
                     changed = True
                 else:
-                    output.append(f"{indent}{type_part}: {description.lstrip()}")
+                    output.append(f"{indent}{type_part}: {description}")
             elif updated_return is not None and not remove_types:
                 output.append(f"{indent}{updated_return}: {stripped}")
                 changed = True

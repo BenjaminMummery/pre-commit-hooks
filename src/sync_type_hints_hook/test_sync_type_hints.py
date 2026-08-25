@@ -54,6 +54,16 @@ class TestParseGoogleDocstrings:
         assert info.documents_return is True
         assert info.returns is None
 
+    @staticmethod
+    def test_colon_in_untyped_yield_description_is_not_a_type_separator():
+        info = parse_docstring_types(
+            "Yields:\n"
+            "    Partial maps ``{initial_label: target_label, ...}`` that localize.\n",
+        )
+        assert info.style == "google"
+        assert info.documents_return is True
+        assert info.returns is None
+
 
 class TestParseNumpyDocstrings:
     @staticmethod
@@ -219,6 +229,28 @@ class TestRewriteDocstrings:
         )
         assert changed is True
         assert "name (int): The name." in rewritten
+
+    @staticmethod
+    def test_add_google_yield_type_before_description_containing_colon():
+        docstring = (
+            "Yields:\n"
+            "    Partial wire-label maps ``{initial_label: target_label, ...}`` that\n"
+            "    localize every target.\n"
+        )
+        info = parse_docstring_types(docstring)
+        rewritten, changed = rewrite_docstring_types(
+            docstring,
+            info,
+            remove_types=False,
+            updated_return="Iterator[WireLabelRoutingMap]",
+        )
+        assert changed is True
+        assert rewritten == (
+            "Yields:\n"
+            "    Iterator[WireLabelRoutingMap]: Partial wire-label maps "
+            "``{initial_label: target_label, ...}`` that\n"
+            "    localize every target."
+        )
 
     @staticmethod
     def test_add_numpy_return_type_at_section_indentation():
