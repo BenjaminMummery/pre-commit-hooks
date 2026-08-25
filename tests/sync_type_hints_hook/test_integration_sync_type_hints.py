@@ -105,6 +105,34 @@ class TestAddMissingAnnotations:
         with open(git_repo.workspace / "hello.py") as handle:
             assert_matching("output", "expected", handle.read(), expected)
 
+    @staticmethod
+    def test_preserves_colon_in_untyped_yield_description(
+        mocker: MockerFixture,
+        git_repo: GitRepo,
+        cwd,
+    ):
+        source = '''from collections.abc import Iterator
+
+
+def mappings() -> Iterator[dict[str, str]]:
+    """Build mappings.
+
+    Yields:
+        Partial maps ``{initial_label: target_label, ...}`` that localize.
+    """
+'''
+        expected = source.replace(
+            "Partial maps",
+            "Iterator[dict[str, str]]: Partial maps",
+        )
+        add_changed_files("mappings.py", source, git_repo, mocker)
+
+        with cwd(git_repo.workspace):
+            assert sync_type_hints.main() == 1
+
+        with open(git_repo.workspace / "mappings.py") as handle:
+            assert_matching("output", "expected", handle.read(), expected)
+
 
 class TestTypeClash:
     @staticmethod
